@@ -19,16 +19,19 @@ _lock = threading.Lock()
 _models: dict[str, object] = {}
 
 
-def get_model(name: str | None = None):
+def get_model(name: str | None = None, bulk: bool = False):
+    """Load (once) the embedding model. `bulk=True` (ingest) uses all CPU cores; queries use few threads."""
     from fastembed import TextEmbedding
 
     settings = get_settings()
     name = name or settings.embedding_model
+    key = f"{name}|{'bulk' if bulk else 'query'}"
     with _lock:
-        if name not in _models:
+        if key not in _models:
             settings.model_cache_dir.mkdir(parents=True, exist_ok=True)
-            _models[name] = TextEmbedding(model_name=name, cache_dir=str(settings.model_cache_dir))
-        return _models[name]
+            threads = None if bulk else settings.onnx_threads
+            _models[key] = TextEmbedding(model_name=name, cache_dir=str(settings.model_cache_dir), threads=threads)
+        return _models[key]
 
 
 def _normalize(m: np.ndarray) -> np.ndarray:
@@ -41,7 +44,7 @@ def _normalize(m: np.ndarray) -> np.ndarray:
 def embed_passages(texts: list[str], model_name: str | None = None, batch_size: int = 64) -> np.ndarray:
     if not texts:
         return np.zeros((0, 0), dtype=np.float32)
-    model = get_model(model_name)
+    model = get_model(model_name, bulk=True)
     vecs = list(model.passage_embed(texts, batch_size=batch_size))  # type: ignore[attr-defined]
     return _normalize(np.vstack(vecs))
 

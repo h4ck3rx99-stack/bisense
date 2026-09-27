@@ -68,6 +68,7 @@ class QueryPlan:
     english_query: str
     keywords: list[str]
     lexical_terms: list[str]
+    content_terms: list[str]  # the user's own content words (no glossary expansion)
     explicit_numbers: list[str]
     explicit_ids: list[int]
     clause_refs: list[str]
@@ -158,8 +159,8 @@ def understand(conn: sqlite3.Connection, query: str, ui_lang: str = "en", contex
         english = " ".join(keywords) if keywords else query
         notes.append("offline keyword translation")
 
-    lexical = tokenize_terms(english)
-    lexical += [t for phrase in expand_lexical(english) for t in [phrase]]
+    content = tokenize_terms(english)
+    lexical = content + expand_lexical(english)
     return QueryPlan(
         raw=query,
         # Answer language: the query's script if it is Hindi/Kannada, otherwise the UI language.
@@ -168,6 +169,7 @@ def understand(conn: sqlite3.Connection, query: str, ui_lang: str = "en", contex
         english_query=english,
         keywords=keywords,
         lexical_terms=lexical,
+        content_terms=content,
         explicit_numbers=[s.canonical for s in numbers],
         explicit_ids=[s.id for s in explicit],
         clause_refs=clause_refs,
@@ -182,7 +184,8 @@ def apply_rewrite(plan: QueryPlan, english_query: str, keywords: list[str], inte
     """Update a plan with the LLM rewrite result (English pivot for non-English queries/follow-ups)."""
     plan.english_query = english_query.strip() or plan.english_query
     plan.keywords = keywords or plan.keywords
-    plan.lexical_terms = tokenize_terms(plan.english_query) + [k for k in keywords if k] + expand_lexical(plan.english_query)
+    plan.content_terms = tokenize_terms(plan.english_query)
+    plan.lexical_terms = plan.content_terms + [k for k in keywords if k] + expand_lexical(plan.english_query)
     if intent and plan.intent == "ask":
         plan.intent = intent
     plan.rewritten = True

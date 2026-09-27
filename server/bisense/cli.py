@@ -126,6 +126,39 @@ def inspect(slug: str, clause: str = typer.Option(None, help="Show one clause, e
 
 
 @app.command()
+def search(
+    query: str,
+    explain: bool = typer.Option(False, "--explain", help="Show every retrieval stage and score"),
+    lang: str = typer.Option("en"),
+    no_rerank: bool = typer.Option(False, help="Disable the cross-encoder"),
+) -> None:
+    """Run retrieval only (no LLM) and print ranked evidence."""
+    from bisense.retrieval.index import db_conn
+    from bisense.retrieval.query import understand
+    from bisense.retrieval.search import search as run_search
+
+    conn = db_conn()
+    plan = understand(conn, query, ui_lang=lang)
+    res = run_search(conn, plan, rerank_enabled=False if no_rerank else None)
+    typer.echo(f"intent={plan.intent} lang={plan.lang} english={plan.english_query!r} scope={[s.number or s.slug for s in plan.scope]}")
+    if explain:
+        typer.echo(f"lexical terms: {plan.lexical_terms}")
+        typer.echo(f"timings (ms): {res.timings}   top rerank: {res.top_rerank}")
+        typer.echo(f"{'#':>2} {'cite':4} {'lex':>5} {'vec':>6} {'fused':>7} {'rerank':>7}  source")
+        for i, c in enumerate(res.candidates[:15], start=1):
+            typer.echo(
+                f"{i:>2} {c.citation_id or '':4} {str(c.lexical_rank or '-'):>5} {c.vector_score or 0:6.3f} {c.fused:7.4f} "
+                f"{c.rerank_score if c.rerank_score is not None else float('nan'):7.2f}  {c.label()[:28]} · {c.clause_number} {c.clause_heading[:30]} (p.{c.page_start})"
+            )
+            typer.echo(f"      {c.text[:150]!r}")
+    typer.echo("\nStandards:")
+    for h in res.standards[:8]:
+        typer.echo(f"  {h.number or '':22} {h.title[:60]:60} via={h.via} compulsory={h.compulsory} score={h.score:.2f}")
+        if h.matched_row:
+            typer.echo(f"      row: {h.matched_row[:140]}")
+
+
+@app.command()
 def report() -> None:
     """Print the last ingest report."""
     path = get_settings().index_dir / "ingest_report.json"

@@ -23,7 +23,7 @@ from bisense.ingest.pdf_parse import IngestError, RawLine, extract_pdf
 from bisense.ingest.structure import build_clauses
 from bisense.ingest.types import ParsedDoc
 
-PARSER_VERSION = "pdf-1.3"
+PARSER_VERSION = "pdf-1.4"
 
 
 def parse_pdf_document(path: Path, language: str = "en", ocr_mode: str = "auto") -> ParsedDoc:

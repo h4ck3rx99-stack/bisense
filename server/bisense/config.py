@@ -50,6 +50,9 @@ class Settings(BaseSettings):
     rerank_enabled: bool = True
     reranker_model: str = "Xenova/ms-marco-MiniLM-L-6-v2"
     model_cache_dir: Path = REPO_ROOT / "data" / "models"
+    # ONNX intra-op threads per model at query time. Two models (embedder + reranker) with all cores
+    # each contend badly; 2 threads each measured fastest on a 16-core laptop (see docs/DECISIONS.md).
+    onnx_threads: int = 2
 
     top_k_context: int = 8
     context_token_budget: int = 3000

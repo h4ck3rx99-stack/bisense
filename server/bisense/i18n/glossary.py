@@ -25,7 +25,8 @@ def expand_lexical(text: str) -> list[str]:
     low = text.lower()
     extra: list[str] = []
     for key, values in (_glossary().get("synonyms") or {}).items():
-        if re.search(r"(?<!\w)" + re.escape(key) + r"(?!\w)", low):
+        # tolerate a plural "s" on the last word ("motorcycle helmets" matches "motorcycle helmet")
+        if re.search(r"(?<!\w)" + re.escape(key) + r"s?(?!\w)", low):
             extra.extend(values)
     return extra
 

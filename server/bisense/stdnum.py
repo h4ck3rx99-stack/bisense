@@ -19,8 +19,9 @@ from dataclasses import dataclass
 # Prefix alternatives, longest first so "IS/ISO/IEC" wins over "IS".
 _PREFIX = r"(?P<prefix>IS\s*/\s*ISO\s*/\s*IEC|IS\s*/\s*IEC|IS\s*/\s*ISO|IS|DEMO)"
 _NUMBER = r"(?P<num>\d{1,6}(?:[-.]\d{1,4})*)"
-_PART = r"(?:\s*\(?\s*(?:Part|Pt\.?|भाग)\s*(?P<part>[0-9A-Za-z/]+)\s*\)?)?"
-_SEC = r"(?:\s*\(?\s*(?:Sec(?:tion)?\.?|Sec)\s*(?P<sec>[0-9A-Za-z/]+)\s*\)?)?"
+_PART = r"(?:\s*[:(]?\s*(?:Part|Pt\.?|भाग)\s*(?P<part>\d{1,3}[A-Z]?)\s*\)?)?"
+# "(Sec 1)", "/Sec 3" (as in "Part 2/Sec 3"), "Section 2"
+_SEC = r"(?:\s*[(/]?\s*(?:Sec(?:tion)?\.?)\s*(?P<sec>\d{1,3}[A-Z]?)\s*\)?)?"
 _YEAR = r"(?:\s*[:：]\s*(?P<year>(?:19|20)\d{2}))?"
 
 # Used for extraction from free text. "IS" must be a separate token (not the word "this").

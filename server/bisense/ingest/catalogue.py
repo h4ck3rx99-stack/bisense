@@ -27,7 +27,7 @@ from bisense.ingest.html_parse import _last_updated, content_root, load_soup
 from bisense.ingest.pdf_parse import IngestError
 from bisense.ingest.types import ClauseDraft, ParsedDoc
 
-PARSER_VERSION = "catalogue-1.0"
+PARSER_VERSION = "catalogue-1.1"
 
 
 def _cell_text(td: Tag) -> str:

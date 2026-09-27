@@ -32,6 +32,9 @@ from bisense.stdnum import (
         ("demo-201", "DEMO-201"),
         ("See IS 4151:2015 for helmets", "IS 4151:2015"),
         ("IS 1489 (भाग 1)", "IS 1489 (Part 1)"),
+        ("IS 302 (Part 2/Sec 3)", "IS 302 (Part 2) (Sec 3)"),
+        ("IS/IEC 62368: Part 1: 2023", "IS/IEC 62368 (Part 1):2023"),
+        ("IS: 16192 (Part 1)", "IS 16192 (Part 1)"),
     ],
 )
 def test_normalize(raw, expected):
