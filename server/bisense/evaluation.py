@@ -16,7 +16,7 @@ import json
 import statistics
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import yaml
@@ -26,6 +26,7 @@ from bisense.config import REPO_ROOT, get_settings
 EVAL_FILE = REPO_ROOT / "server" / "eval" / "questions.yaml"
 OUT_JSON = REPO_ROOT / "docs" / "eval" / "latest.json"
 OUT_MD = REPO_ROOT / "docs" / "EVAL.md"
+OUT_NO_LLM = REPO_ROOT / "docs" / "eval" / "no_llm.json"
 TARGETS = {"recall_at_5": 0.85, "exact_number_hit_at_1": 1.0, "refusal_accuracy": 0.9, "false_refusal_rate": 0.1}
 ANSWERABLE_TYPES = {"answerable", "exact", "compare", "followup"}
 
@@ -94,7 +95,7 @@ def run_retrieval(questions: list[dict], use_llm_rewrite: bool = True, rerank: b
             res = retrieve(conn, plan)
             r.retrieval_ms = round((time.perf_counter() - t0) * 1000, 1)
             r.top_rerank = res.top_rerank
-            r.scope_explicit = plan.scope_source == "explicit"
+            r.scope_explicit = plan.scope_source in ("explicit", "context")  # these bypass the gate
             ordered = list(res.context) + [c for c in res.candidates if c not in res.context]
             exp = q.get("expect") or []
             for i, c in enumerate(ordered[:10], start=1):
@@ -169,7 +170,13 @@ def calibrate_gate(results: list[QResult]) -> dict:
         if best is None or score > best[0]:
             best = (score, t, refusal, false_ref)
     assert best is not None
-    return {"threshold": best[1], "gate_refusal_accuracy": round(best[2], 3), "gate_false_refusal_rate": round(best[3], 3), "answerable_scores": sorted(round(x, 2) for x in ans), "unanswerable_scores": sorted(round(x, 2) for x in una)}
+    return {
+        "threshold": best[1],
+        "gate_refusal_accuracy": round(best[2], 3),
+        "gate_false_refusal_rate": round(best[3], 3),
+        "answerable_scores": sorted(round(x, 2) for x in ans),
+        "unanswerable_scores": sorted(round(x, 2) for x in una),
+    }
 
 
 def _pct(values: list[float], p: float) -> float | None:
@@ -256,7 +263,7 @@ def write_report(results: list[QResult], metrics: dict, calib: dict, meta: dict,
         "",
         "Definitions: recall@5 = share of answerable questions with an expected source (document + clause) among the first 5 evidence passages; "
         "MRR@10 = mean reciprocal rank of the first expected passage; exact-number hit@1 = the named standard is the first standard listed; "
-        "refusal accuracy = share of unanswerable questions answered with \"not in the indexed sources\"; false-refusal rate = share of answerable "
+        'refusal accuracy = share of unanswerable questions answered with "not in the indexed sources"; false-refusal rate = share of answerable '
         "questions refused; drop rate = share of drafted statements removed by the validator; fact hit = the expected verbatim fragment appears in the answer.",
         "",
         "## Evidence gate calibration",
@@ -275,10 +282,29 @@ def write_report(results: list[QResult], metrics: dict, calib: dict, meta: dict,
     else:
         lines.append("Not calibrated (reranker disabled).")
     if comparisons:
-        lines += ["", "## Configuration comparison (retrieval only)", "", "| Configuration | recall@5 | MRR@10 | exact hit@1 | p50 ms | p95 ms |", "|---|---|---|---|---|---|"]
+        lines += [
+            "",
+            "## Configuration comparison (retrieval only)",
+            "",
+            "| Configuration | recall@5 | MRR@10 | exact hit@1 | p50 ms | p95 ms |",
+            "|---|---|---|---|---|---|",
+        ]
         for c in comparisons:
-            lines.append(f"| {c['name']} | {fmt(c['recall_at_5'])} | {fmt(c['mrr_at_10'])} | {fmt(c['exact_number_hit_at_1'])} | {fmt(c['retrieval_p50_ms'])} | {fmt(c['retrieval_p95_ms'])} |")
-    lines += ["", "## Per-question results", "", "| id | type | lang | rank | top standard | top rerank | answer | mode | fact | ms |", "|---|---|---|---|---|---|---|---|---|---|"]
+            lines.append(
+                f"| {c['name']} | {fmt(c['recall_at_5'])} | {fmt(c['mrr_at_10'])} | {fmt(c['exact_number_hit_at_1'])} | {fmt(c['retrieval_p50_ms'])} | {fmt(c['retrieval_p95_ms'])} |"
+            )
+    if OUT_NO_LLM.exists():
+        nl = json.loads(OUT_NO_LLM.read_text(encoding="utf-8"))
+        lines += ["", f"## Without an LLM (extractive mode, run {nl['generated_at']})", "", "| Metric | Value |", "|---|---|"]
+        lines += [f"| {k} | {fmt(v)} |" for k, v in nl["metrics"].items()]
+        lines += ["", "In this mode refusals come only from the stricter evidence gate (`GATE_RERANK_MIN_NO_LLM`); answers are verbatim passages."]
+    lines += [
+        "",
+        "## Per-question results",
+        "",
+        "| id | type | lang | rank | top standard | top rerank | answer | mode | fact | ms |",
+        "|---|---|---|---|---|---|---|---|---|---|",
+    ]
     for r in results:
         lines.append(
             f"| {r.id} | {r.type} | {r.lang} | {r.rank or '—'} | {r.top_standard or '—'} | {fmt(r.top_rerank)} | {r.answer_type or '—'} | {r.mode or '—'} | "
@@ -313,13 +339,18 @@ def main(no_llm: bool = False, smoke: bool = False, compare: bool = False, log=p
         for name, rr in (("hybrid + reranker", True), ("hybrid, no reranker", False)):
             rs = run_retrieval(questions, use_llm_rewrite=llm is not None, rerank=rr, log=log)
             mm = summarize(rs, s.gate_rerank_min, with_answers=False)
-            comparisons.append({"name": f"{name} ({s.embedding_model})", **{k: mm.get(k) for k in ("recall_at_5", "mrr_at_10", "exact_number_hit_at_1", "retrieval_p50_ms", "retrieval_p95_ms")}})
+            comparisons.append(
+                {
+                    "name": f"{name} ({s.embedding_model})",
+                    **{k: mm.get(k) for k in ("recall_at_5", "mrr_at_10", "exact_number_hit_at_1", "retrieval_p50_ms", "retrieval_p95_ms")},
+                }
+            )
     if llm is not None:
         log("Running the full answer pipeline ...")
         run_answers(questions, {r.id: r for r in results}, log=log)
-    metrics = summarize(results, s.gate_rerank_min, with_answers=llm is not None)
+    metrics = summarize(results, s.gate_rerank_min_no_llm, with_answers=llm is not None)
     meta = {
-        "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "dataset_mode": idx.dataset_mode,
         "tiers": "B+C" if idx.dataset_mode == "demo" else "A+B",
         "corpus": {k: v for k, v in idx.counts.items()},
@@ -329,6 +360,12 @@ def main(no_llm: bool = False, smoke: bool = False, compare: bool = False, log=p
         "llm": s.llm_model if llm is not None else None,
         "smoke": smoke,
     }
-    if not smoke:
+    if smoke:
+        pass
+    elif llm is None:
+        # Extractive-only mode: its own file, so the main (LLM) report is not overwritten.
+        OUT_NO_LLM.parent.mkdir(parents=True, exist_ok=True)
+        OUT_NO_LLM.write_text(json.dumps({**meta, "metrics": metrics, "calibration": calib}, indent=1, ensure_ascii=False), encoding="utf-8")
+    else:
         write_report(results, metrics, calib, meta, comparisons)
     return {"metrics": metrics, "calibration": calib, "comparisons": comparisons, "results": results}

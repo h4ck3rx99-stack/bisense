@@ -35,9 +35,16 @@ _ask_limiter = RateLimiter(get_settings().rate_limit_ask)
 @router.post("/search", response_model=SearchResponse)
 def search_endpoint(req: SearchRequest, conn: sqlite3.Connection = Depends(get_db)) -> SearchResponse:
     ctx = req.context
-    plan = understand(conn, req.query, ui_lang=req.lang, context=ClientContext(
-        recent_questions=list(ctx.recent_questions) if ctx else [], focus_slugs=list(ctx.focus_slugs) if ctx else [], open_slug=ctx.open_slug if ctx else None,
-    ))
+    plan = understand(
+        conn,
+        req.query,
+        ui_lang=req.lang,
+        context=ClientContext(
+            recent_questions=list(ctx.recent_questions) if ctx else [],
+            focus_slugs=list(ctx.focus_slugs) if ctx else [],
+            open_slug=ctx.open_slug if ctx else None,
+        ),
+    )
     # Instant results: no cross-encoder (it costs ~1-2 s on a laptop CPU); /api/ask reranks.
     res = search(conn, plan, rerank_enabled=False)
     cands = res.context

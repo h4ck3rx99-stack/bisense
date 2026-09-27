@@ -6,7 +6,7 @@ import re
 import sqlite3
 
 from bisense import stdnum
-from bisense.models import Citation, QueryInfo, Scores, ScopeItemOut, StandardRef
+from bisense.models import Citation, QueryInfo, ScopeItemOut, Scores, StandardRef
 from bisense.retrieval.query import QueryPlan
 from bisense.retrieval.search import Candidate, StandardHit
 
@@ -87,9 +87,14 @@ def standard_ref_for_number(conn: sqlite3.Connection, number: str) -> StandardRe
     if not r:
         return None
     return StandardRef(
-        slug=r["slug"], number=r["number_canonical"], title=r["title"], kind=r["kind"],
-        compulsory=r["compulsory_certification"], compulsory_source=r["compulsory_source"],
-        catalogue_only=bool(r["catalogue_only"]), synthetic=bool(r["synthetic"]),
+        slug=r["slug"],
+        number=r["number_canonical"],
+        title=r["title"],
+        kind=r["kind"],
+        compulsory=r["compulsory_certification"],
+        compulsory_source=r["compulsory_source"],
+        catalogue_only=bool(r["catalogue_only"]),
+        synthetic=bool(r["synthetic"]),
     )
 
 
@@ -113,7 +118,20 @@ def summary_context(conn: sqlite3.Connection, standard_id: int, limit: int = 8) 
     picked: list[int] = []
     seen_kinds: dict[str, int] = {}
     order = ["scope", "requirement", "table", "test_method", "marking", "sampling", "conformity", "packing", "faq", "other", "front", "foreword"]
-    per_kind = {"scope": 2, "requirement": 2, "table": 1, "test_method": 1, "marking": 1, "sampling": 1, "conformity": 1, "packing": 1, "faq": 4, "other": 3, "front": 1, "foreword": 1}
+    per_kind = {
+        "scope": 2,
+        "requirement": 2,
+        "table": 1,
+        "test_method": 1,
+        "marking": 1,
+        "sampling": 1,
+        "conformity": 1,
+        "packing": 1,
+        "faq": 4,
+        "other": 3,
+        "front": 1,
+        "foreword": 1,
+    }
     for kind in order:
         for r in rows:
             if len(picked) >= limit:

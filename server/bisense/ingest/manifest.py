@@ -27,9 +27,23 @@ from bisense.ingest.demo_pack import read_demo_source
 from bisense.ingest.fetch_public import load_fetch_log, load_public_sources
 
 MANIFEST_FIELDS = [
-    "file", "tier", "standard_number", "title", "doc_type", "source_url", "obtained_on", "status",
-    "status_verified_on", "category", "industries", "products", "compulsory_certification",
-    "compulsory_source", "language", "synthetic", "needs_review",
+    "file",
+    "tier",
+    "standard_number",
+    "title",
+    "doc_type",
+    "source_url",
+    "obtained_on",
+    "status",
+    "status_verified_on",
+    "category",
+    "industries",
+    "products",
+    "compulsory_certification",
+    "compulsory_source",
+    "language",
+    "synthetic",
+    "needs_review",
 ]
 
 

@@ -33,7 +33,14 @@ def run_doctor() -> list[Check]:
     s = get_settings()
     checks: list[Check] = []
     v = sys.version_info
-    checks.append(Check("Python 3.11/3.12", v[:2] in ((3, 11), (3, 12)), f"{v.major}.{v.minor}.{v.micro}", "Install Python 3.12 and run: npm run setup (uv picks the right version)"))
+    checks.append(
+        Check(
+            "Python 3.11/3.12",
+            v[:2] in ((3, 11), (3, 12)),
+            f"{v.major}.{v.minor}.{v.micro}",
+            "Install Python 3.12 and run: npm run setup (uv picks the right version)",
+        )
+    )
     node = shutil.which("node")
     if node:
         out = subprocess.run([node, "--version"], capture_output=True, text=True).stdout.strip()
@@ -50,7 +57,9 @@ def run_doctor() -> list[Check]:
 
     cache = s.model_cache_dir
     have_models = cache.exists() and any(cache.rglob("*.onnx"))
-    checks.append(Check("Embedding/reranker models downloaded", have_models, str(cache), "Run: npm run setup (downloads ~100 MB once; needs internet)", blocking=False))
+    checks.append(
+        Check("Embedding/reranker models downloaded", have_models, str(cache), "Run: npm run setup (downloads ~100 MB once; needs internet)", blocking=False)
+    )
 
     if s.db_path.exists():
         try:
@@ -65,19 +74,41 @@ def run_doctor() -> list[Check]:
 
     public = s.data_dir / "public"
     n_public = len([p for p in public.glob("*") if p.suffix in (".html", ".pdf")]) if public.exists() else 0
-    checks.append(Check("Official BIS pages (Tier B)", n_public > 0, f"{n_public} files in data/public", "Run: npm run fetch-public (needs internet, once)", blocking=False))
+    checks.append(
+        Check(
+            "Official BIS pages (Tier B)", n_public > 0, f"{n_public} files in data/public", "Run: npm run fetch-public (needs internet, once)", blocking=False
+        )
+    )
     raw = s.data_dir / "raw"
     n_raw = len(list(raw.glob("*.pdf"))) if raw.exists() else 0
-    checks.append(Check("Real Indian Standards (Tier A)", True, f"{n_raw} PDFs in data/raw" + ("" if n_raw else " (demo pack is used instead)"), blocking=False))
+    checks.append(
+        Check("Real Indian Standards (Tier A)", True, f"{n_raw} PDFs in data/raw" + ("" if n_raw else " (demo pack is used instead)"), blocking=False)
+    )
 
     if s.llm_provider == "none" or not s.llm_configured:
-        checks.append(Check("LLM", True, "not configured: answers use extractive mode (verbatim clauses)", "Optional: add a free key in .env (see .env.example)", blocking=False))
+        checks.append(
+            Check(
+                "LLM",
+                True,
+                "not configured: answers use extractive mode (verbatim clauses)",
+                "Optional: add a free key in .env (see .env.example)",
+                blocking=False,
+            )
+        )
     else:
         from bisense.answer.llm_client import get_llm
 
         llm = get_llm()
         reach = bool(llm and llm.reachable())
-        checks.append(Check("LLM reachable", reach, f"{s.llm_model} at {s.llm_base_url}", "Check LLM_BASE_URL / LLM_API_KEY in .env, internet access, or start Ollama. The app still works in extractive mode.", blocking=False))
+        checks.append(
+            Check(
+                "LLM reachable",
+                reach,
+                f"{s.llm_model} at {s.llm_base_url}",
+                "Check LLM_BASE_URL / LLM_API_KEY in .env, internet access, or start Ollama. The app still works in extractive mode.",
+                blocking=False,
+            )
+        )
 
     tess = shutil.which("tesseract")
     checks.append(Check("Tesseract OCR (optional)", True, tess or "not installed (only needed for scanned PDFs)", blocking=False))
@@ -112,6 +143,9 @@ def run_warm(log=print) -> dict:
         log("No LLM configured: warming stores nothing (extractive answers need no cache). Add a key in .env first.")
         return {"warmed": 0}
     cache.WARMING = True
+    settings = get_settings()
+    old_demo = settings.demo_mode
+    settings.demo_mode = True  # live pipeline first (never short-circuit on an existing cache entry)
     summary = {"ok": 0, "extractive": 0, "refused": 0, "items": []}
     try:
         for item in spec.get("questions", []):
@@ -132,9 +166,14 @@ def run_warm(log=print) -> dict:
             else:
                 summary["ok"] += 1
             log(f"  {item['q'][:70]:70} -> {kind} ({mode}) {time.perf_counter() - t0:.1f}s")
+            time.sleep(3)  # stay under free-tier rate limits (e.g. Groq: 30 requests/minute)
         for slug in spec.get("summaries", []):
             t0 = time.perf_counter()
-            req = AskRequest(query=f"Explain {slug_label(slug)} in simple language.", lang="en", context=AskContext(open_slug=slug, focus_slugs=[slug], recent_questions=["summary"]))
+            req = AskRequest(
+                query=f"Explain {slug_label(slug)} in simple language.",
+                lang="en",
+                context=AskContext(open_slug=slug, focus_slugs=[slug], recent_questions=["summary"]),
+            )
             for ev, data in run_ask(req):
                 if ev == "answer":
                     log(f"  summary {slug} -> {data.answer_type} ({data.mode}) {time.perf_counter() - t0:.1f}s")
@@ -148,6 +187,7 @@ def run_warm(log=print) -> dict:
             conn.close()
     finally:
         cache.WARMING = False
+        settings.demo_mode = old_demo
     return summary
 
 

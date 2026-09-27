@@ -38,7 +38,11 @@ def plain_language(conn: sqlite3.Connection, standard_id: int, slug: str, lang: 
     rows = conn.execute("SELECT id, text_verbatim FROM requirements WHERE standard_id = ? ORDER BY id LIMIT 30", (standard_id,)).fetchall()
     items = {str(r["id"]): r["text_verbatim"] for r in rows}
     try:
-        res = llm.chat([{"role": "system", "content": SYSTEM}, {"role": "user", "content": json.dumps({"items": items}, ensure_ascii=False)}], json_mode=True, max_tokens=1800)
+        res = llm.chat(
+            [{"role": "system", "content": SYSTEM}, {"role": "user", "content": json.dumps({"items": items}, ensure_ascii=False)}],
+            json_mode=True,
+            max_tokens=1800,
+        )
         data = extract_json(res.text).get("items") or {}
     except (LLMUnavailable, ValueError) as exc:
         raise PlainUnavailable(str(exc)) from exc

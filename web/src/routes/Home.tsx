@@ -123,7 +123,7 @@ export default function Home() {
               <FlaskConical size={18} className="mt-0.5 shrink-0" aria-hidden />
               <p>
                 {t("home.demoBanner", { std: counts?.standards_full_text ?? 0, guide: counts?.guidance ?? 0 })}{" "}
-                <Link to="/about#data">{t("home.demoBannerLink")}</Link>
+                <Link to="/about#data" className="font-medium underline">{t("home.demoBannerLink")}</Link>
               </p>
             </div>
           )}

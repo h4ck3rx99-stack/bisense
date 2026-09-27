@@ -86,7 +86,5 @@ def fetch_all(data_dir: Path, refresh: bool = False, log=print) -> dict[str, dic
                 "bytes": len(resp.content),
             }
 
-    (out_dir / "fetch_log.yaml").write_text(
-        yaml.safe_dump(fetch_log, sort_keys=True, allow_unicode=True), encoding="utf-8"
-    )
+    (out_dir / "fetch_log.yaml").write_text(yaml.safe_dump(fetch_log, sort_keys=True, allow_unicode=True), encoding="utf-8")
     return fetch_log

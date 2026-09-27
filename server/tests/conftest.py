@@ -26,6 +26,7 @@ def built_index(tmp_path_factory):
     os.environ["DATASET"] = "demo"
     os.environ["DEMO_MODE"] = "false"
     os.environ["RATE_LIMIT_ASK"] = "1000/minute"
+    os.environ["BISENSE_NO_WARMUP"] = "1"
 
     from bisense.config import get_settings
 

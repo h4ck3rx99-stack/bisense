@@ -36,7 +36,7 @@ def parse_pdf_document(path: Path, language: str = "en", ocr_mode: str = "auto")
     keep_sets = [set(map(id, [])) for _ in parsed.pages]  # placeholder for readability
     del keep_sets
     pages: list[list[RawLine]] = []
-    for page, kept in zip(parsed.pages, cleaned_texts):
+    for page, kept in zip(parsed.pages, cleaned_texts, strict=True):
         kept_counter: dict[str, int] = {}
         for t in kept:
             kept_counter[t] = kept_counter.get(t, 0) + 1

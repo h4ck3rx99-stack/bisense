@@ -14,8 +14,8 @@ from __future__ import annotations
 
 import time
 import uuid
-from collections.abc import Iterator
-from datetime import datetime, timezone
+from collections.abc import Generator, Iterator
+from datetime import UTC, datetime
 from typing import get_args
 
 from pydantic import BaseModel
@@ -39,8 +39,8 @@ from bisense.i18n.protect import protect, restore
 from bisense.i18n.translate import translate_strings
 from bisense.models import (
     Answer,
-    AskRequest,
     AnswerType,
+    AskRequest,
     AskTrace,
     Citation,
     DoneEvent,
@@ -63,12 +63,21 @@ _TRACE_MAX = 50
 
 
 def _now() -> str:
-    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="seconds")
 
 
 def _sources(res: SearchResult) -> list[SourceView]:
     return [
-        SourceView(cid=c.citation_id or "", text=c.text, clause_number=c.clause_number, standard_number=c.number, title=c.title, url=c.source_url, page_start=c.page_start, page_end=c.page_end)
+        SourceView(
+            cid=c.citation_id or "",
+            text=c.text,
+            clause_number=c.clause_number,
+            standard_number=c.number,
+            title=c.title,
+            url=c.source_url,
+            page_start=c.page_start,
+            page_end=c.page_end,
+        )
         for c in res.context
     ]
 
@@ -111,10 +120,9 @@ def run_ask(req: AskRequest) -> Iterator[Event]:
         std_refs = [to_standard_ref(h) for h in res.standards[:8]]
         yield "evidence", EvidenceEvent(citations=citations, standards=std_refs)
 
-        answer = _decide(conn, req, plan, res, citations, std_refs, llm, tokens, stages, index.version)
-        for ev in answer.events:
-            yield ev
-        final = answer.answer
+        # _decide is a generator: stage events reach the browser while the LLM is working.
+        decision = yield from _decide(conn, req, plan, res, citations, std_refs, llm, tokens, stages, index.version)
+        final = decision.answer
         final.searched_summary = searched_summary(index.counts)
         final.synthetic_used = any(c.synthetic for c in res.context)
 
@@ -191,18 +199,22 @@ def _summary_search(conn, plan: QueryPlan) -> SearchResult:
         c.citation_id = f"C{i}"
     from bisense.retrieval.search import group_standards
 
-    return SearchResult(plan=plan, candidates=ordered, context=ordered, standards=group_standards(conn, ordered, plan), timings={}, top_rerank=None, reranked=False)
+    return SearchResult(
+        plan=plan, candidates=ordered, context=ordered, standards=group_standards(conn, ordered, plan), timings={}, top_rerank=None, reranked=False
+    )
 
 
-def _gate_fails(res: SearchResult, plan: QueryPlan) -> bool:
+def _gate_fails(res: SearchResult, plan: QueryPlan, llm_available: bool = True) -> bool:
     s = get_settings()
+    # Without an LLM there is no model to say "not in the sources", so the gate is stricter.
+    threshold = s.gate_rerank_min if llm_available else s.gate_rerank_min_no_llm
     if not res.context:
         return True
     # A named standard, or a follow-up about the standard in context: answer from that scope
     # (the reranker scores pronoun questions like "what must be marked on it?" poorly).
     if plan.scope_source in ("explicit", "context") or plan.intent == "summarize":
         return False
-    if res.reranked and res.top_rerank is not None and res.top_rerank < s.gate_rerank_min:
+    if res.reranked and res.top_rerank is not None and res.top_rerank < threshold:
         return True
     return False
 
@@ -214,7 +226,18 @@ def _needs_product(plan: QueryPlan) -> bool:
     return not orig
 
 
-def _decide(conn, req: AskRequest, plan: QueryPlan, res: SearchResult, citations: list[Citation], std_refs: list[StandardRef], llm, tokens: dict, stages: dict, index_version: str) -> _Decision:
+def _decide(
+    conn,
+    req: AskRequest,
+    plan: QueryPlan,
+    res: SearchResult,
+    citations: list[Citation],
+    std_refs: list[StandardRef],
+    llm,
+    tokens: dict,
+    stages: dict,
+    index_version: str,
+) -> Generator[Event, None, _Decision]:
     d = _Decision()
     settings = get_settings()
 
@@ -223,18 +246,30 @@ def _decide(conn, req: AskRequest, plan: QueryPlan, res: SearchResult, citations
         return d
 
     if _needs_product(plan):
-        cats = [r["category"] for r in conn.execute(
-            "SELECT category, COUNT(*) n FROM standards WHERE kind IN ('standard','catalogue') AND category IS NOT NULL GROUP BY category ORDER BY (kind='standard') DESC, n DESC LIMIT 6"
-        )]
+        cats = [
+            r["category"]
+            for r in conn.execute(
+                "SELECT category, COUNT(*) n FROM standards WHERE kind IN ('standard','catalogue') AND category IS NOT NULL GROUP BY category ORDER BY (kind='standard') DESC, n DESC LIMIT 6"
+            )
+        ]
         d.answer = Answer(
-            answer_type="clarification", mode="none", lang=plan.lang,  # type: ignore[arg-type]
+            answer_type="clarification",
+            mode="none",
+            lang=plan.lang,  # type: ignore[arg-type]
             clarifying_question="clarify.product",
             clarifying_options=["packaged drinking water", "two-wheeler helmet", "TMT steel bars", "electric iron", "gold jewellery"] + cats[:3],
         )
         return d
 
-    if _gate_fails(res, plan):
-        d.answer = Answer(answer_type="insufficient_evidence", mode="none", lang=plan.lang, notice="notice.insufficient", evidence_strength="none", strength_basis="No indexed passage was relevant enough to answer.")  # type: ignore[arg-type]
+    if _gate_fails(res, plan, llm_available=llm is not None):
+        d.answer = Answer(
+            answer_type="insufficient_evidence",
+            mode="none",
+            lang=plan.lang,
+            notice="notice.insufficient",
+            evidence_strength="none",
+            strength_basis="No indexed passage was relevant enough to answer.",
+        )  # type: ignore[arg-type]
         return d
 
     key = cache.cache_key("ask", plan.english_query if plan.rewritten else plan.raw, plan.lang, [s.slug for s in plan.scope], plan.intent, index_version)
@@ -249,9 +284,11 @@ def _decide(conn, req: AskRequest, plan: QueryPlan, res: SearchResult, citations
 
     live: Answer | None = None
     if llm is not None:
-        d.events.append(("stage", StageEvent(stage="drafting", detail={"passages": len(res.context)})))
+        yield ("stage", StageEvent(stage="drafting", detail={"passages": len(res.context)}))
         t0 = time.perf_counter()
         live = _live_answer(llm, plan, res, citations, std_refs, tokens, d, conn)
+        yield from d.events
+        d.events.clear()
         stages["llm_and_validate"] = round((time.perf_counter() - t0) * 1000, 1)
         # Small models sometimes decline even when the best passage is a near-verbatim answer. With
         # evidence this strong, show the passages verbatim instead of a refusal (labelled as such).
@@ -267,7 +304,7 @@ def _decide(conn, req: AskRequest, plan: QueryPlan, res: SearchResult, citations
 
     if live is not None:
         if plan.lang != "en" and live.answer_type not in ("insufficient_evidence",):
-            d.events.append(("stage", StageEvent(stage="translating")))
+            yield ("stage", StageEvent(stage="translating"))
             t0 = time.perf_counter()
             live = _translate(llm, live, plan.lang)
             stages["translate"] = round((time.perf_counter() - t0) * 1000, 1)
@@ -290,7 +327,9 @@ def _decide(conn, req: AskRequest, plan: QueryPlan, res: SearchResult, citations
     return d
 
 
-def _live_answer(llm, plan: QueryPlan, res: SearchResult, citations: list[Citation], std_refs: list[StandardRef], tokens: dict, d: _Decision, conn) -> Answer | None:
+def _live_answer(
+    llm, plan: QueryPlan, res: SearchResult, citations: list[Citation], std_refs: list[StandardRef], tokens: dict, d: _Decision, conn
+) -> Answer | None:
     messages = build_messages(plan, res.context)
     sources = _sources(res)
     question = plan.raw if plan.lang == "en" else plan.english_query

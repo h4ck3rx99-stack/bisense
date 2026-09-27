@@ -1,8 +1,8 @@
 """Loads i18n/glossary.yaml and applies it.
 
-  expand_lexical(text)      -> extra English search terms from the synonym map (lexical query only)
-  keyword_translate(text)   -> offline Hindi/Kannada -> English keywords (used only without an LLM)
-  do_not_translate()        -> protected glossary terms for answer translation
+expand_lexical(text)      -> extra English search terms from the synonym map (lexical query only)
+keyword_translate(text)   -> offline Hindi/Kannada -> English keywords (used only without an LLM)
+do_not_translate()        -> protected glossary terms for answer translation
 """
 
 from __future__ import annotations

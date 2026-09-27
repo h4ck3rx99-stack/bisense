@@ -90,7 +90,9 @@ def test_every_chunk_belongs_to_one_clause(built_index):
     from bisense.db import connect
 
     conn = connect(get_settings().db_path, readonly=True)
-    bad = conn.execute("SELECT COUNT(*) FROM chunks ch JOIN clauses cl ON cl.id = ch.clause_id WHERE instr(cl.text, substr(ch.text, 1, 40)) = 0 AND cl.kind NOT IN ('table', 'list')").fetchone()[0]
+    bad = conn.execute(
+        "SELECT COUNT(*) FROM chunks ch JOIN clauses cl ON cl.id = ch.clause_id WHERE instr(cl.text, substr(ch.text, 1, 40)) = 0 AND cl.kind NOT IN ('table', 'list')"
+    ).fetchone()[0]
     conn.close()
     assert bad == 0
 

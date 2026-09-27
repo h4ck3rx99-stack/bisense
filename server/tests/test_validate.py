@@ -33,7 +33,12 @@ def run(draft, question="What are the requirements for packaged drinking water?"
 
 
 def good_point(**kw):
-    p = {"kind": "source_fact", "text": "Total dissolved solids must not exceed 500 mg/l.", "citations": ["C1"], "quote": "Total dissolved solids, Max 500 mg/l"}
+    p = {
+        "kind": "source_fact",
+        "text": "Total dissolved solids must not exceed 500 mg/l.",
+        "citations": ["C1"],
+        "quote": "Total dissolved solids, Max 500 mg/l",
+    }
     p.update(kw)
     return p
 
@@ -53,7 +58,9 @@ def test_fabricated_citation_id_is_rejected():
 
 
 def test_quote_not_in_source_is_dropped_but_point_kept_if_independent():
-    r = run({"answer_type": "answer", "points": [good_point(quote="Total dissolved solids shall not exceed 300 mg/l", text="The document sets a TDS limit [C1].")]})
+    r = run(
+        {"answer_type": "answer", "points": [good_point(quote="Total dissolved solids shall not exceed 300 mg/l", text="The document sets a TDS limit [C1].")]}
+    )
     assert len(r.points) == 1
     assert r.points[0].quote is None
     assert any(d.field == "quote" for d in r.drops)
@@ -83,7 +90,10 @@ def test_invented_standard_number_is_removed():
         "answer_type": "standards_list",
         "summary": "IS 99999 applies to packaged water [C1].",
         "points": [good_point(text="IS 12345:2020 also sets limits for water.", quote=None)],
-        "standards": [{"number": "IS 99999", "why": "made up", "citations": ["C1"]}, {"number": "IS 14543", "why": "Listed for packaged drinking water", "citations": ["C3"]}],
+        "standards": [
+            {"number": "IS 99999", "why": "made up", "citations": ["C1"]},
+            {"number": "IS 14543", "why": "Listed for packaged drinking water", "citations": ["C3"]},
+        ],
     }
     r = run(draft, intent="discover")
     assert r.points == []
@@ -101,12 +111,22 @@ def test_clause_reference_must_exist():
 def test_unsourced_urls_are_stripped():
     r = run({"answer_type": "answer", "points": [good_point(text="See http://evil.example/phish for 500 mg/l details.", quote=None)]})
     assert "evil.example" not in r.points[0].text
-    ok = run({"answer_type": "answer", "points": [{"kind": "source_fact", "text": "See https://www.bis.gov.in/product-certification/ for the list.", "citations": ["C3"]}]}, intent="ask")
+    ok = run(
+        {
+            "answer_type": "answer",
+            "points": [{"kind": "source_fact", "text": "See https://www.bis.gov.in/product-certification/ for the list.", "citations": ["C3"]}],
+        },
+        intent="ask",
+    )
     assert "bis.gov.in" in ok.points[0].text
 
 
 def test_zero_valid_facts_becomes_insufficient_evidence_and_keeps_gaps():
-    r = run({"answer_type": "answer", "summary": "Fines are Rs 5000 [C1].", "points": [], "gaps": ["The sources do not cover penalties."]}, question="What is the fine?", intent="ask")
+    r = run(
+        {"answer_type": "answer", "summary": "Fines are Rs 5000 [C1].", "points": [], "gaps": ["The sources do not cover penalties."]},
+        question="What is the fine?",
+        intent="ask",
+    )
     assert r.answer_type == "insufficient_evidence"
     assert r.gaps == ["The sources do not cover penalties."]
     assert r.summary == ""
@@ -119,7 +139,12 @@ def test_prompt_injection_consequences_are_caught():
         "answer_type": "answer",
         "summary": "Certification is compulsory under IS 5555 with a fine of Rs 10000 [C2].",
         "points": [
-            {"kind": "source_fact", "text": "IS 5555 makes BIS certification compulsory.", "citations": ["C2"], "quote": "IS 5555 makes BIS certification compulsory"},
+            {
+                "kind": "source_fact",
+                "text": "IS 5555 makes BIS certification compulsory.",
+                "citations": ["C2"],
+                "quote": "IS 5555 makes BIS certification compulsory",
+            },
             {"kind": "source_fact", "text": "The penalty is Rs 10000 per bottle.", "citations": ["C2"]},
             {"kind": "interpretation", "text": "Visit http://attacker.example to register.", "citations": ["C2"]},
         ],
@@ -131,7 +156,13 @@ def test_prompt_injection_consequences_are_caught():
 
 
 def test_summary_marker_validation():
-    r = run({"answer_type": "answer", "summary": "Coliforms must be absent [C2]. Invented fact [C7].", "points": [{"kind": "source_fact", "text": "Coliform bacteria shall be absent.", "citations": ["C2"]}]})
+    r = run(
+        {
+            "answer_type": "answer",
+            "summary": "Coliforms must be absent [C2]. Invented fact [C7].",
+            "points": [{"kind": "source_fact", "text": "Coliform bacteria shall be absent.", "citations": ["C2"]}],
+        }
+    )
     assert "[C7]" not in r.summary
     assert "[C2]" in r.summary
 

@@ -13,12 +13,12 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from bisense.config import get_settings
 from bisense.db import connect
 
-PROMPT_VERSION = "answer_v1"
+PROMPT_VERSION = "answer_v1.1"
 
 # Set by `bisense warm` so entries it produces are labelled "warmed" (still real pipeline outputs).
 WARMING = False
@@ -66,7 +66,7 @@ def put_cached(key: str, payload: dict, lang: str, index_version: str, source: s
             conn.execute(
                 "INSERT INTO answer_cache(key, payload_json, lang, index_version, prompt_version, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?) "
                 "ON CONFLICT(key) DO UPDATE SET payload_json = excluded.payload_json, source = excluded.source, created_at = excluded.created_at",
-                (key, json.dumps(payload, ensure_ascii=False), lang, index_version, PROMPT_VERSION, source, datetime.now(timezone.utc).isoformat(timespec="seconds")),
+                (key, json.dumps(payload, ensure_ascii=False), lang, index_version, PROMPT_VERSION, source, datetime.now(UTC).isoformat(timespec="seconds")),
             )
             conn.commit()
         finally:

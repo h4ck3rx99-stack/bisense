@@ -112,7 +112,7 @@ def parse_html_document(path: Path, language: str = "en") -> ParsedDoc:
                 q = _text(child)
                 faq_n += 1
                 m = _FAQ_NUM_RE.match(q)
-                q_clean = q[m.end():] if m else q
+                q_clean = q[m.end() :] if m else q
                 current = new_clause(f"Q{faq_n}", q_clean.strip(), "faq")
                 continue
             if "panel" in classes:

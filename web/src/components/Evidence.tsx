@@ -102,7 +102,7 @@ export function EvidenceCard({ c, quote, cited, actions }: { c: Citation; quote?
   return (
     <article
       id={`evidence-${c.id}`}
-      className={`card relative scroll-mt-24 p-3.5 ${c.synthetic ? "synthetic-stripes" : ""} ${cited === false ? "opacity-80" : ""}`}
+      className={`card relative scroll-mt-24 p-3.5 ${c.synthetic ? "synthetic-stripes" : ""} ${cited ? "border-l-[3px] border-l-fact-rule" : ""}`}
       aria-label={t("evidence.cardLabel", { n: c.n, source: sourceLabel(c) })}
     >
       <header className="mb-1.5 flex items-start gap-2">

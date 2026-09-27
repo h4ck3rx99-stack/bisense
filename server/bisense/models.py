@@ -20,6 +20,7 @@ class BaseModel(_PydanticBase):
     # serialization schema so the generated TypeScript types are not needlessly optional.
     model_config = ConfigDict(json_schema_serialization_defaults_required=True)
 
+
 Lang = Literal["en", "hi", "kn"]
 SLUG_PATTERN = r"^[a-z0-9][a-z0-9-]{0,120}$"
 Slug = Field(pattern=SLUG_PATTERN)
@@ -28,8 +29,15 @@ StandardKind = Literal["standard", "guidance", "order", "catalogue"]
 EvidenceStrength = Literal["strong", "moderate", "limited", "none"]
 AnswerMode = Literal["live", "cached", "extractive", "none"]
 AnswerType = Literal[
-    "answer", "standards_list", "requirements", "comparison", "summary", "definition",
-    "clarification", "insufficient_evidence", "out_of_scope",
+    "answer",
+    "standards_list",
+    "requirements",
+    "comparison",
+    "summary",
+    "definition",
+    "clarification",
+    "insufficient_evidence",
+    "out_of_scope",
 ]
 Modality = Literal["shall", "shall_not", "should", "should_not", "may", "must"]
 
@@ -37,6 +45,7 @@ Modality = Literal["shall", "shall_not", "should", "should_not", "may", "must"]
 # ---------------------------------------------------------------------------------------------------
 # Requests
 # ---------------------------------------------------------------------------------------------------
+
 
 class AskContext(BaseModel):
     """What the client remembers about the conversation. Only questions and standard ids -- never answers."""
@@ -82,6 +91,7 @@ class TTSRequest(BaseModel):
 # ---------------------------------------------------------------------------------------------------
 # Evidence and answers
 # ---------------------------------------------------------------------------------------------------
+
 
 class Scores(BaseModel):
     lexical_rank: int | None = None
@@ -243,6 +253,7 @@ class AskTrace(BaseModel):
 # ---------------------------------------------------------------------------------------------------
 # Library and standards
 # ---------------------------------------------------------------------------------------------------
+
 
 class CategoryCount(BaseModel):
     category: str

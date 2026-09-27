@@ -24,17 +24,46 @@ from bisense.i18n.glossary import expand_lexical, keyword_translate
 from bisense.i18n.languages import detect_language
 
 INTENT_RULES: list[tuple[str, re.Pattern[str]]] = [
-    ("out_of_scope", re.compile(r"^\s*(hi|hello|hey|namaste|thanks|thank you|how are you|who are you|good (morning|evening)|tell me a joke|what'?s up)\W*$", re.I)),
+    (
+        "out_of_scope",
+        re.compile(r"^\s*(hi|hello|hey|namaste|thanks|thank you|how are you|who are you|good (morning|evening)|tell me a joke|what'?s up)\W*$", re.I),
+    ),
     ("compare", re.compile(r"\b(compare|comparison|vs\.?|versus|difference|differences|differ)\b|तुलना|अंतर|ಹೋಲಿಕೆ|ವ್ಯತ್ಯಾಸ", re.I)),
     ("clause_lookup", re.compile(r"\b(clause|cl\.|section|annex|annexure)\s*[A-Z]?-?\d+(\.\d+)*|खंड\s*\d|ಖಂಡ\s*\d", re.I)),
-    ("applicability", re.compile(r"\b(my product|my products|my business|my company|my factory|i make|i manufacture|we make|we manufacture|we produce|i produce|i sell|we sell|apply to my|for my)\b|मेरे उत्पाद|मेरा उत्पाद|ನನ್ನ ಉತ್ಪನ್ನ", re.I)),
-    ("summarize", re.compile(r"\b(explain|summari[sz]e|summary|simple language|simple terms|in simple|overview of|plain language|eli5)\b|सरल|समझा|सारांश|ವಿವರಿಸಿ|ಸರಳ|ಸಾರಾಂಶ", re.I)),
-    ("requirements", re.compile(r"\b(requirements?|tests?|testing|test methods?|checklist|what must|must meet|limits?|specifications? for|criteria)\b|परीक्षण|आवश्यकता|ಪರೀಕ್ಷೆ|ಅವಶ್ಯಕತೆ|ಅಗತ್ಯ", re.I)),
-    ("discover", re.compile(r"\b(which (bis |indian )?standards?|what (bis |indian )?standards?|applicable|apply to|applies to|relevant standards?|standards? (for|on|covering)|is there a standard)\b|लागू|कौन.?से.{0,10}मानक|ಅನ್ವಯ|ಯಾವ.{0,20}ಮಾನದಂಡ", re.I)),
+    (
+        "applicability",
+        re.compile(
+            r"\b(my product|my products|my business|my company|my factory|i make|i manufacture|we make|we manufacture|we produce|i produce|i sell|we sell|apply to my|for my)\b|मेरे उत्पाद|मेरा उत्पाद|ನನ್ನ ಉತ್ಪನ್ನ",
+            re.I,
+        ),
+    ),
+    (
+        "summarize",
+        re.compile(
+            r"\b(explain|summari[sz]e|summary|simple language|simple terms|in simple|overview of|plain language|eli5)\b|सरल|समझा|सारांश|ವಿವರಿಸಿ|ಸರಳ|ಸಾರಾಂಶ", re.I
+        ),
+    ),
+    (
+        "requirements",
+        re.compile(
+            r"\b(requirements?|tests?|testing|test methods?|checklist|what must|must meet|limits?|specifications? for|criteria)\b|परीक्षण|आवश्यकता|ಪರೀಕ್ಷೆ|ಅವಶ್ಯಕತೆ|ಅಗತ್ಯ",
+            re.I,
+        ),
+    ),
+    (
+        "discover",
+        re.compile(
+            r"\b(which (bis |indian )?standards?|what (bis |indian )?standards?|applicable|apply to|applies to|relevant standards?|standards? (for|on|covering)|is there a standard)\b|लागू|कौन.?से.{0,10}मानक|ಅನ್ವಯ|ಯಾವ.{0,20}ಮಾನದಂಡ",
+            re.I,
+        ),
+    ),
     ("define", re.compile(r"^\s*(what is|what's|what are|meaning of|define|definition of|what does .* mean)\b|क्या है|का अर्थ|ಎಂದರೇನು|ಅರ್ಥ", re.I)),
 ]
 
-CLAUSE_REF_RE = re.compile(r"\b(?:clause|cl\.|section|sec\.)\s*(?P<num>[A-H]-\d+(?:\.\d+)*|\d+(?:\.\d+)*)|\b(?P<table>Table\s+\d+)|\b(?P<annex>Annex(?:ure)?\s*-?\s*[A-Z]|Annex(?:ure)?\s*-?\s*[IVX]+)", re.I)
+CLAUSE_REF_RE = re.compile(
+    r"\b(?:clause|cl\.|section|sec\.)\s*(?P<num>[A-H]-\d+(?:\.\d+)*|\d+(?:\.\d+)*)|\b(?P<table>Table\s+\d+)|\b(?P<annex>Annex(?:ure)?\s*-?\s*[A-Z]|Annex(?:ure)?\s*-?\s*[IVX]+)",
+    re.I,
+)
 ANAPHORA_RE = re.compile(r"\b(this|that|these|those|it|its|they|them|the standard|the same|above|both)\b|यह|इस|इसके|ये|इन|ಈ|ಅದರ|ಇದು|ಇವು", re.I)
 STOPWORDS = set(
     "a an the of for to in on at by with from and or is are was were be been being what which who whom whose how why when where "
@@ -186,7 +215,9 @@ def apply_rewrite(plan: QueryPlan, english_query: str, keywords: list[str], inte
     plan.keywords = keywords or plan.keywords
     plan.content_terms = tokenize_terms(plan.english_query)
     plan.lexical_terms = plan.content_terms + [k for k in keywords if k] + expand_lexical(plan.english_query)
-    if intent and plan.intent == "ask":
-        plan.intent = intent
+    # Re-classify with the same deterministic rules on the English text (the model's own label is
+    # only a hint and is not trusted).
+    if plan.intent == "ask":
+        plan.intent = classify_intent(plan.english_query)
     plan.rewritten = True
     plan.notes = [n for n in plan.notes if n != "offline keyword translation"]

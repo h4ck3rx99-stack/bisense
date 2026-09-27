@@ -1,14 +1,14 @@
 """Library and standard explorer endpoints.
 
-    GET /api/library                               counts by category, dataset mode, sources
-    GET /api/standards                             filterable, paginated list with facets
-    GET /api/standards/suggest?q=                  typeahead (<= 8)
-    GET /api/standards/{slug}                      explorer detail (metadata, clause tree, refs, related ...)
-    GET /api/standards/{slug}/clauses/{number}     verbatim clause
-    GET /api/standards/{slug}/requirements         deterministic requirement statements
-    GET /api/standards/{slug}/requirements.csv     checklist export
-    GET /api/standards/{slug}/summary?lang=        cited plain-language summary (cached)
-    GET /api/standards/{slug}/pages/{n}.png?q=     page image with highlighted quote (PDF sources only)
+GET /api/library                               counts by category, dataset mode, sources
+GET /api/standards                             filterable, paginated list with facets
+GET /api/standards/suggest?q=                  typeahead (<= 8)
+GET /api/standards/{slug}                      explorer detail (metadata, clause tree, refs, related ...)
+GET /api/standards/{slug}/clauses/{number}     verbatim clause
+GET /api/standards/{slug}/requirements         deterministic requirement statements
+GET /api/standards/{slug}/requirements.csv     checklist export
+GET /api/standards/{slug}/summary?lang=        cited plain-language summary (cached)
+GET /api/standards/{slug}/pages/{n}.png?q=     page image with highlighted quote (PDF sources only)
 """
 
 from __future__ import annotations
@@ -63,10 +63,20 @@ _SUMMARY_COLS = (
 
 def _summary(r: sqlite3.Row) -> StandardSummary:
     return StandardSummary(
-        slug=r["slug"], kind=r["kind"], number=r["number_canonical"], title=r["title"], year=r["year"],
-        category=r["category"], status=r["status"], compulsory=r["compulsory_certification"],
-        catalogue_only=bool(r["catalogue_only"]), synthetic=bool(r["synthetic"]), needs_review=bool(r["needs_review"]),
-        tier=r["tier"], clause_count=r["clause_count"], requirement_count=r["requirement_count"],
+        slug=r["slug"],
+        kind=r["kind"],
+        number=r["number_canonical"],
+        title=r["title"],
+        year=r["year"],
+        category=r["category"],
+        status=r["status"],
+        compulsory=r["compulsory_certification"],
+        catalogue_only=bool(r["catalogue_only"]),
+        synthetic=bool(r["synthetic"]),
+        needs_review=bool(r["needs_review"]),
+        tier=r["tier"],
+        clause_count=r["clause_count"],
+        requirement_count=r["requirement_count"],
     )
 
 
@@ -81,6 +91,7 @@ def _get_standard(conn: sqlite3.Connection, slug: str) -> sqlite3.Row:
 
 # ---------------------------------------------------------------------------------------------------
 
+
 @router.get("/library", response_model=LibraryOut)
 def library(conn: sqlite3.Connection = Depends(get_db)) -> LibraryOut:
     index = get_index()
@@ -90,7 +101,9 @@ def library(conn: sqlite3.Connection = Depends(get_db)) -> LibraryOut:
     ]
     sources = [
         {"file": r["file_name"], "tier": r["tier"], "doc_type": r["doc_type"], "url": r["source_url"], "obtained_on": r["obtained_on"], "title": r["title"]}
-        for r in conn.execute("SELECT d.file_name, d.tier, d.doc_type, d.source_url, d.obtained_on, s.title FROM documents d JOIN standards s ON s.document_id = d.id ORDER BY d.tier, s.title")
+        for r in conn.execute(
+            "SELECT d.file_name, d.tier, d.doc_type, d.source_url, d.obtained_on, s.title FROM documents d JOIN standards s ON s.document_id = d.id ORDER BY d.tier, s.title"
+        )
     ]
     return LibraryOut(
         dataset_mode=index.dataset_mode,
@@ -146,7 +159,9 @@ def list_standards(
         else:
             like_terms = [t for t in re.findall(r"\w+", q.lower()) if len(t) > 1][:6]
             for t in like_terms:
-                where.append("(LOWER(s.title) LIKE ? OR LOWER(COALESCE(s.number_canonical, '')) LIKE ? OR LOWER(s.products_json) LIKE ? OR LOWER(COALESCE(s.category,'')) LIKE ?)")
+                where.append(
+                    "(LOWER(s.title) LIKE ? OR LOWER(COALESCE(s.number_canonical, '')) LIKE ? OR LOWER(s.products_json) LIKE ? OR LOWER(COALESCE(s.category,'')) LIKE ?)"
+                )
                 params += [f"%{t}%"] * 4
     clause = f"WHERE {' AND '.join(where)}" if where else ""
     total = conn.execute(f"SELECT COUNT(*) FROM standards s {clause}", params).fetchone()[0]  # noqa: S608
@@ -161,7 +176,10 @@ def list_standards(
         params + [page_size, (page - 1) * page_size],
     ).fetchall()
     facets: dict[str, list[CategoryCount]] = {"category": [], "kind": []}
-    for r in conn.execute(f"SELECT COALESCE(s.category, 'Uncategorised') AS c, s.kind AS k, COUNT(*) AS n FROM standards s {clause} GROUP BY c, k ORDER BY n DESC LIMIT 60", params):  # noqa: S608
+    for r in conn.execute(
+        f"SELECT COALESCE(s.category, 'Uncategorised') AS c, s.kind AS k, COUNT(*) AS n FROM standards s {clause} GROUP BY c, k ORDER BY n DESC LIMIT 60",
+        params,
+    ):  # noqa: S608
         facets["category"].append(CategoryCount(category=r["c"], count=r["n"], kind=r["k"]))
     for r in conn.execute(f"SELECT s.kind AS k, COUNT(*) AS n FROM standards s {clause} GROUP BY k", params):  # noqa: S608
         facets["kind"].append(CategoryCount(category=r["k"], count=r["n"], kind=r["k"]))
@@ -187,8 +205,15 @@ def suggest(q: str = Query(..., min_length=1, max_length=100), conn: sqlite3.Con
 
 
 def _clause_tree(conn: sqlite3.Connection, standard_id: int) -> list[ClauseNode]:
-    rows = conn.execute("SELECT id, number, heading, kind, level, page_start, page_end, parent_id FROM clauses WHERE standard_id = ? ORDER BY ord", (standard_id,)).fetchall()
-    nodes = {r["id"]: ClauseNode(id=r["id"], number=r["number"], heading=r["heading"], kind=r["kind"], level=r["level"], page_start=r["page_start"], page_end=r["page_end"]) for r in rows}
+    rows = conn.execute(
+        "SELECT id, number, heading, kind, level, page_start, page_end, parent_id FROM clauses WHERE standard_id = ? ORDER BY ord", (standard_id,)
+    ).fetchall()
+    nodes = {
+        r["id"]: ClauseNode(
+            id=r["id"], number=r["number"], heading=r["heading"], kind=r["kind"], level=r["level"], page_start=r["page_start"], page_end=r["page_end"]
+        )
+        for r in rows
+    }
     roots: list[ClauseNode] = []
     for r in rows:
         node = nodes[r["id"]]
@@ -236,7 +261,9 @@ def standard_detail(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> St
     scope = conn.execute("SELECT number, text FROM clauses WHERE standard_id = ? AND kind = 'scope' AND text != '' ORDER BY ord LIMIT 3", (sid,)).fetchall()
     scope_text = "\n\n".join(r["text"] for r in scope) or None
     if not scope_text:
-        first = conn.execute("SELECT number, text FROM clauses WHERE standard_id = ? AND text != '' AND kind != 'table' ORDER BY ord LIMIT 1", (sid,)).fetchone()
+        first = conn.execute(
+            "SELECT number, text FROM clauses WHERE standard_id = ? AND text != '' AND kind != 'table' ORDER BY ord LIMIT 1", (sid,)
+        ).fetchone()
         scope = [first] if first else []
         scope_text = first["text"][:800] if first else None
     refs = [
@@ -268,7 +295,9 @@ def standard_detail(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> St
                 mentions.append({"product": r["product_term"], "status": r["status"], "order": r["note"], "slug": r["slug"], "clause_number": r["number"]})
     terms = [
         {"term": r["term"], "definition": r["definition_verbatim"], "clause_number": r["number"], "page": r["page"]}
-        for r in conn.execute("SELECT t.term, t.definition_verbatim, t.page, c.number FROM terms t JOIN clauses c ON c.id = t.clause_id WHERE t.standard_id = ?", (sid,))
+        for r in conn.execute(
+            "SELECT t.term, t.definition_verbatim, t.page, c.number FROM terms t JOIN clauses c ON c.id = t.clause_id WHERE t.standard_id = ?", (sid,)
+        )
     ]
     counts = {
         "clauses": s["clause_count"],
@@ -286,16 +315,25 @@ def standard_detail(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> St
         industries=loads(s["industries_json"], []),
         products=loads(s["products_json"], []),
         provenance=Provenance(
-            tier=s["tier"], doc_type=doc["doc_type"] if doc else None, file_name=doc["file_name"] if doc else None,
-            source_url=s["source_url"] or (doc["source_url"] if doc else None), obtained_on=doc["obtained_on"] if doc else None,
-            pages=doc["pages"] if doc else None, language=doc["language"] if doc else None,
+            tier=s["tier"],
+            doc_type=doc["doc_type"] if doc else None,
+            file_name=doc["file_name"] if doc else None,
+            source_url=s["source_url"] or (doc["source_url"] if doc else None),
+            obtained_on=doc["obtained_on"] if doc else None,
+            pages=doc["pages"] if doc else None,
+            language=doc["language"] if doc else None,
             warnings=loads(doc["warnings_json"], []) if doc else [],
         ),
-        compulsory=CompulsoryEvidence(status=s["compulsory_certification"], source=s["compulsory_source"], slug=ev.get("slug"), clause_number=ev.get("clause_number")),
+        compulsory=CompulsoryEvidence(
+            status=s["compulsory_certification"], source=s["compulsory_source"], slug=ev.get("slug"), clause_number=ev.get("clause_number")
+        ),
         scope_text=scope_text,
         scope_clause=scope[0]["number"] if scope else None,
         clauses=_clause_tree(conn, sid),
-        amendments=[AmendmentOut(label=r["label"], date=r["date"], text_excerpt=r["text_excerpt"], page=r["page"]) for r in conn.execute("SELECT * FROM amendments WHERE standard_id = ?", (sid,))],
+        amendments=[
+            AmendmentOut(label=r["label"], date=r["date"], text_excerpt=r["text_excerpt"], page=r["page"])
+            for r in conn.execute("SELECT * FROM amendments WHERE standard_id = ?", (sid,))
+        ],
         references=refs,
         referenced_by=referenced_by,
         related=_related(conn, sid) if s["kind"] == "standard" else [],
@@ -311,8 +349,17 @@ def all_clauses(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> list[C
     s = _get_standard(conn, slug)
     return [
         ClauseOut(
-            id=r["id"], number=r["number"], heading=r["heading"], kind=r["kind"], path=r["path"], level=r["level"],
-            page_start=r["page_start"], page_end=r["page_end"], text=r["text"], is_table=r["kind"] in ("table", "list"), children=[],
+            id=r["id"],
+            number=r["number"],
+            heading=r["heading"],
+            kind=r["kind"],
+            path=r["path"],
+            level=r["level"],
+            page_start=r["page_start"],
+            page_end=r["page_end"],
+            text=r["text"],
+            is_table=r["kind"] in ("table", "list"),
+            children=[],
         )
         for r in conn.execute("SELECT * FROM clauses WHERE standard_id = ? ORDER BY ord", (s["id"],))
     ]
@@ -331,8 +378,17 @@ def clause(slug: str, number: str, conn: sqlite3.Connection = Depends(get_db)) -
         for c in conn.execute("SELECT * FROM clauses WHERE parent_id = ? ORDER BY ord", (r["id"],))
     ]
     return ClauseOut(
-        id=r["id"], number=r["number"], heading=r["heading"], kind=r["kind"], path=r["path"], level=r["level"],
-        page_start=r["page_start"], page_end=r["page_end"], text=r["text"], is_table=r["kind"] in ("table", "list"), children=children,
+        id=r["id"],
+        number=r["number"],
+        heading=r["heading"],
+        kind=r["kind"],
+        path=r["path"],
+        level=r["level"],
+        page_start=r["page_start"],
+        page_end=r["page_end"],
+        text=r["text"],
+        is_table=r["kind"] in ("table", "list"),
+        children=children,
     )
 
 
@@ -355,7 +411,16 @@ def _requirements(conn: sqlite3.Connection, s: sqlite3.Row, modality: str | None
         params.append(f"%{q.lower()}%")
     sql += " ORDER BY c.ord, r.id"
     return [
-        RequirementOut(id=r["id"], clause_number=r["number"], clause_heading=r["heading"], clause_kind=r["kind"], modality=r["modality"], text=r["text_verbatim"], page=r["page"], topic=r["topic"])
+        RequirementOut(
+            id=r["id"],
+            clause_number=r["number"],
+            clause_heading=r["heading"],
+            clause_kind=r["kind"],
+            modality=r["modality"],
+            text=r["text_verbatim"],
+            page=r["page"],
+            topic=r["topic"],
+        )
         for r in conn.execute(sql, params)
     ]
 
@@ -377,7 +442,9 @@ def requirements(
 
 
 @router.get("/standards/{slug}/requirements/plain")
-def requirements_plain(slug: str, request: Request, lang: str = Query("en", pattern=r"^(en|hi|kn)$"), conn: sqlite3.Connection = Depends(get_db)) -> dict[str, dict[str, str]]:
+def requirements_plain(
+    slug: str, request: Request, lang: str = Query("en", pattern=r"^(en|hi|kn)$"), conn: sqlite3.Connection = Depends(get_db)
+) -> dict[str, dict[str, str]]:
     """AI interpretations of requirement statements (labelled as such in the UI)."""
     from bisense.answer.plain import PlainUnavailable, plain_language
     from bisense.api.ask import check_rate
@@ -397,7 +464,11 @@ def requirements_csv(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> R
     buf = io.StringIO()
     w = csv.writer(buf)
     label = s["number_canonical"] or s["title"]
-    w.writerow([f"Requirement statements extracted from {label}, with clause references. This checklist is a study aid, not a certification or compliance determination."])
+    w.writerow(
+        [
+            f"Requirement statements extracted from {label}, with clause references. This checklist is a study aid, not a certification or compliance determination."
+        ]
+    )
     if s["synthetic"]:
         w.writerow(["Synthetic demo data, not an Indian Standard."])
     w.writerow(["standard", "clause", "page", "modality", "requirement_verbatim", "interpretation", "status", "notes"])
@@ -421,7 +492,9 @@ def summary(slug: str, request: Request, lang: str = Query("en", pattern=r"^(en|
         raise ApiError(409, "catalogue_only")
     check_rate(request)
     label = s["number_canonical"] or s["title"]
-    req = AskRequest(query=f"Explain {label} in simple language.", lang=lang, context=AskContext(open_slug=slug, focus_slugs=[slug], recent_questions=["summary"]))  # type: ignore[arg-type]
+    req = AskRequest(
+        query=f"Explain {label} in simple language.", lang=lang, context=AskContext(open_slug=slug, focus_slugs=[slug], recent_questions=["summary"])
+    )  # type: ignore[arg-type]
     answer = None
     citations = []
     for event, data in run_ask(req):
@@ -456,7 +529,7 @@ def page_image(slug: str, n: int, q: str | None = Query(None, max_length=200), c
         raise ApiError(404, "page_unavailable")
     cache_dir = get_settings().data_dir / "cache" / "pages"
     cache_dir.mkdir(parents=True, exist_ok=True)
-    key = hashlib.sha1(json.dumps([str(path), path.stat().st_mtime, n, q or ""]).encode()).hexdigest()[:20]
+    key = hashlib.sha1(json.dumps([str(path), path.stat().st_mtime, n, q or ""]).encode(), usedforsecurity=False).hexdigest()[:20]
     cached = cache_dir / f"{key}.png"
     if cached.exists():
         png = cached.read_bytes()

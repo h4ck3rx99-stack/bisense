@@ -172,7 +172,9 @@ def build_clauses(pages: list[list[RawLine]]) -> list[ClauseDraft]:
             level = (clauses[parent].level + 1) if parent is not None else 1
             number = f"Table {m_cap.group('n')}"
             current = add_clause(
-                ClauseDraft(number=number, heading=m_cap.group("rest").strip(" -–—"), level=level, kind="table", page_start=ln.page, page_end=ln.page, parent=parent)
+                ClauseDraft(
+                    number=number, heading=m_cap.group("rest").strip(" -–—"), level=level, kind="table", page_start=ln.page, page_end=ln.page, parent=parent
+                )
             )
             continue
 

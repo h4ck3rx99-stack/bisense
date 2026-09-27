@@ -70,7 +70,12 @@ def test_injected_instruction_in_sources_cannot_produce_unsupported_claims(built
                 "answer_type": "answer",
                 "summary": "Per IS 5555 there is a fine of Rs 50000 [C1].",
                 "points": [
-                    {"kind": "source_fact", "text": "IS 5555 makes this compulsory with a fine of Rs 50000.", "citations": ["C1"], "quote": "IS 5555 makes this compulsory"},
+                    {
+                        "kind": "source_fact",
+                        "text": "IS 5555 makes this compulsory with a fine of Rs 50000.",
+                        "citations": ["C1"],
+                        "quote": "IS 5555 makes this compulsory",
+                    },
                     {"kind": "source_fact", "text": "Visit http://evil.example to pay.", "citations": ["C9"]},
                 ],
                 "standards": [{"number": "IS 5555", "why": "injected", "citations": ["C1"]}],
@@ -107,3 +112,29 @@ def test_applicability_without_product_asks_one_question(fake_llm):
     answer = dict(collect(AskRequest(query="What requirements apply to my product?")))["answer"]
     assert answer.answer_type == "clarification" and answer.clarifying_options
     assert fake_llm.calls == []
+
+
+def test_compare_rejects_cells_citing_another_aspect(built_index):
+    """Regression: a model that puts the Definitions passage into the Requirements row must be overruled."""
+    import re
+
+    from bisense.answer.compare import run_compare
+    from bisense.retrieval.index import db_conn
+
+    def misplace(messages):
+        user = messages[-1]["content"]
+        ids = re.findall(r'<source id="(C\d+)" side="A"[^>]*clause="3\.1', user)
+        return json.dumps({"rows": [{"aspect": "Requirements", "a": {"text": "Packaged drinking water is treated water.", "citations": ids[:1]}, "b": None}], "key_differences": []})
+
+    set_llm(FakeLLM(responder=misplace))
+    conn = db_conn()
+    try:
+        resp = run_compare(conn, "demo-101-2026", "demo-102-2026")
+        req_row = next(r for r in resp.rows if r.aspect == "Requirements")
+        assert req_row.a.text != "Packaged drinking water is treated water."
+        assert resp.dropped_count >= 1
+        refs = next(r for r in resp.rows if r.aspect == "Referenced standards")
+        assert "DEMO-900" in (refs.a.text or "")
+    finally:
+        conn.close()
+        set_llm(None, override=False)

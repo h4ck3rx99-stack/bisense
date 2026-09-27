@@ -8,10 +8,10 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import sys
 import threading
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -72,17 +72,27 @@ async def lifespan(app: FastAPI):
     _setup_logging()
     s = get_settings()
     if not s.llm_configured or s.llm_provider == "none":
-        logging.getLogger("bisense.startup").warning(json.dumps({"event": "no_llm", "msg": "No LLM configured: answers use extractive mode (verbatim clauses). See .env.example."}))
-    threading.Thread(target=warm_up, daemon=True).start()
+        logging.getLogger("bisense.startup").warning(
+            json.dumps({"event": "no_llm", "msg": "No LLM configured: answers use extractive mode (verbatim clauses). See .env.example."})
+        )
+    if os.environ.get("BISENSE_NO_WARMUP") != "1":  # tests skip the background warm-up
+        threading.Thread(target=warm_up, daemon=True).start()
     yield
 
 
 def create_app() -> FastAPI:
     s = get_settings()
-    app = FastAPI(title="BISense API", version="0.1.0", lifespan=lifespan, docs_url="/api/docs" if s.debug else None, redoc_url=None, openapi_url="/api/openapi.json")
+    app = FastAPI(
+        title="BISense API", version="0.1.0", lifespan=lifespan, docs_url="/api/docs" if s.debug else None, redoc_url=None, openapi_url="/api/openapi.json"
+    )
 
     if s.app_env == "development":
-        app.add_middleware(CORSMiddleware, allow_origins=[o.strip() for o in s.cors_origins.split(",") if o.strip()], allow_methods=["GET", "POST"], allow_headers=["Content-Type"])
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=[o.strip() for o in s.cors_origins.split(",") if o.strip()],
+            allow_methods=["GET", "POST"],
+            allow_headers=["Content-Type"],
+        )
 
     @app.middleware("http")
     async def security_headers(request: Request, call_next):
@@ -110,7 +120,13 @@ def create_app() -> FastAPI:
     async def http_error(request: Request, exc: StarletteHTTPException):
         if exc.status_code == 404 and not request.url.path.startswith("/api") and (WEB_DIST / "index.html").exists():
             return FileResponse(WEB_DIST / "index.html")
-        return JSONResponse(status_code=exc.status_code, content={"code": "not_found" if exc.status_code == 404 else "http_error", "message_key": "error.not_found" if exc.status_code == 404 else "error.internal"})
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": "not_found" if exc.status_code == 404 else "http_error",
+                "message_key": "error.not_found" if exc.status_code == 404 else "error.internal",
+            },
+        )
 
     @app.exception_handler(Exception)
     async def unhandled(_: Request, exc: Exception):

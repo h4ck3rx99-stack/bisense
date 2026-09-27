@@ -117,12 +117,7 @@ def strip_repeated_lines(pages: list[list[str]]) -> tuple[list[list[str]], int]:
     for lines in pages:
         keep = []
         for line in lines:
-            if (
-                _repeat_key(line) in repeated
-                or is_page_number(line)
-                or is_watermark_line(line)
-                or is_gazette_noise(line)
-            ):
+            if _repeat_key(line) in repeated or is_page_number(line) or is_watermark_line(line) or is_gazette_noise(line):
                 removed += 1
                 continue
             keep.append(line)
@@ -131,6 +126,7 @@ def strip_repeated_lines(pages: list[list[str]]) -> tuple[list[list[str]], int]:
 
 
 # ---- script detection -------------------------------------------------------------------------
+
 
 def script_counts(text: str) -> dict[str, int]:
     counts = {"latin": 0, "devanagari": 0, "kannada": 0, "other": 0}
@@ -185,7 +181,7 @@ def is_broken_devanagari(line: str) -> bool:
     dev = sum(1 for ch in line if 0x0900 <= ord(ch) <= 0x097F)
     if dev == 0:
         return False
-    stray = sum(1 for ch in line if ch in '!"#$%&\'*+<=>?@[\\]^_`{|}~' or ch in "0123456789" and False)
+    stray = sum(1 for ch in line if ch in "!\"#$%&'*+<=>?@[\\]^_`{|}~" or ch in "0123456789" and False)
     latin_caps_inside = len(re.findall(r"[ऀ-ॿ][A-Z]|[A-Z][ऀ-ॿ]", line))
     return (stray + latin_caps_inside) / max(dev, 1) > 0.08
 

@@ -86,7 +86,7 @@
   :lang(hi) { line-height: 1.65; }
   :lang(kn) { line-height: 1.65; }
   body { min-height: 100dvh; overflow-x: hidden; }
-  a { color: var(--color-accent); text-underline-offset: 2px; }
+  a { color: var(--color-accent); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 2px; }
   a:hover { color: var(--color-accent-strong); }
   :focus-visible { outline: 2px solid var(--color-accent-ring); outline-offset: 2px; border-radius: 3px; }
   ::selection { background: var(--color-accent-soft); }

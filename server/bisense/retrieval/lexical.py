@@ -32,9 +32,7 @@ def build_fts_query(terms: list[str]) -> str:
     return " OR ".join(parts[:40])
 
 
-def lexical_search(
-    conn: sqlite3.Connection, terms: list[str], limit: int = 40, standard_ids: list[int] | None = None
-) -> list[tuple[int, float]]:
+def lexical_search(conn: sqlite3.Connection, terms: list[str], limit: int = 40, standard_ids: list[int] | None = None) -> list[tuple[int, float]]:
     q = build_fts_query(terms)
     if not q:
         return []

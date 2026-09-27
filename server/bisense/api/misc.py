@@ -48,12 +48,32 @@ def health() -> HealthOut:
     try:
         idx = get_index()
     except IndexMissing:
-        return HealthOut(status="no_index", dataset_mode="none", index_version=None, counts={}, llm=llm_info, models_loaded=False, demo_mode=s.demo_mode, version=VERSION, features=_features())
+        return HealthOut(
+            status="no_index",
+            dataset_mode="none",
+            index_version=None,
+            counts={},
+            llm=llm_info,
+            models_loaded=False,
+            demo_mode=s.demo_mode,
+            version=VERSION,
+            features=_features(),
+        )
     from bisense.retrieval import embed, rerank
 
     models_loaded = bool(embed._models) and (rerank._model is not None or not s.rerank_enabled)
     status = "ok" if (llm_info["reachable"] or not llm_info["configured"]) else "degraded"
-    return HealthOut(status=status, dataset_mode=idx.dataset_mode, index_version=idx.version, counts=idx.counts, llm=llm_info, models_loaded=models_loaded, demo_mode=s.demo_mode, version=VERSION, features=_features())
+    return HealthOut(
+        status=status,
+        dataset_mode=idx.dataset_mode,
+        index_version=idx.version,
+        counts=idx.counts,
+        llm=llm_info,
+        models_loaded=models_loaded,
+        demo_mode=s.demo_mode,
+        version=VERSION,
+        features=_features(),
+    )
 
 
 def _features() -> dict[str, bool]:

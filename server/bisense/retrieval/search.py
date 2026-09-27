@@ -222,7 +222,7 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
 
         head = ordered[:RERANK_TOP]
         scores = rerank(plan.english_query, [_rerank_text(c) for c in head])
-        for c, s in zip(head, scores):
+        for c, s in zip(head, scores, strict=True):
             c.rerank_score = s
         head.sort(key=lambda c: (c.rerank_score or -99) + 20 * (c.boosts.get("number_boost", 0) + c.boosts.get("mention_boost", 0)), reverse=True)
         ordered = head + ordered[RERANK_TOP:]
@@ -265,9 +265,29 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
 
 
 _GENERIC = STOPWORDS | {
-    "product", "products", "certification", "compulsory", "requirement", "requirements", "bis", "isi", "mark",
-    "specification", "make", "manufacture", "sell", "business", "quality", "control", "order", "mandatory",
-    "licence", "license", "standard", "scheme", "indian",
+    "product",
+    "products",
+    "certification",
+    "compulsory",
+    "requirement",
+    "requirements",
+    "bis",
+    "isi",
+    "mark",
+    "specification",
+    "make",
+    "manufacture",
+    "sell",
+    "business",
+    "quality",
+    "control",
+    "order",
+    "mandatory",
+    "licence",
+    "license",
+    "standard",
+    "scheme",
+    "indian",
 }
 
 
@@ -402,9 +422,19 @@ def group_standards(conn: sqlite3.Connection, ordered: list[Candidate], plan: Qu
         if not r:
             return
         hits[std_id] = StandardHit(
-            standard_id=r["id"], slug=r["slug"], number=r["number_canonical"], title=r["title"], kind=r["kind"],
-            catalogue_only=bool(r["catalogue_only"]), synthetic=bool(r["synthetic"]), compulsory=r["compulsory_certification"],
-            compulsory_source=r["compulsory_source"], score=score, via=via, evidence_chunk_ids=[chunk_id], matched_row=row,
+            standard_id=r["id"],
+            slug=r["slug"],
+            number=r["number_canonical"],
+            title=r["title"],
+            kind=r["kind"],
+            catalogue_only=bool(r["catalogue_only"]),
+            synthetic=bool(r["synthetic"]),
+            compulsory=r["compulsory_certification"],
+            compulsory_source=r["compulsory_source"],
+            score=score,
+            via=via,
+            evidence_chunk_ids=[chunk_id],
+            matched_row=row,
         )
 
     for rank, c in enumerate(ordered):
@@ -430,9 +460,7 @@ def group_standards(conn: sqlite3.Connection, ordered: list[Candidate], plan: Qu
                     if match == 0:
                         continue
                 for sn in nums[:1]:
-                    row = conn.execute(
-                        "SELECT id FROM standards WHERE base_number = ? ORDER BY (kind = 'catalogue') LIMIT 1", (sn.base,)
-                    ).fetchone()
+                    row = conn.execute("SELECT id FROM standards WHERE base_number = ? ORDER BY (kind = 'catalogue') LIMIT 1", (sn.base,)).fetchone()
                     if row:
                         add(row["id"], score - 0.5 + 2 * match, "official_list", c.chunk_id, " ".join(line.strip("|").split("|")).strip())
             continue

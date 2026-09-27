@@ -1,8 +1,8 @@
 """Terms, references and amendments extracted from the clause tree.
 
-  - terms: from terminology clauses written as "3.1 Term - Definition" (or with an em dash).
-  - references: Indian Standard numbers mentioned in the References clause and elsewhere.
-  - amendments: clauses of kind "amendment" (label, date, excerpt), only when present in the source.
+- terms: from terminology clauses written as "3.1 Term - Definition" (or with an em dash).
+- references: Indian Standard numbers mentioned in the References clause and elsewhere.
+- amendments: clauses of kind "amendment" (label, date, excerpt), only when present in the source.
 """
 
 from __future__ import annotations

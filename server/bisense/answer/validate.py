@@ -18,13 +18,16 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
+from typing import Literal
 
 from bisense import stdnum
 from bisense.models import Drop, Point
 
 CITE_MARKER_RE = re.compile(r"\[(C\d{1,2})\]")
 URL_RE = re.compile(r"https?://[^\s)\]>\"']+")
-CLAUSE_REF_RE = re.compile(r"\b(?:clause|cl\.|sub-clause|section)\s+([A-H]-\d+(?:\.\d+)*|\d+(?:\.\d+)*)|\b(Table\s+\d+[A-Z]?)|\b(Annex(?:ure)?[\s-]+[A-Z]{1,4}\b)", re.I)
+CLAUSE_REF_RE = re.compile(
+    r"\b(?:clause|cl\.|sub-clause|section)\s+([A-H]-\d+(?:\.\d+)*|\d+(?:\.\d+)*)|\b(Table\s+\d+[A-Z]?)|\b(Annex(?:ure)?[\s-]+[A-Z]{1,4}\b)", re.I
+)
 # numbers like 500, 0.01, 6.5, "5 000", 1,000 ; optional unit / percent afterwards is part of the match text
 NUMBER_RE = re.compile(r"(?<![\w.])(\d{1,3}(?:[ ,]\d{3})+|\d+(?:\.\d+)?)(?![\w.]*\d)")
 FACTUAL_INTENTS = {"ask", "discover", "requirements", "summarize", "define", "applicability", "compare", "clause_lookup"}
@@ -117,6 +120,7 @@ def standards_in(text: str) -> list[stdnum.StdNumber]:
 # validator
 # ---------------------------------------------------------------------------------------------------
 
+
 class Validator:
     def __init__(self, sources: list[SourceView], question: str, intent: str):
         self.sources = {s.cid: s for s in sources}
@@ -177,7 +181,11 @@ class Validator:
             ok = False
             for c in pool:
                 s = self.sources[c]
-                if norm_text(s.clause_number) == ref_norm or norm_text(s.clause_number).startswith(ref_norm + ".") or ref_norm.startswith(norm_text(s.clause_number) + "."):
+                if (
+                    norm_text(s.clause_number) == ref_norm
+                    or norm_text(s.clause_number).startswith(ref_norm + ".")
+                    or ref_norm.startswith(norm_text(s.clause_number) + ".")
+                ):
                     ok = True
                 elif ref_norm in norm_text(s.text) or ref_norm in norm_text(s.clause_number):
                     ok = True
@@ -244,7 +252,7 @@ class Validator:
         return result
 
     def _validate_point(self, rp: dict) -> Point | None:
-        kind = "interpretation" if rp.get("kind") == "interpretation" else "source_fact"
+        kind: Literal["source_fact", "interpretation"] = "interpretation" if rp.get("kind") == "interpretation" else "source_fact"
         text = " ".join(str(rp.get("text") or "").split())
         if not text:
             return None

@@ -117,7 +117,9 @@ def inspect(slug: str, clause: str = typer.Option(None, help="Show one clause, e
             typer.echo(c["text"])
             for ch in conn.execute("SELECT id, token_count, text FROM chunks WHERE clause_id = ?", (c["id"],)):
                 typer.echo(f"    [chunk {ch['id']} ~{ch['token_count']} tok] {ch['text'][:160]!r}")
-    reqs = conn.execute("SELECT r.modality, c.number, r.text_verbatim FROM requirements r JOIN clauses c ON c.id = r.clause_id WHERE r.standard_id = ?", (std["id"],)).fetchall()
+    reqs = conn.execute(
+        "SELECT r.modality, c.number, r.text_verbatim FROM requirements r JOIN clauses c ON c.id = r.clause_id WHERE r.standard_id = ?", (std["id"],)
+    ).fetchall()
     typer.echo(f"\n{len(reqs)} requirement statements")
     for r in reqs[:40]:
         if clause and not r["number"].startswith(clause):
@@ -212,7 +214,7 @@ def eval_cmd(
     for c in out["comparisons"]:
         typer.echo(json.dumps(c))
     if not smoke:
-        typer.echo("Wrote docs/EVAL.md and docs/eval/latest.json")
+        typer.echo("Wrote the evaluation report (docs/EVAL.md or docs/eval/no_llm.json)")
     if (out["metrics"].get("recall_at_5") or 0) < min_recall:
         typer.secho(f"recall@5 below {min_recall}", fg=typer.colors.RED)
         raise typer.Exit(1)
@@ -223,9 +225,8 @@ def openapi(out: str = typer.Option("openapi.json", help="Output path (relative 
     """Write the OpenAPI schema (used by `npm run gen:types` to generate frontend types)."""
     from pathlib import Path
 
-    from bisense.main import create_app
-
     from bisense import models
+    from bisense.main import create_app
 
     schema = create_app().openapi()
     # SSE event payloads are not route responses; add them so the frontend gets generated types too.

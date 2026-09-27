@@ -20,7 +20,7 @@ import os
 import sqlite3
 import time
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 import numpy as np
@@ -59,6 +59,7 @@ def parser_version_for(path: Path, doc_type: str) -> str:
 # ---------------------------------------------------------------------------------------------------
 # Parse step (cached)
 # ---------------------------------------------------------------------------------------------------
+
 
 def _doc_to_json(doc: ParsedDoc) -> str:
     return json.dumps(dataclasses.asdict(doc), ensure_ascii=False)
@@ -162,15 +163,13 @@ def _insert(conn: sqlite3.Connection, table: str, row: dict) -> int:
     return int(cur.lastrowid or 0)
 
 
-def build_database(
-    db_path: Path, parsed: list[tuple[SourceFile, str, ParsedDoc]], dataset_mode: str, log: Log
-) -> tuple[list[tuple[int, str]], dict]:
+def build_database(db_path: Path, parsed: list[tuple[SourceFile, str, ParsedDoc]], dataset_mode: str, log: Log) -> tuple[list[tuple[int, str]], dict]:
     """Write all parsed documents into a fresh database. Returns (chunk_id, embed_text) pairs and stats."""
     if db_path.exists():
         db_path.unlink()
     conn = connect(db_path)
     init_schema(conn)
-    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    now = datetime.now(UTC).isoformat(timespec="seconds")
     embed_rows: list[tuple[int, str]] = []
     per_doc: dict[str, dict] = {}
     standard_ids_by_base: dict[str, int] = {}
@@ -291,7 +290,11 @@ def build_database(
         # terms
         terms = extract_terms(doc.clauses)
         for i, term, definition in terms:
-            _insert(conn, "terms", {"standard_id": std_id, "clause_id": clause_ids[i], "term": term, "definition_verbatim": definition, "page": doc.clauses[i].page_start})
+            _insert(
+                conn,
+                "terms",
+                {"standard_id": std_id, "clause_id": clause_ids[i], "term": term, "definition_verbatim": definition, "page": doc.clauses[i].page_start},
+            )
 
         # references
         if fields["kind"] == "standard":
@@ -334,7 +337,11 @@ def build_database(
         evidence = json.dumps({"slug": list_slug, "clause_number": row.get("clause_number"), "page": 1})
         target_id = standard_ids_by_base.get(sn.base)
         status = "denotified" if row["status"] == "denotified" else "yes"
-        source = f"BIS list of products under compulsory certification — {row['order']}" if status == "yes" else "BIS list of products under compulsory certification: de-notified from compulsory BIS certification"
+        source = (
+            f"BIS list of products under compulsory certification — {row['order']}"
+            if status == "yes"
+            else "BIS list of products under compulsory certification: de-notified from compulsory BIS certification"
+        )
         if target_id is None:
             slug = stdnum.slugify_number(sn.canonical)
             if conn.execute("SELECT 1 FROM standards WHERE slug = ?", (slug,)).fetchone():
@@ -395,7 +402,9 @@ def build_database(
     for from_id, number, clause_id in pending_refs:
         sn = stdnum.parse(number)
         to_id = standard_ids_by_base.get(sn.base) if sn else None
-        conn.execute("INSERT INTO standard_refs(from_standard_id, to_number, to_standard_id, clause_id) VALUES (?, ?, ?, ?)", (from_id, number, to_id, clause_id))
+        conn.execute(
+            "INSERT INTO standard_refs(from_standard_id, to_number, to_standard_id, clause_id) VALUES (?, ?, ?, ?)", (from_id, number, to_id, clause_id)
+        )
 
     set_meta(conn, "dataset_mode", dataset_mode)
     conn.commit()
@@ -415,6 +424,7 @@ def _table_text(c: ClauseDraft) -> str:
 # Embed step (cached by text hash)
 # ---------------------------------------------------------------------------------------------------
 
+
 def embed_all(index_dir: Path, rows: list[tuple[int, str]], model_name: str, log: Log) -> tuple[int, int]:
     from bisense.retrieval.embed import embed_passages
 
@@ -425,14 +435,14 @@ def embed_all(index_dir: Path, rows: list[tuple[int, str]], model_name: str, log
             keys = z["keys"]
             vecs = z["vecs"]
             cache = {str(k): vecs[i] for i, k in enumerate(keys)}
-    hashes = [hashlib.sha1(t.encode("utf-8")).hexdigest() for _, t in rows]
-    missing = [(h, t) for h, (_, t) in zip(hashes, rows) if h not in cache]
+    hashes = [hashlib.sha1(t.encode("utf-8"), usedforsecurity=False).hexdigest() for _, t in rows]
+    missing = [(h, t) for h, (_, t) in zip(hashes, rows, strict=True) if h not in cache]
     missing = list(dict(missing).items())
     if missing:
         log(f"embedding {len(missing)} new chunks with {model_name} ...")
         t0 = time.time()
         vecs = embed_passages([t for _, t in missing], model_name=model_name)
-        for (h, _), v in zip(missing, vecs):
+        for (h, _), v in zip(missing, vecs, strict=True):
             cache[h] = v
         log(f"  done in {time.time() - t0:.1f}s")
     dim = len(next(iter(cache.values()))) if cache else 0
@@ -458,6 +468,7 @@ def _atomic_save_npy(path: Path, arr: np.ndarray) -> None:
 # ---------------------------------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------------------------------
+
 
 def run_ingest(
     settings: Settings,
@@ -501,7 +512,10 @@ def run_ingest(
 
     fingerprint = json.dumps(
         {
-            "files": sorted((sf.path.name, sha, sf.entry.get("title"), sf.entry.get("standard_number"), sf.entry.get("status"), sf.entry.get("compulsory_certification")) for sf, sha, _ in parsed),
+            "files": sorted(
+                (sf.path.name, sha, sf.entry.get("title"), sf.entry.get("standard_number"), sf.entry.get("status"), sf.entry.get("compulsory_certification"))
+                for sf, sha, _ in parsed
+            ),
             "chunker": CHUNKER_VERSION,
             "parsers": [parse.PARSER_VERSION, html_parse.PARSER_VERSION, catalogue.PARSER_VERSION],
             "model": settings.embedding_model,
@@ -536,22 +550,21 @@ def run_ingest(
     set_meta(conn, "index_version", index_version)
     set_meta(conn, "embedding_model", settings.embedding_model)
     set_meta(conn, "chunker_version", CHUNKER_VERSION)
-    set_meta(conn, "built_at", datetime.now(timezone.utc).isoformat(timespec="seconds"))
+    set_meta(conn, "built_at", datetime.now(UTC).isoformat(timespec="seconds"))
     conn.commit()
     conn.close()
     try:
         os.replace(tmp_db, db_path)
     except PermissionError as exc:
         raise IngestError(
-            "Could not replace data/index/bisense.db because another process has it open. "
-            "Stop the running BISense server and run ingest again."
+            "Could not replace data/index/bisense.db because another process has it open. Stop the running BISense server and run ingest again."
         ) from exc
 
     report = {
         "index_version": index_version,
         "dataset_mode": discovery.dataset_mode,
         "tiers": discovery.tiers,
-        "built_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "built_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "seconds": round(time.time() - t0, 1),
         "embedding_model": settings.embedding_model,
         "embedded_new": new_vecs,

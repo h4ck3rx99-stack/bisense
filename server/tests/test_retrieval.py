@@ -30,7 +30,9 @@ def test_malicious_fts_input_never_errors(evil):
 def test_rrf_rewards_agreement():
     s = rrf([[(1, 9.0), (2, 8.0), (3, 7.0)], [(3, 0.9), (1, 0.8)]])
     assert s[1] > s[3] > s[2]
-    boosted = apply_boosts(s, {1: {"kind": "scope", "standard_id": 5}, 2: {"kind": "table", "standard_id": 6}, 3: {"kind": "requirement", "standard_id": 7}}, "discover", [7])
+    boosted = apply_boosts(
+        s, {1: {"kind": "scope", "standard_id": 5}, 2: {"kind": "table", "standard_id": 6}, 3: {"kind": "requirement", "standard_id": 7}}, "discover", [7]
+    )
     assert boosted[1]["kind_boost"] > 0 and boosted[3]["number_boost"] > 0
 
 
