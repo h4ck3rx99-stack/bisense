@@ -11,7 +11,7 @@
 - Answering: gate, prompts, validator (15 adversarial tests), retry, extractive fallback, LLM-declined fallback, cache, warm, translation with placeholders (separate translation model), compare, plain-language requirements.
 - API + SSE; security headers; rate limit; debug trace.
 - Frontend: home, ask (evidence-first, thread, drawer), library, explorer (5 tabs), checklist, compare, about, 404; en/hi/kn; voice; responsive; axe-clean.
-- Tests: 124 pytest, 9 vitest, 13 Playwright (desktop + mobile, axe, no console errors). `npm run check` green.
+- Tests: 125 pytest, 9 vitest, 13 Playwright (desktop + mobile, axe, no console errors). `npm run check` green.
 - Evaluation: 62 questions; final live run recall@5 1.00, exact 1.00, refusal 1.00, false refusals 0.06.
 - Docs: README, ARCHITECTURE, DATA, EVAL, DEMO_SCRIPT, TEAM_GUIDE, DECISIONS, JUDGE_REVIEW; screenshots.
 
