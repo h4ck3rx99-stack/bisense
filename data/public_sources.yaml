@@ -1,0 +1,190 @@
+# Tier B: official public BIS pages that `bisense fetch-public` may download.
+#
+# Rules (see docs/DATA.md):
+#   - Only official domains (bis.gov.in). Never follow URLs found inside fetched content.
+#   - robots.txt of www.bis.gov.in (checked 2026-09-27) disallows only /wp-admin/.
+#   - One request every few seconds; stop on any HTTP error.
+#   - Each downloaded file is recorded in data/sources.yaml with URL and retrieval date.
+#
+# Fields: file (name under data/public/), url, title, category, doc_type
+#   doc_type: guidance_page (BIS service information) | catalogue_page (list of products + IS numbers)
+#             | government_order (Quality Control Order PDF)
+
+pages:
+  # --- Compulsory certification lists (product -> Indian Standard) ---
+  - file: bis-compulsory-scheme-i.html
+    url: https://www.bis.gov.in/product-certification/products-under-compulsory-certification/scheme-i-mark-scheme/?lang=en
+    title: Products under Compulsory Certification — Scheme-I (ISI Mark Scheme)
+    category: Compulsory certification
+    doc_type: catalogue_page
+  - file: bis-compulsory-scheme-ii.html
+    url: https://www.bis.gov.in/product-certification/products-under-compulsory-certification/scheme-ii-registration-scheme/?lang=en
+    title: Products under Compulsory Certification — Scheme-II (Compulsory Registration Scheme)
+    category: Compulsory certification
+    doc_type: catalogue_page
+
+  # --- Product certification ---
+  - file: bis-product-certification-overview.html
+    url: https://www.bis.gov.in/product-certification/product-certification-overview/?lang=en
+    title: Product Certification — Overview
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-product-certification-faq.html
+    url: https://www.bis.gov.in/product-certification/product-certification-faq/?lang=en
+    title: Product Certification — FAQ
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-compulsory-registration.html
+    url: https://www.bis.gov.in/product-certification/compulsory-registration/?lang=en
+    title: Compulsory Registration Scheme
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-fmcs-overview.html
+    url: https://www.bis.gov.in/fmcs/fmcs-overview/?lang=en
+    title: Foreign Manufacturers Certification Scheme (FMCS) — Overview
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-fmcs-faq.html
+    url: https://www.bis.gov.in/fmcs/fmcs-faqs/?lang=en
+    title: Foreign Manufacturers Certification Scheme (FMCS) — FAQ
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-scheme-x.html
+    url: https://www.bis.gov.in/scheme-x-certification/?lang=en
+    title: Scheme X Certification
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-scheme-x-faq.html
+    url: https://www.bis.gov.in/scheme-x-certification/faq-scheme-x-certification/?lang=en
+    title: Scheme X Certification — FAQ
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-use-of-standard-mark.html
+    url: https://www.bis.gov.in/system-certification-overview/system-certification-licence/use-of-standard-mark/?lang=en
+    title: Use of Standard Mark (Management System Certification)
+    category: Product certification
+    doc_type: guidance_page
+
+  # --- Hallmarking ---
+  - file: bis-hallmarking-overview.html
+    url: https://www.bis.gov.in/hallmarking-overview/?lang=en
+    title: Hallmarking — Overview
+    category: Hallmarking
+    doc_type: guidance_page
+  - file: bis-hallmarking-faq.html
+    url: https://www.bis.gov.in/hallmarking-overview/hallmarking-faqs/hallmarking-faq/?lang=en
+    title: Hallmarking — FAQ
+    category: Hallmarking
+    doc_type: guidance_page
+  - file: bis-hallmarking-consumer-faq.html
+    url: https://www.bis.gov.in/hallmarking-overview/hallmarking-faqs/common-consumer-faq/?lang=en
+    title: Hallmarking — Common Consumer FAQ
+    category: Hallmarking
+    doc_type: guidance_page
+  - file: bis-hallmarking-mandatory-order.html
+    url: https://www.bis.gov.in/hallmarking-overview/mandatory-hallmarking-order/?lang=en
+    title: Mandatory Hallmarking Order
+    category: Hallmarking
+    doc_type: guidance_page
+  - file: bis-hallmarking-centre.html
+    url: https://www.bis.gov.in/hallmarking-overview/hallmarking-centre/?lang=en
+    title: Assaying and Hallmarking Centres
+    category: Hallmarking
+    doc_type: guidance_page
+  - file: bis-hallmarking-consumer-protection.html
+    url: https://www.bis.gov.in/hallmarking-overview/consumer-protection/?lang=en
+    title: Hallmarking — Consumer Protection
+    category: Hallmarking
+    doc_type: guidance_page
+
+  # --- Laboratories ---
+  - file: bis-lab-overview.html
+    url: https://www.bis.gov.in/laboratorys/laboratory-services-overview/?lang=en
+    title: Laboratory Services — Overview
+    category: Laboratories
+    doc_type: guidance_page
+  - file: bis-lab-faq.html
+    url: https://www.bis.gov.in/laboratorys/laboratory-services-overview/laboratory-faq/?lang=en
+    title: Laboratory Services — FAQ
+    category: Laboratories
+    doc_type: guidance_page
+  - file: bis-lab-recognition-apply.html
+    url: https://www.bis.gov.in/laboratorys/how-to-apply-for-bis-recognition/?lang=en
+    title: How to Apply for BIS Laboratory Recognition
+    category: Laboratories
+    doc_type: guidance_page
+  - file: bis-lab-testing-overview.html
+    url: https://www.bis.gov.in/laboratorys/testing-overview/?lang=en
+    title: Testing — Overview
+    category: Laboratories
+    doc_type: guidance_page
+  - file: bis-lab-list.html
+    url: https://www.bis.gov.in/laboratorys/list-of-laboratories/?lang=en
+    title: List of BIS Laboratories
+    category: Laboratories
+    doc_type: guidance_page
+
+  # --- Consumers ---
+  - file: bis-consumer-faq.html
+    url: https://www.bis.gov.in/consumer-overview/for-consumers-faq/?lang=en
+    title: For Consumers — FAQ
+    category: Consumer affairs
+    doc_type: guidance_page
+  - file: bis-consumer-complaint.html
+    url: https://www.bis.gov.in/consumer-overview/online-complaint-registration/?lang=en
+    title: Online Complaint Registration
+    category: Consumer affairs
+    doc_type: guidance_page
+  - file: bis-consumer-protection.html
+    url: https://www.bis.gov.in/consumer-overview/consumer-protection/?lang=en
+    title: Consumer Protection
+    category: Consumer affairs
+    doc_type: guidance_page
+  - file: bis-know-your-standard.html
+    url: https://www.bis.gov.in/know-your-standard/?lang=en
+    title: Know Your Standard
+    category: Consumer affairs
+    doc_type: guidance_page
+  - file: bis-full-faq.html
+    url: https://www.bis.gov.in/full-faq/?lang=en
+    title: BIS — Frequently Asked Questions
+    category: General
+    doc_type: guidance_page
+
+  # --- Hindi-only pages (the English URL says "only available in Hindi") ---
+  - file: bis-product-certification-process-hi.html
+    url: https://www.bis.gov.in/product-certification/product-certification-process/?lang=hi
+    title: उत्पाद प्रमाणन प्रक्रिया (Product Certification Process)
+    category: Product certification
+    doc_type: guidance_page
+    language: hi
+  - file: bis-product-certification-fee-hi.html
+    url: https://www.bis.gov.in/product-certification/product-certification-fee/?lang=hi
+    title: उत्पाद प्रमाणन शुल्क (Product Certification Fee)
+    category: Product certification
+    doc_type: guidance_page
+    language: hi
+
+  # --- Official Quality Control Orders (Gazette notifications hosted on bis.gov.in) ---
+  - file: qco-helmet-two-wheeler-2020.pdf
+    url: https://bis.gov.in/wp-content/uploads/2020/12/Helmet-for-riders-of-Two-Wheeler-Motor-Vehicles-Quality-Control-Order-2020.pdf
+    title: Helmet for Riders of Two Wheeler Motor Vehicles (Quality Control) Order, 2020
+    category: Quality Control Orders
+    doc_type: government_order
+  - file: qco-plugs-sockets-2019.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2019/12/Plug-and-socket-QCO.pdf
+    title: Plugs and Socket-Outlets (Quality Control) Order
+    category: Quality Control Orders
+    doc_type: government_order
+
+  # --- Official BIS guideline PDFs (selected by hand from the product-certification-process page) ---
+  - file: bis-guidelines-grant-of-licence-2026.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2026/02/GrantofLicence-Guidelines-25Feb2026.pdf
+    title: Guidelines for Grant of Licence (Product Certification Scheme-I)
+    category: Product certification
+    doc_type: guidance_page
+  - file: bis-guidelines-cluster-lab-msme.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2023/07/GuidelinesForUtilisationOfClusterLabByMSMEs.pdf
+    title: Guidelines for Utilisation of Cluster Based Testing Facility by MSMEs
+    category: Laboratories
+    doc_type: guidance_page

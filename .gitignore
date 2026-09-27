@@ -1,0 +1,38 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# data that must never be committed (copyrighted / rebuildable)
+data/raw/*
+!data/raw/.gitkeep
+data/public/*
+!data/public/.gitkeep
+data/processed/
+data/index/*
+!data/index/.gitkeep
+data/models/
+data/cache/
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# node / web
+node_modules/
+web/dist/
+web/test-results/
+web/playwright-report/
+web/blob-report/
+*.tsbuildinfo
+
+# misc
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
