@@ -1,0 +1,3502 @@
+{
+ "openapi": "3.1.0",
+ "info": {
+  "title": "BISense API",
+  "version": "0.1.0"
+ },
+ "paths": {
+  "/api/health": {
+   "get": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Health",
+    "operationId": "health_api_health_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HealthOut"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/compare": {
+   "post": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Compare",
+    "operationId": "compare_api_compare_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/CompareRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/CompareResponse"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/voice/stt": {
+   "post": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Voice Stt",
+    "operationId": "voice_stt_api_voice_stt_post",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/voice/tts": {
+   "post": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Voice Tts",
+    "operationId": "voice_tts_api_voice_tts_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TTSRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/eval": {
+   "get": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Eval Summary",
+    "description": "Latest evaluation results written by `bisense eval` (docs/eval/latest.json). Real numbers only.",
+    "operationId": "eval_summary_api_eval_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "additionalProperties": true,
+         "type": "object",
+         "title": "Response Eval Summary Api Eval Get"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/debug/trace/{request_id}": {
+   "get": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Debug Trace",
+    "operationId": "debug_trace_api_debug_trace__request_id__get",
+    "parameters": [
+     {
+      "name": "request_id",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Request Id"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/AskTrace"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/search": {
+   "post": {
+    "tags": [
+     "ask"
+    ],
+    "summary": "Search Endpoint",
+    "operationId": "search_endpoint_api_search_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/SearchRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SearchResponse"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/ask": {
+   "post": {
+    "tags": [
+     "ask"
+    ],
+    "summary": "Ask Endpoint",
+    "operationId": "ask_endpoint_api_ask_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/AskRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/library": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Library",
+    "operationId": "library_api_library_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/LibraryOut"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "List Standards",
+    "operationId": "list_standards_api_standards_get",
+    "parameters": [
+     {
+      "name": "q",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 200
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     },
+     {
+      "name": "kind",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^(standard|guidance|order|catalogue)(,(standard|guidance|order|catalogue))*$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Kind"
+      }
+     },
+     {
+      "name": "category",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 200
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Category"
+      }
+     },
+     {
+      "name": "compulsory",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^(yes|denotified|unknown|no)$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Compulsory"
+      }
+     },
+     {
+      "name": "tier",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^[ABC]$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Tier"
+      }
+     },
+     {
+      "name": "year_from",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "maximum": 2100,
+         "minimum": 1900
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Year From"
+      }
+     },
+     {
+      "name": "year_to",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "integer",
+         "maximum": 2100,
+         "minimum": 1900
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Year To"
+      }
+     },
+     {
+      "name": "sort",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(relevance|number|title|year)$",
+       "default": "relevance",
+       "title": "Sort"
+      }
+     },
+     {
+      "name": "page",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 1000,
+       "minimum": 1,
+       "default": 1,
+       "title": "Page"
+      }
+     },
+     {
+      "name": "page_size",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "integer",
+       "maximum": 100,
+       "minimum": 1,
+       "default": 25,
+       "title": "Page Size"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StandardListOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/suggest": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Suggest",
+    "operationId": "suggest_api_standards_suggest_get",
+    "parameters": [
+     {
+      "name": "q",
+      "in": "query",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "minLength": 1,
+       "maxLength": 100,
+       "title": "Q"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/SuggestItem"
+         },
+         "title": "Response Suggest Api Standards Suggest Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Standard Detail",
+    "operationId": "standard_detail_api_standards__slug__get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/StandardDetail"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}/clauses": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "All Clauses",
+    "description": "Every clause of a document, in order, with verbatim text (the explorer's clause viewer).",
+    "operationId": "all_clauses_api_standards__slug__clauses_get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "array",
+         "items": {
+          "$ref": "#/components/schemas/ClauseOut"
+         },
+         "title": "Response All Clauses Api Standards  Slug  Clauses Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}/clauses/{number}": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Clause",
+    "operationId": "clause_api_standards__slug__clauses__number__get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     },
+     {
+      "name": "number",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Number"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/ClauseOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}/requirements": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Requirements",
+    "operationId": "requirements_api_standards__slug__requirements_get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     },
+     {
+      "name": "modality",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "pattern": "^(shall|shall_not|should|should_not|may|must)(,(shall|shall_not|should|should_not|may|must))*$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Modality"
+      }
+     },
+     {
+      "name": "kind",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 200,
+         "pattern": "^[a-z_,]+$"
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Kind"
+      }
+     },
+     {
+      "name": "q",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 200
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/RequirementsOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}/requirements/plain": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Requirements Plain",
+    "description": "AI interpretations of requirement statements (labelled as such in the UI).",
+    "operationId": "requirements_plain_api_standards__slug__requirements_plain_get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     },
+     {
+      "name": "lang",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(en|hi|kn)$",
+       "default": "en",
+       "title": "Lang"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "type": "object",
+         "additionalProperties": {
+          "type": "object",
+          "additionalProperties": {
+           "type": "string"
+          }
+         },
+         "title": "Response Requirements Plain Api Standards  Slug  Requirements Plain Get"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}/requirements.csv": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Requirements Csv",
+    "operationId": "requirements_csv_api_standards__slug__requirements_csv_get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}/summary": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Summary",
+    "operationId": "summary_api_standards__slug__summary_get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     },
+     {
+      "name": "lang",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "type": "string",
+       "pattern": "^(en|hi|kn)$",
+       "default": "en",
+       "title": "Lang"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/SummaryOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "/api/standards/{slug}/pages/{n}.png": {
+   "get": {
+    "tags": [
+     "standards"
+    ],
+    "summary": "Page Image",
+    "operationId": "page_image_api_standards__slug__pages__n__png_get",
+    "parameters": [
+     {
+      "name": "slug",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "string",
+       "title": "Slug"
+      }
+     },
+     {
+      "name": "n",
+      "in": "path",
+      "required": true,
+      "schema": {
+       "type": "integer",
+       "title": "N"
+      }
+     },
+     {
+      "name": "q",
+      "in": "query",
+      "required": false,
+      "schema": {
+       "anyOf": [
+        {
+         "type": "string",
+         "maxLength": 200
+        },
+        {
+         "type": "null"
+        }
+       ],
+       "title": "Q"
+      }
+     }
+    ],
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {}
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  }
+ },
+ "components": {
+  "schemas": {
+   "AmendmentOut": {
+    "properties": {
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "date": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Date"
+     },
+     "text_excerpt": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Text Excerpt"
+     },
+     "page": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Page"
+     }
+    },
+    "type": "object",
+    "required": [
+     "label",
+     "date",
+     "text_excerpt",
+     "page"
+    ],
+    "title": "AmendmentOut"
+   },
+   "Answer": {
+    "properties": {
+     "answer_type": {
+      "type": "string",
+      "enum": [
+       "answer",
+       "standards_list",
+       "requirements",
+       "comparison",
+       "summary",
+       "definition",
+       "clarification",
+       "insufficient_evidence",
+       "out_of_scope"
+      ],
+      "title": "Answer Type"
+     },
+     "summary": {
+      "type": "string",
+      "title": "Summary",
+      "default": ""
+     },
+     "points": {
+      "items": {
+       "$ref": "#/components/schemas/Point"
+      },
+      "type": "array",
+      "title": "Points"
+     },
+     "standards": {
+      "items": {
+       "$ref": "#/components/schemas/StandardRef"
+      },
+      "type": "array",
+      "title": "Standards"
+     },
+     "gaps": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Gaps"
+     },
+     "clarifying_question": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Clarifying Question"
+     },
+     "clarifying_options": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Clarifying Options"
+     },
+     "follow_ups": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Follow Ups"
+     },
+     "evidence_strength": {
+      "type": "string",
+      "enum": [
+       "strong",
+       "moderate",
+       "limited",
+       "none"
+      ],
+      "title": "Evidence Strength",
+      "default": "none"
+     },
+     "strength_basis": {
+      "type": "string",
+      "title": "Strength Basis",
+      "default": ""
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "live",
+       "cached",
+       "extractive",
+       "none"
+      ],
+      "title": "Mode",
+      "default": "live"
+     },
+     "provider": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Provider"
+     },
+     "generated_at": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Generated At"
+     },
+     "dropped_count": {
+      "type": "integer",
+      "title": "Dropped Count",
+      "default": 0
+     },
+     "drops": {
+      "items": {
+       "$ref": "#/components/schemas/Drop"
+      },
+      "type": "array",
+      "title": "Drops"
+     },
+     "lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Lang",
+      "default": "en"
+     },
+     "translated": {
+      "type": "boolean",
+      "title": "Translated",
+      "default": false
+     },
+     "translation_failed": {
+      "type": "boolean",
+      "title": "Translation Failed",
+      "default": false
+     },
+     "original": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/OriginalAnswer"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "notice": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notice"
+     },
+     "searched_summary": {
+      "type": "string",
+      "title": "Searched Summary",
+      "default": ""
+     },
+     "library_note": {
+      "type": "string",
+      "title": "Library Note",
+      "default": ""
+     },
+     "synthetic_used": {
+      "type": "boolean",
+      "title": "Synthetic Used",
+      "default": false
+     }
+    },
+    "type": "object",
+    "required": [
+     "answer_type",
+     "summary",
+     "points",
+     "standards",
+     "gaps",
+     "clarifying_question",
+     "clarifying_options",
+     "follow_ups",
+     "evidence_strength",
+     "strength_basis",
+     "mode",
+     "provider",
+     "generated_at",
+     "dropped_count",
+     "drops",
+     "lang",
+     "translated",
+     "translation_failed",
+     "original",
+     "notice",
+     "searched_summary",
+     "library_note",
+     "synthetic_used"
+    ],
+    "title": "Answer"
+   },
+   "AskContext": {
+    "properties": {
+     "recent_questions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 2,
+      "title": "Recent Questions"
+     },
+     "focus_slugs": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 6,
+      "title": "Focus Slugs"
+     },
+     "open_slug": {
+      "anyOf": [
+       {
+        "type": "string",
+        "pattern": "^[a-z0-9][a-z0-9-]{0,120}$"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Open Slug"
+     }
+    },
+    "type": "object",
+    "title": "AskContext",
+    "description": "What the client remembers about the conversation. Only questions and standard ids -- never answers."
+   },
+   "AskRequest": {
+    "properties": {
+     "query": {
+      "type": "string",
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Query"
+     },
+     "lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Lang",
+      "default": "en"
+     },
+     "context": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AskContext"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "query"
+    ],
+    "title": "AskRequest"
+   },
+   "AskTrace": {
+    "properties": {
+     "request_id": {
+      "type": "string",
+      "title": "Request Id"
+     },
+     "query": {
+      "$ref": "#/components/schemas/QueryInfo"
+     },
+     "candidates": {
+      "items": {
+       "$ref": "#/components/schemas/Citation"
+      },
+      "type": "array",
+      "title": "Candidates"
+     },
+     "cited_ids": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Cited Ids"
+     },
+     "drops": {
+      "items": {
+       "$ref": "#/components/schemas/Drop"
+      },
+      "type": "array",
+      "title": "Drops"
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "live",
+       "cached",
+       "extractive",
+       "none"
+      ],
+      "title": "Mode"
+     },
+     "provider": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Provider"
+     },
+     "timings": {
+      "$ref": "#/components/schemas/Timings"
+     },
+     "top_rerank": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Top Rerank"
+     },
+     "gate_threshold": {
+      "type": "number",
+      "title": "Gate Threshold"
+     },
+     "tokens": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "type": "object",
+      "title": "Tokens"
+     }
+    },
+    "type": "object",
+    "required": [
+     "request_id",
+     "query",
+     "candidates",
+     "cited_ids",
+     "drops",
+     "mode",
+     "provider",
+     "timings",
+     "top_rerank",
+     "gate_threshold",
+     "tokens"
+    ],
+    "title": "AskTrace",
+    "description": "Everything the Retrieval details drawer shows (also served by /api/debug/trace when DEBUG=true)."
+   },
+   "CategoryCount": {
+    "properties": {
+     "category": {
+      "type": "string",
+      "title": "Category"
+     },
+     "count": {
+      "type": "integer",
+      "title": "Count"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "guidance",
+       "order",
+       "catalogue"
+      ],
+      "title": "Kind"
+     }
+    },
+    "type": "object",
+    "required": [
+     "category",
+     "count",
+     "kind"
+    ],
+    "title": "CategoryCount"
+   },
+   "Citation": {
+    "properties": {
+     "id": {
+      "type": "string",
+      "title": "Id"
+     },
+     "n": {
+      "type": "integer",
+      "title": "N"
+     },
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "standard_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Standard Number"
+     },
+     "standard_title": {
+      "type": "string",
+      "title": "Standard Title"
+     },
+     "standard_kind": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "guidance",
+       "order",
+       "catalogue"
+      ],
+      "title": "Standard Kind"
+     },
+     "clause_number": {
+      "type": "string",
+      "title": "Clause Number"
+     },
+     "clause_heading": {
+      "type": "string",
+      "title": "Clause Heading"
+     },
+     "clause_kind": {
+      "type": "string",
+      "title": "Clause Kind"
+     },
+     "clause_path": {
+      "type": "string",
+      "title": "Clause Path"
+     },
+     "page_start": {
+      "type": "integer",
+      "title": "Page Start"
+     },
+     "page_end": {
+      "type": "integer",
+      "title": "Page End"
+     },
+     "snippet": {
+      "type": "string",
+      "title": "Snippet"
+     },
+     "scores": {
+      "$ref": "#/components/schemas/Scores"
+     },
+     "synthetic": {
+      "type": "boolean",
+      "title": "Synthetic"
+     },
+     "tier": {
+      "type": "string",
+      "title": "Tier"
+     },
+     "doc_type": {
+      "type": "string",
+      "title": "Doc Type"
+     },
+     "url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Url"
+     },
+     "has_page_image": {
+      "type": "boolean",
+      "title": "Has Page Image"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "n",
+     "slug",
+     "standard_number",
+     "standard_title",
+     "standard_kind",
+     "clause_number",
+     "clause_heading",
+     "clause_kind",
+     "clause_path",
+     "page_start",
+     "page_end",
+     "snippet",
+     "scores",
+     "synthetic",
+     "tier",
+     "doc_type",
+     "url",
+     "has_page_image"
+    ],
+    "title": "Citation"
+   },
+   "ClauseNode": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "number": {
+      "type": "string",
+      "title": "Number"
+     },
+     "heading": {
+      "type": "string",
+      "title": "Heading"
+     },
+     "kind": {
+      "type": "string",
+      "title": "Kind"
+     },
+     "level": {
+      "type": "integer",
+      "title": "Level"
+     },
+     "page_start": {
+      "type": "integer",
+      "title": "Page Start"
+     },
+     "page_end": {
+      "type": "integer",
+      "title": "Page End"
+     },
+     "children": {
+      "items": {
+       "$ref": "#/components/schemas/ClauseNode"
+      },
+      "type": "array",
+      "title": "Children"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "number",
+     "heading",
+     "kind",
+     "level",
+     "page_start",
+     "page_end",
+     "children"
+    ],
+    "title": "ClauseNode"
+   },
+   "ClauseOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "number": {
+      "type": "string",
+      "title": "Number"
+     },
+     "heading": {
+      "type": "string",
+      "title": "Heading"
+     },
+     "kind": {
+      "type": "string",
+      "title": "Kind"
+     },
+     "path": {
+      "type": "string",
+      "title": "Path"
+     },
+     "level": {
+      "type": "integer",
+      "title": "Level"
+     },
+     "page_start": {
+      "type": "integer",
+      "title": "Page Start"
+     },
+     "page_end": {
+      "type": "integer",
+      "title": "Page End"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "is_table": {
+      "type": "boolean",
+      "title": "Is Table"
+     },
+     "children": {
+      "items": {
+       "$ref": "#/components/schemas/ClauseNode"
+      },
+      "type": "array",
+      "title": "Children"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "number",
+     "heading",
+     "kind",
+     "path",
+     "level",
+     "page_start",
+     "page_end",
+     "text",
+     "is_table",
+     "children"
+    ],
+    "title": "ClauseOut"
+   },
+   "CompareCell": {
+    "properties": {
+     "text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Text"
+     },
+     "citations": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Citations"
+     },
+     "found": {
+      "type": "boolean",
+      "title": "Found"
+     }
+    },
+    "type": "object",
+    "required": [
+     "text",
+     "citations",
+     "found"
+    ],
+    "title": "CompareCell"
+   },
+   "CompareRequest": {
+    "properties": {
+     "a": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,120}$",
+      "title": "A"
+     },
+     "b": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{0,120}$",
+      "title": "B"
+     },
+     "lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Lang",
+      "default": "en"
+     }
+    },
+    "type": "object",
+    "required": [
+     "a",
+     "b"
+    ],
+    "title": "CompareRequest"
+   },
+   "CompareResponse": {
+    "properties": {
+     "a": {
+      "$ref": "#/components/schemas/StandardSummary"
+     },
+     "b": {
+      "$ref": "#/components/schemas/StandardSummary"
+     },
+     "rows": {
+      "items": {
+       "$ref": "#/components/schemas/CompareRow"
+      },
+      "type": "array",
+      "title": "Rows"
+     },
+     "numeric": {
+      "items": {
+       "$ref": "#/components/schemas/NumericRow"
+      },
+      "type": "array",
+      "title": "Numeric"
+     },
+     "key_differences": {
+      "items": {
+       "$ref": "#/components/schemas/Point"
+      },
+      "type": "array",
+      "title": "Key Differences"
+     },
+     "citations": {
+      "items": {
+       "$ref": "#/components/schemas/Citation"
+      },
+      "type": "array",
+      "title": "Citations"
+     },
+     "mode": {
+      "type": "string",
+      "enum": [
+       "live",
+       "cached",
+       "extractive",
+       "none"
+      ],
+      "title": "Mode"
+     },
+     "notice": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Notice"
+     },
+     "dropped_count": {
+      "type": "integer",
+      "title": "Dropped Count",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "required": [
+     "a",
+     "b",
+     "rows",
+     "numeric",
+     "key_differences",
+     "citations",
+     "mode",
+     "notice",
+     "dropped_count"
+    ],
+    "title": "CompareResponse"
+   },
+   "CompareRow": {
+    "properties": {
+     "aspect": {
+      "type": "string",
+      "title": "Aspect"
+     },
+     "a": {
+      "$ref": "#/components/schemas/CompareCell"
+     },
+     "b": {
+      "$ref": "#/components/schemas/CompareCell"
+     }
+    },
+    "type": "object",
+    "required": [
+     "aspect",
+     "a",
+     "b"
+    ],
+    "title": "CompareRow"
+   },
+   "CompulsoryEvidence": {
+    "properties": {
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source"
+     },
+     "slug": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Slug"
+     },
+     "clause_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Clause Number"
+     }
+    },
+    "type": "object",
+    "required": [
+     "status",
+     "source",
+     "slug",
+     "clause_number"
+    ],
+    "title": "CompulsoryEvidence"
+   },
+   "Drop": {
+    "properties": {
+     "field": {
+      "type": "string",
+      "title": "Field"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "reason": {
+      "type": "string",
+      "title": "Reason"
+     }
+    },
+    "type": "object",
+    "required": [
+     "field",
+     "text",
+     "reason"
+    ],
+    "title": "Drop"
+   },
+   "HTTPValidationError": {
+    "properties": {
+     "detail": {
+      "items": {
+       "$ref": "#/components/schemas/ValidationError"
+      },
+      "type": "array",
+      "title": "Detail"
+     }
+    },
+    "type": "object",
+    "title": "HTTPValidationError"
+   },
+   "HealthOut": {
+    "properties": {
+     "status": {
+      "type": "string",
+      "enum": [
+       "ok",
+       "degraded",
+       "no_index"
+      ],
+      "title": "Status"
+     },
+     "dataset_mode": {
+      "type": "string",
+      "title": "Dataset Mode"
+     },
+     "index_version": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Index Version"
+     },
+     "counts": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "type": "object",
+      "title": "Counts"
+     },
+     "llm": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "type": "object",
+      "title": "Llm"
+     },
+     "models_loaded": {
+      "type": "boolean",
+      "title": "Models Loaded"
+     },
+     "demo_mode": {
+      "type": "boolean",
+      "title": "Demo Mode"
+     },
+     "version": {
+      "type": "string",
+      "title": "Version"
+     },
+     "features": {
+      "additionalProperties": {
+       "type": "boolean"
+      },
+      "type": "object",
+      "title": "Features"
+     }
+    },
+    "type": "object",
+    "required": [
+     "status",
+     "dataset_mode",
+     "index_version",
+     "counts",
+     "llm",
+     "models_loaded",
+     "demo_mode",
+     "version",
+     "features"
+    ],
+    "title": "HealthOut"
+   },
+   "LibraryOut": {
+    "properties": {
+     "dataset_mode": {
+      "type": "string",
+      "title": "Dataset Mode"
+     },
+     "index_version": {
+      "type": "string",
+      "title": "Index Version"
+     },
+     "built_at": {
+      "type": "string",
+      "title": "Built At"
+     },
+     "counts": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "type": "object",
+      "title": "Counts"
+     },
+     "categories": {
+      "items": {
+       "$ref": "#/components/schemas/CategoryCount"
+      },
+      "type": "array",
+      "title": "Categories"
+     },
+     "languages": {
+      "items": {
+       "type": "string",
+       "enum": [
+        "en",
+        "hi",
+        "kn"
+       ]
+      },
+      "type": "array",
+      "title": "Languages"
+     },
+     "sources": {
+      "items": {
+       "additionalProperties": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Sources"
+     }
+    },
+    "type": "object",
+    "required": [
+     "dataset_mode",
+     "index_version",
+     "built_at",
+     "counts",
+     "categories",
+     "languages",
+     "sources"
+    ],
+    "title": "LibraryOut"
+   },
+   "NumericRow": {
+    "properties": {
+     "parameter": {
+      "type": "string",
+      "title": "Parameter"
+     },
+     "unit": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Unit"
+     },
+     "a_value": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "A Value"
+     },
+     "b_value": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "B Value"
+     },
+     "a_citation": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "A Citation"
+     },
+     "b_citation": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "B Citation"
+     }
+    },
+    "type": "object",
+    "required": [
+     "parameter",
+     "unit",
+     "a_value",
+     "b_value",
+     "a_citation",
+     "b_citation"
+    ],
+    "title": "NumericRow"
+   },
+   "OriginalAnswer": {
+    "properties": {
+     "summary": {
+      "type": "string",
+      "title": "Summary"
+     },
+     "points": {
+      "items": {
+       "$ref": "#/components/schemas/Point"
+      },
+      "type": "array",
+      "title": "Points"
+     },
+     "gaps": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Gaps"
+     },
+     "follow_ups": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Follow Ups"
+     }
+    },
+    "type": "object",
+    "required": [
+     "summary",
+     "points",
+     "gaps",
+     "follow_ups"
+    ],
+    "title": "OriginalAnswer"
+   },
+   "Point": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "source_fact",
+       "interpretation"
+      ],
+      "title": "Kind"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "citations": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Citations"
+     },
+     "quote": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Quote"
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "text",
+     "citations",
+     "quote"
+    ],
+    "title": "Point"
+   },
+   "Provenance": {
+    "properties": {
+     "tier": {
+      "type": "string",
+      "title": "Tier"
+     },
+     "doc_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Doc Type"
+     },
+     "file_name": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "File Name"
+     },
+     "source_url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Url"
+     },
+     "obtained_on": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Obtained On"
+     },
+     "pages": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Pages"
+     },
+     "language": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Language"
+     },
+     "warnings": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Warnings"
+     }
+    },
+    "type": "object",
+    "required": [
+     "tier",
+     "doc_type",
+     "file_name",
+     "source_url",
+     "obtained_on",
+     "pages",
+     "language",
+     "warnings"
+    ],
+    "title": "Provenance"
+   },
+   "QueryInfo": {
+    "properties": {
+     "interpreted_query": {
+      "type": "string",
+      "title": "Interpreted Query"
+     },
+     "intent": {
+      "type": "string",
+      "title": "Intent"
+     },
+     "lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Lang"
+     },
+     "resolved_scope": {
+      "items": {
+       "$ref": "#/components/schemas/ScopeItemOut"
+      },
+      "type": "array",
+      "title": "Resolved Scope"
+     },
+     "scope_source": {
+      "type": "string",
+      "title": "Scope Source"
+     },
+     "rewritten": {
+      "type": "boolean",
+      "title": "Rewritten"
+     },
+     "notes": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Notes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "interpreted_query",
+     "intent",
+     "lang",
+     "resolved_scope",
+     "scope_source",
+     "rewritten",
+     "notes"
+    ],
+    "title": "QueryInfo"
+   },
+   "ReferenceOut": {
+    "properties": {
+     "number": {
+      "type": "string",
+      "title": "Number"
+     },
+     "slug": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Slug"
+     },
+     "title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Title"
+     },
+     "clause_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Clause Number"
+     }
+    },
+    "type": "object",
+    "required": [
+     "number",
+     "slug",
+     "title",
+     "clause_number"
+    ],
+    "title": "ReferenceOut"
+   },
+   "RelatedOut": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "guidance",
+       "order",
+       "catalogue"
+      ],
+      "title": "Kind"
+     },
+     "similarity": {
+      "type": "number",
+      "title": "Similarity"
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "number",
+     "title",
+     "kind",
+     "similarity"
+    ],
+    "title": "RelatedOut"
+   },
+   "RequirementOut": {
+    "properties": {
+     "id": {
+      "type": "integer",
+      "title": "Id"
+     },
+     "clause_number": {
+      "type": "string",
+      "title": "Clause Number"
+     },
+     "clause_heading": {
+      "type": "string",
+      "title": "Clause Heading"
+     },
+     "clause_kind": {
+      "type": "string",
+      "title": "Clause Kind"
+     },
+     "modality": {
+      "type": "string",
+      "enum": [
+       "shall",
+       "shall_not",
+       "should",
+       "should_not",
+       "may",
+       "must"
+      ],
+      "title": "Modality"
+     },
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "page": {
+      "type": "integer",
+      "title": "Page"
+     },
+     "topic": {
+      "type": "string",
+      "title": "Topic"
+     }
+    },
+    "type": "object",
+    "required": [
+     "id",
+     "clause_number",
+     "clause_heading",
+     "clause_kind",
+     "modality",
+     "text",
+     "page",
+     "topic"
+    ],
+    "title": "RequirementOut"
+   },
+   "RequirementsOut": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "synthetic": {
+      "type": "boolean",
+      "title": "Synthetic"
+     },
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/RequirementOut"
+      },
+      "type": "array",
+      "title": "Items"
+     },
+     "counts": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "type": "object",
+      "title": "Counts"
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "number",
+     "title",
+     "synthetic",
+     "items",
+     "counts"
+    ],
+    "title": "RequirementsOut"
+   },
+   "ScopeItemOut": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "guidance",
+       "order",
+       "catalogue"
+      ],
+      "title": "Kind"
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "number",
+     "title",
+     "kind"
+    ],
+    "title": "ScopeItemOut"
+   },
+   "Scores": {
+    "properties": {
+     "lexical_rank": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lexical Rank"
+     },
+     "vector": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Vector"
+     },
+     "fused": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Fused"
+     },
+     "rerank": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Rerank"
+     },
+     "boosts": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "type": "object",
+      "title": "Boosts"
+     }
+    },
+    "type": "object",
+    "required": [
+     "lexical_rank",
+     "vector",
+     "fused",
+     "rerank",
+     "boosts"
+    ],
+    "title": "Scores"
+   },
+   "SearchFilters": {
+    "properties": {
+     "kinds": {
+      "items": {
+       "type": "string",
+       "enum": [
+        "standard",
+        "guidance",
+        "order",
+        "catalogue"
+       ]
+      },
+      "type": "array",
+      "maxItems": 4,
+      "title": "Kinds"
+     },
+     "slugs": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 10,
+      "title": "Slugs"
+     }
+    },
+    "type": "object",
+    "title": "SearchFilters"
+   },
+   "SearchRequest": {
+    "properties": {
+     "query": {
+      "type": "string",
+      "maxLength": 1000,
+      "minLength": 1,
+      "title": "Query"
+     },
+     "lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Lang",
+      "default": "en"
+     },
+     "filters": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/SearchFilters"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "context": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/AskContext"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "query"
+    ],
+    "title": "SearchRequest"
+   },
+   "SearchResponse": {
+    "properties": {
+     "query": {
+      "$ref": "#/components/schemas/QueryInfo"
+     },
+     "citations": {
+      "items": {
+       "$ref": "#/components/schemas/Citation"
+      },
+      "type": "array",
+      "title": "Citations"
+     },
+     "standards": {
+      "items": {
+       "$ref": "#/components/schemas/StandardRef"
+      },
+      "type": "array",
+      "title": "Standards"
+     },
+     "timings": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "type": "object",
+      "title": "Timings"
+     },
+     "total_candidates": {
+      "type": "integer",
+      "title": "Total Candidates"
+     }
+    },
+    "type": "object",
+    "required": [
+     "query",
+     "citations",
+     "standards",
+     "timings",
+     "total_candidates"
+    ],
+    "title": "SearchResponse"
+   },
+   "StandardDetail": {
+    "properties": {
+     "summary": {
+      "$ref": "#/components/schemas/StandardSummary"
+     },
+     "revision_label": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Revision Label"
+     },
+     "status_verified_on": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Status Verified On"
+     },
+     "committee": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Committee"
+     },
+     "ics": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Ics"
+     },
+     "industries": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Industries"
+     },
+     "products": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Products"
+     },
+     "provenance": {
+      "$ref": "#/components/schemas/Provenance"
+     },
+     "compulsory": {
+      "$ref": "#/components/schemas/CompulsoryEvidence"
+     },
+     "scope_text": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Scope Text"
+     },
+     "scope_clause": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Scope Clause"
+     },
+     "clauses": {
+      "items": {
+       "$ref": "#/components/schemas/ClauseNode"
+      },
+      "type": "array",
+      "title": "Clauses"
+     },
+     "amendments": {
+      "items": {
+       "$ref": "#/components/schemas/AmendmentOut"
+      },
+      "type": "array",
+      "title": "Amendments"
+     },
+     "references": {
+      "items": {
+       "$ref": "#/components/schemas/ReferenceOut"
+      },
+      "type": "array",
+      "title": "References"
+     },
+     "referenced_by": {
+      "items": {
+       "$ref": "#/components/schemas/ReferenceOut"
+      },
+      "type": "array",
+      "title": "Referenced By"
+     },
+     "related": {
+      "items": {
+       "$ref": "#/components/schemas/RelatedOut"
+      },
+      "type": "array",
+      "title": "Related"
+     },
+     "terms": {
+      "items": {
+       "additionalProperties": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "integer"
+         }
+        ]
+       },
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Terms"
+     },
+     "counts": {
+      "additionalProperties": {
+       "type": "integer"
+      },
+      "type": "object",
+      "title": "Counts"
+     },
+     "product_mentions": {
+      "items": {
+       "additionalProperties": {
+        "anyOf": [
+         {
+          "type": "string"
+         },
+         {
+          "type": "null"
+         }
+        ]
+       },
+       "type": "object"
+      },
+      "type": "array",
+      "title": "Product Mentions"
+     }
+    },
+    "type": "object",
+    "required": [
+     "summary",
+     "revision_label",
+     "status_verified_on",
+     "committee",
+     "ics",
+     "industries",
+     "products",
+     "provenance",
+     "compulsory",
+     "scope_text",
+     "scope_clause",
+     "clauses",
+     "amendments",
+     "references",
+     "referenced_by",
+     "related",
+     "terms",
+     "counts",
+     "product_mentions"
+    ],
+    "title": "StandardDetail"
+   },
+   "StandardListOut": {
+    "properties": {
+     "items": {
+      "items": {
+       "$ref": "#/components/schemas/StandardSummary"
+      },
+      "type": "array",
+      "title": "Items"
+     },
+     "total": {
+      "type": "integer",
+      "title": "Total"
+     },
+     "page": {
+      "type": "integer",
+      "title": "Page"
+     },
+     "page_size": {
+      "type": "integer",
+      "title": "Page Size"
+     },
+     "facets": {
+      "additionalProperties": {
+       "items": {
+        "$ref": "#/components/schemas/CategoryCount"
+       },
+       "type": "array"
+      },
+      "type": "object",
+      "title": "Facets"
+     }
+    },
+    "type": "object",
+    "required": [
+     "items",
+     "total",
+     "page",
+     "page_size",
+     "facets"
+    ],
+    "title": "StandardListOut"
+   },
+   "StandardRef": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "guidance",
+       "order",
+       "catalogue"
+      ],
+      "title": "Kind"
+     },
+     "why": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Why"
+     },
+     "citations": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Citations"
+     },
+     "compulsory": {
+      "type": "string",
+      "title": "Compulsory",
+      "default": "unknown"
+     },
+     "compulsory_source": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Compulsory Source"
+     },
+     "catalogue_only": {
+      "type": "boolean",
+      "title": "Catalogue Only",
+      "default": false
+     },
+     "synthetic": {
+      "type": "boolean",
+      "title": "Synthetic",
+      "default": false
+     },
+     "via": {
+      "type": "string",
+      "title": "Via",
+      "default": "full_text"
+     },
+     "matched_row": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Matched Row"
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "number",
+     "title",
+     "kind",
+     "why",
+     "citations",
+     "compulsory",
+     "compulsory_source",
+     "catalogue_only",
+     "synthetic",
+     "via",
+     "matched_row"
+    ],
+    "title": "StandardRef"
+   },
+   "StandardSummary": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "guidance",
+       "order",
+       "catalogue"
+      ],
+      "title": "Kind"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "year": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Year"
+     },
+     "category": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Category"
+     },
+     "status": {
+      "type": "string",
+      "title": "Status"
+     },
+     "compulsory": {
+      "type": "string",
+      "title": "Compulsory"
+     },
+     "catalogue_only": {
+      "type": "boolean",
+      "title": "Catalogue Only"
+     },
+     "synthetic": {
+      "type": "boolean",
+      "title": "Synthetic"
+     },
+     "needs_review": {
+      "type": "boolean",
+      "title": "Needs Review"
+     },
+     "tier": {
+      "type": "string",
+      "title": "Tier"
+     },
+     "clause_count": {
+      "type": "integer",
+      "title": "Clause Count",
+      "default": 0
+     },
+     "requirement_count": {
+      "type": "integer",
+      "title": "Requirement Count",
+      "default": 0
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "kind",
+     "number",
+     "title",
+     "year",
+     "category",
+     "status",
+     "compulsory",
+     "catalogue_only",
+     "synthetic",
+     "needs_review",
+     "tier",
+     "clause_count",
+     "requirement_count"
+    ],
+    "title": "StandardSummary"
+   },
+   "SuggestItem": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "kind": {
+      "type": "string",
+      "enum": [
+       "standard",
+       "guidance",
+       "order",
+       "catalogue"
+      ],
+      "title": "Kind"
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "number",
+     "title",
+     "kind"
+    ],
+    "title": "SuggestItem"
+   },
+   "SummaryOut": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "answer": {
+      "$ref": "#/components/schemas/Answer"
+     },
+     "citations": {
+      "items": {
+       "$ref": "#/components/schemas/Citation"
+      },
+      "type": "array",
+      "title": "Citations"
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "answer",
+     "citations"
+    ],
+    "title": "SummaryOut"
+   },
+   "TTSRequest": {
+    "properties": {
+     "text": {
+      "type": "string",
+      "maxLength": 3000,
+      "minLength": 1,
+      "title": "Text"
+     },
+     "lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Lang",
+      "default": "en"
+     }
+    },
+    "type": "object",
+    "required": [
+     "text"
+    ],
+    "title": "TTSRequest"
+   },
+   "Timings": {
+    "properties": {
+     "stages": {
+      "additionalProperties": {
+       "type": "number"
+      },
+      "type": "object",
+      "title": "Stages"
+     },
+     "total_ms": {
+      "type": "number",
+      "title": "Total Ms"
+     }
+    },
+    "type": "object",
+    "required": [
+     "stages",
+     "total_ms"
+    ],
+    "title": "Timings"
+   },
+   "ValidationError": {
+    "properties": {
+     "loc": {
+      "items": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "integer"
+        }
+       ]
+      },
+      "type": "array",
+      "title": "Location"
+     },
+     "msg": {
+      "type": "string",
+      "title": "Message"
+     },
+     "type": {
+      "type": "string",
+      "title": "Error Type"
+     },
+     "input": {
+      "title": "Input"
+     },
+     "ctx": {
+      "type": "object",
+      "title": "Context"
+     }
+    },
+    "type": "object",
+    "required": [
+     "loc",
+     "msg",
+     "type"
+    ],
+    "title": "ValidationError"
+   },
+   "StageEvent": {
+    "properties": {
+     "stage": {
+      "enum": [
+       "understanding",
+       "searching",
+       "drafting",
+       "verifying",
+       "translating"
+      ],
+      "title": "Stage",
+      "type": "string"
+     },
+     "detail": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "integer"
+        },
+        {
+         "type": "string"
+        }
+       ]
+      },
+      "title": "Detail",
+      "type": "object"
+     }
+    },
+    "required": [
+     "stage",
+     "detail"
+    ],
+    "title": "StageEvent",
+    "type": "object"
+   },
+   "EvidenceEvent": {
+    "properties": {
+     "citations": {
+      "items": {
+       "$ref": "#/components/schemas/Citation"
+      },
+      "title": "Citations",
+      "type": "array"
+     },
+     "standards": {
+      "items": {
+       "$ref": "#/components/schemas/StandardRef"
+      },
+      "title": "Standards",
+      "type": "array"
+     }
+    },
+    "required": [
+     "citations",
+     "standards"
+    ],
+    "title": "EvidenceEvent",
+    "type": "object"
+   },
+   "ErrorEvent": {
+    "properties": {
+     "code": {
+      "title": "Code",
+      "type": "string"
+     },
+     "message_key": {
+      "title": "Message Key",
+      "type": "string"
+     }
+    },
+    "required": [
+     "code",
+     "message_key"
+    ],
+    "title": "ErrorEvent",
+    "type": "object"
+   },
+   "DoneEvent": {
+    "properties": {
+     "request_id": {
+      "title": "Request Id",
+      "type": "string"
+     },
+     "timings": {
+      "$ref": "#/components/schemas/Timings"
+     }
+    },
+    "required": [
+     "request_id",
+     "timings"
+    ],
+    "title": "DoneEvent",
+    "type": "object"
+   }
+  }
+ }
+}

@@ -305,6 +305,19 @@ def standard_detail(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> St
     )
 
 
+@router.get("/standards/{slug}/clauses", response_model=list[ClauseOut])
+def all_clauses(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> list[ClauseOut]:
+    """Every clause of a document, in order, with verbatim text (the explorer's clause viewer)."""
+    s = _get_standard(conn, slug)
+    return [
+        ClauseOut(
+            id=r["id"], number=r["number"], heading=r["heading"], kind=r["kind"], path=r["path"], level=r["level"],
+            page_start=r["page_start"], page_end=r["page_end"], text=r["text"], is_table=r["kind"] in ("table", "list"), children=[],
+        )
+        for r in conn.execute("SELECT * FROM clauses WHERE standard_id = ? ORDER BY ord", (s["id"],))
+    ]
+
+
 @router.get("/standards/{slug}/clauses/{number:path}", response_model=ClauseOut)
 def clause(slug: str, number: str, conn: sqlite3.Connection = Depends(get_db)) -> ClauseOut:
     s = _get_standard(conn, slug)
@@ -361,6 +374,20 @@ def requirements(
     for r in conn.execute("SELECT modality, COUNT(*) n FROM requirements WHERE standard_id = ? GROUP BY modality", (s["id"],)):
         counts[r["modality"]] = r["n"]
     return RequirementsOut(slug=slug, number=s["number_canonical"], title=s["title"], synthetic=bool(s["synthetic"]), items=items, counts=counts)
+
+
+@router.get("/standards/{slug}/requirements/plain")
+def requirements_plain(slug: str, request: Request, lang: str = Query("en", pattern=r"^(en|hi|kn)$"), conn: sqlite3.Connection = Depends(get_db)) -> dict[str, dict[str, str]]:
+    """AI interpretations of requirement statements (labelled as such in the UI)."""
+    from bisense.answer.plain import PlainUnavailable, plain_language
+    from bisense.api.ask import check_rate
+
+    s = _get_standard(conn, slug)
+    check_rate(request)
+    try:
+        return {"items": plain_language(conn, s["id"], slug, lang)}
+    except PlainUnavailable as exc:
+        raise ApiError(503, "llm_unavailable") from exc
 
 
 @router.get("/standards/{slug}/requirements.csv")

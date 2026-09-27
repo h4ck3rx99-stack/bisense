@@ -88,6 +88,20 @@ def voice_tts(req: TTSRequest, request: Request) -> None:
     raise ApiError(501, "voice_provider_not_configured")
 
 
+@router.get("/eval")
+def eval_summary() -> dict:
+    """Latest evaluation results written by `bisense eval` (docs/eval/latest.json). Real numbers only."""
+    import json
+
+    from bisense.config import REPO_ROOT
+
+    path = REPO_ROOT / "docs" / "eval" / "latest.json"
+    if not path.exists():
+        return {"available": False}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    return {"available": True, **{k: data.get(k) for k in ("generated_at", "dataset_mode", "corpus", "metrics", "targets", "counts", "llm")}}
+
+
 @router.get("/debug/trace/{request_id}", response_model=AskTrace)
 def debug_trace(request_id: str) -> AskTrace:
     from bisense.answer.ask import TRACES

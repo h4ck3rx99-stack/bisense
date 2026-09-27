@@ -11,7 +11,14 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel as _PydanticBase
+from pydantic import ConfigDict, Field
+
+
+class BaseModel(_PydanticBase):
+    # Response fields that have defaults are always present in JSON; mark them required in the
+    # serialization schema so the generated TypeScript types are not needlessly optional.
+    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
 
 Lang = Literal["en", "hi", "kn"]
 SLUG_PATTERN = r"^[a-z0-9][a-z0-9-]{0,120}$"

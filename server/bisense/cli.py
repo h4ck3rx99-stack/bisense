@@ -159,6 +159,27 @@ def search(
 
 
 @app.command()
+def openapi(out: str = typer.Option("openapi.json", help="Output path (relative to server/)")) -> None:
+    """Write the OpenAPI schema (used by `npm run gen:types` to generate frontend types)."""
+    from pathlib import Path
+
+    from bisense.main import create_app
+
+    from bisense import models
+
+    schema = create_app().openapi()
+    # SSE event payloads are not route responses; add them so the frontend gets generated types too.
+    comps = schema.setdefault("components", {}).setdefault("schemas", {})
+    for model in (models.StageEvent, models.EvidenceEvent, models.ErrorEvent, models.DoneEvent, models.AskTrace, models.QueryInfo, models.Answer):
+        js = model.model_json_schema(ref_template="#/components/schemas/{model}", mode="serialization")
+        for name, sub in js.pop("$defs", {}).items():
+            comps.setdefault(name, sub)
+        comps.setdefault(model.__name__, js)
+    Path(out).write_text(json.dumps(schema, indent=1, ensure_ascii=False), encoding="utf-8")
+    typer.echo(f"wrote {out} ({len(schema.get('paths', {}))} paths)")
+
+
+@app.command()
 def report() -> None:
     """Print the last ingest report."""
     path = get_settings().index_dir / "ingest_report.json"

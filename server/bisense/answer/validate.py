@@ -254,6 +254,8 @@ class Validator:
             return None
         quote = rp.get("quote")
         quote = " ".join(str(quote).split()) if quote else None
+        if quote and len(norm_text(quote)) < 12:
+            quote = None  # a one-word "quote" adds nothing; the point's own citation still stands
         if quote and not self.quote_ok(quote, cites):
             self.drop("quote", quote, "quote not found verbatim in the cited source")
             # the point depended on the quote if the quote text is repeated inside the point

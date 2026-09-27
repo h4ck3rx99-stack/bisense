@@ -1,0 +1,137 @@
+@import "tailwindcss";
+
+/*
+ * BISense design tokens. Every colour, font and radius in the app comes from here.
+ * Semantic colours:
+ *   fact    -> what a source says (neutral surface, indigo rule)
+ *   interp  -> AI interpretation (warm amber tint + its own icon and label)
+ *   synth   -> synthetic demo data (violet, dashed)
+ *   calm    -> insufficient evidence (slate, deliberately not error-red)
+ * Contrast: text tokens are >= 4.5:1 on their surfaces (WCAG AA).
+ */
+@theme {
+  --font-sans: "Inter", "Noto Sans Devanagari", "Noto Sans Kannada", ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --font-indic-deva: "Noto Sans Devanagari", "Inter", sans-serif;
+  --font-indic-knda: "Noto Sans Kannada", "Inter", sans-serif;
+
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-base: 15px;
+  --text-md: 16px;
+  --text-lg: 18px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-3xl: 30px;
+
+  --color-page: #f6f6f4;
+  --color-surface: #ffffff;
+  --color-surface-2: #f3f3f1;
+  --color-surface-3: #eaeae6;
+  --color-line: #e2e2dd;
+  --color-line-strong: #cfcfc8;
+  --color-ink: #1b1b1f;
+  --color-ink-2: #3a3a42;
+  --color-ink-3: #55555e;
+
+  --color-accent: #3b3496;
+  --color-accent-strong: #2e2878;
+  --color-accent-soft: #eeedfa;
+  --color-accent-ring: #6c63d9;
+
+  --color-fact-rule: #3b3496;
+  --color-interp-bg: #fdf7e7;
+  --color-interp-line: #ecd58e;
+  --color-interp-ink: #6b4508;
+  --color-interp-icon: #a2650a;
+
+  --color-synth-bg: #f6f1fd;
+  --color-synth-line: #b89be3;
+  --color-synth-ink: #5b2a95;
+
+  --color-calm-bg: #eff2f6;
+  --color-calm-line: #c9d2de;
+  --color-calm-ink: #2f3c4f;
+
+  --color-ok-bg: #edf7f0;
+  --color-ok-ink: #1d6337;
+  --color-warn-bg: #fdf4e3;
+  --color-warn-ink: #7c4a03;
+  --color-err-bg: #fcefee;
+  --color-err-ink: #9b1c1c;
+
+  --color-hl: #fff1a8;
+
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --shadow-pop: 0 8px 24px -6px rgb(20 20 30 / 0.18), 0 2px 6px -2px rgb(20 20 30 / 0.12);
+
+  --ease-out: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@layer base {
+  html {
+    background: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+  html:lang(hi) body { font-family: var(--font-indic-deva); line-height: 1.65; }
+  html:lang(kn) body { font-family: var(--font-indic-knda); line-height: 1.65; }
+  :lang(hi) { line-height: 1.65; }
+  :lang(kn) { line-height: 1.65; }
+  body { min-height: 100dvh; overflow-x: hidden; }
+  a { color: var(--color-accent); text-underline-offset: 2px; }
+  a:hover { color: var(--color-accent-strong); }
+  :focus-visible { outline: 2px solid var(--color-accent-ring); outline-offset: 2px; border-radius: 3px; }
+  ::selection { background: var(--color-accent-soft); }
+  h1, h2, h3 { letter-spacing: -0.01em; }
+  button { cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+  input::placeholder, textarea::placeholder { color: var(--color-ink-3); opacity: 1; }
+}
+
+@layer components {
+  .mono { font-family: var(--font-mono); font-feature-settings: "zero" 0; letter-spacing: -0.01em; }
+  .tabular { font-variant-numeric: tabular-nums; }
+  .card { background: var(--color-surface); border: 1px solid var(--color-line); border-radius: var(--radius-lg); }
+  .skip-link {
+    position: absolute; left: 8px; top: -48px; z-index: 100; padding: 8px 12px; background: var(--color-ink); color: #fff;
+    border-radius: var(--radius-md); transition: top 150ms var(--ease-out);
+  }
+  .skip-link:focus { top: 8px; color: #fff; }
+  .hl { background: var(--color-hl); border-radius: 2px; box-shadow: 0 0 0 1px #f1dc6b; }
+  .flash { animation: flash 1.6s var(--ease-out); }
+  .skeleton { background: linear-gradient(90deg, var(--color-surface-2), var(--color-surface-3), var(--color-surface-2)); background-size: 200% 100%; animation: shimmer 1.4s linear infinite; border-radius: var(--radius-sm); }
+  .synthetic-stripes { background-image: repeating-linear-gradient(135deg, transparent 0 6px, rgb(91 42 149 / 0.06) 6px 12px); }
+
+  /* Markdown tables inside evidence and clauses */
+  .md { overflow-wrap: anywhere; }
+  .md p { margin: 0 0 0.6em; }
+  .md p:last-child { margin-bottom: 0; }
+  .md ul { list-style: disc; padding-left: 1.25em; margin: 0.25em 0 0.6em; }
+  .md .table-wrap { overflow-x: auto; margin: 0.4em 0 0.6em; border: 1px solid var(--color-line); border-radius: var(--radius-md); }
+  .md table { border-collapse: collapse; font-size: 13px; width: 100%; }
+  .md th, .md td { border-bottom: 1px solid var(--color-line); padding: 5px 8px; text-align: left; vertical-align: top; }
+  .md th { background: var(--color-surface-2); font-weight: 600; white-space: nowrap; }
+  .md tr:last-child td { border-bottom: none; }
+  .md td { font-variant-numeric: tabular-nums; }
+
+  @media print {
+    .no-print { display: none !important; }
+    html, body { background: #fff; }
+    .card { border-color: #bbb; }
+  }
+}
+
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+@keyframes flash { 0% { background: var(--color-hl); } 100% { background: transparent; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+}
