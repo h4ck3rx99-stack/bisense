@@ -124,7 +124,12 @@ def test_compare_rejects_cells_citing_another_aspect(built_index):
     def misplace(messages):
         user = messages[-1]["content"]
         ids = re.findall(r'<source id="(C\d+)" side="A"[^>]*clause="3\.1', user)
-        return json.dumps({"rows": [{"aspect": "Requirements", "a": {"text": "Packaged drinking water is treated water.", "citations": ids[:1]}, "b": None}], "key_differences": []})
+        return json.dumps(
+            {
+                "rows": [{"aspect": "Requirements", "a": {"text": "Packaged drinking water is treated water.", "citations": ids[:1]}, "b": None}],
+                "key_differences": [],
+            }
+        )
 
     set_llm(FakeLLM(responder=misplace))
     conn = db_conn()

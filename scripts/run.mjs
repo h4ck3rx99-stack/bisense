@@ -22,8 +22,16 @@ function py(argv) {
   return [venvPy, ["-m", mod, ...argv.slice(1)]];
 }
 
+// On Windows, npm/uv are .cmd/.exe shims that need a shell; pass one quoted command string then.
+const quote = (a) => (/[\s"&|<>^]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a);
+function spawnArgs(cmd, cmdArgs) {
+  const useShell = isWin && !cmd.endsWith(".exe");
+  return useShell ? [[cmd, ...cmdArgs].map(quote).join(" "), [], true] : [cmd, cmdArgs, false];
+}
+
 function run(cmd, cmdArgs, opts = {}) {
-  const r = spawnSync(cmd, cmdArgs, { stdio: "inherit", shell: isWin && !cmd.endsWith(".exe"), ...opts, env: { ...process.env, PYTHONIOENCODING: "utf-8", ...(opts.env ?? {}) } });
+  const [c, a, shell] = spawnArgs(cmd, cmdArgs);
+  const r = spawnSync(c, a, { stdio: "inherit", shell, ...opts, env: { ...process.env, PYTHONIOENCODING: "utf-8", ...(opts.env ?? {}) } });
   if (r.status !== 0) {
     console.error(`\n✗ ${[cmd, ...cmdArgs].join(" ")} failed (exit ${r.status ?? r.signal})`);
     process.exit(r.status ?? 1);
@@ -38,7 +46,8 @@ const npmWeb = (script, extra = []) => run("npm", ["run", script, ...(extra.leng
 
 function startServer(extraEnv = {}, reload = false) {
   const [c, a] = py(["uvicorn", "bisense.main:app", "--host", process.env.HOST ?? "127.0.0.1", "--port", process.env.PORT ?? "8000", ...(reload ? ["--reload", "--reload-dir", "bisense"] : [])]);
-  return spawn(c, a, { cwd: SERVER, stdio: "inherit", shell: isWin && !c.endsWith(".exe"), env: { ...process.env, PYTHONIOENCODING: "utf-8", ...extraEnv } });
+  const [c2, a2, shell] = spawnArgs(c, a);
+  return spawn(c2, a2, { cwd: SERVER, stdio: "inherit", shell, env: { ...process.env, PYTHONIOENCODING: "utf-8", ...extraEnv } });
 }
 
 const tasks = {
@@ -59,7 +68,8 @@ const tasks = {
   },
   dev() {
     const api = startServer({ APP_ENV: "development" }, true);
-    const web = spawn("npm", ["run", "dev"], { cwd: WEB, stdio: "inherit", shell: isWin });
+    const [wc, wa, wshell] = spawnArgs("npm", ["run", "dev"]);
+    const web = spawn(wc, wa, { cwd: WEB, stdio: "inherit", shell: wshell });
     const stop = () => {
       api.kill();
       web.kill();

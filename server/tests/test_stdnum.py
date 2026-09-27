@@ -67,3 +67,12 @@ def test_same_standard_year_insensitive():
 def test_slug():
     assert slugify_number("IS 302 (Part 1):2008") == "is-302-part-1-2008"
     assert slugify_number("IS/IEC 60335-1:2012") == "is-iec-60335-1-2012"
+
+
+def test_relative_data_dir_resolves_from_repo_root(monkeypatch):
+    """Regression: DATA_DIR=./data in .env must not resolve relative to server/ (fresh-clone bug)."""
+    from bisense.config import REPO_ROOT, Settings
+
+    monkeypatch.setenv("DATA_DIR", "./data")
+    s = Settings()
+    assert s.data_dir == (REPO_ROOT / "data").resolve()

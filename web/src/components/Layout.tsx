@@ -108,7 +108,7 @@ export function TopBar() {
     <header className="sticky top-0 z-30 border-b border-line bg-[rgb(246_246_244/0.92)] backdrop-blur-sm no-print">
       <div className="mx-auto flex h-14 max-w-[1400px] items-center gap-3 px-4 sm:px-6">
         <Link to="/" className="flex items-baseline gap-2 text-ink no-underline" aria-label={t("brand.home")}>
-          <span className="text-[19px] font-bold tracking-[-0.03em]">
+          <span className="text-[19px] font-bold tracking-[-0.03em] [font-family:Inter,ui-sans-serif,sans-serif]" lang="en">
             BI<span className="text-accent">Sense</span>
           </span>
         </Link>

@@ -40,6 +40,6 @@ and real standards drop in through the same ingestion."
 - **"How is legal applicability decided?"** Only from indexed official lists/orders (e.g. Helmet QCO 2020 → IS 4151). "SHALL" in a standard is shown separately and never implies legal obligation.
 - **"Why not fine-tune a model?"** Retrieval keeps answers traceable and updatable by re-indexing; no training data or GPU needed.
 - **"How does Hindi/Kannada work?"** Query rewritten to English (identifiers protected), retrieval and validation in English, validated answer translated back; placeholders ⟦0⟧ guarantee numbers and standard numbers survive. Without an LLM, a glossary keyword map still searches.
-- **"How accurate is it?"** Point to docs/EVAL.md: 62 questions, recall@5 0.98, refusal accuracy 1.0, false refusals 0.02 with Groq on 2026-09-27 — and that the demo corpus is small and partly synthetic.
+- **"How accurate is it?"** Point to docs/EVAL.md: 62 questions, recall@5 1.0, refusal accuracy 1.0, false refusals 0.06 with Groq on 2026-09-28 — and that the demo corpus is small and partly synthetic.
 - **"Cost?"** Zero: open-source components, local embeddings, free-tier or local LLM, one laptop.
 - **"How would BIS deploy it?"** Point ingestion at the licensed standards collection, run the same container, keep it internal; add languages with one registry entry and one strings file.

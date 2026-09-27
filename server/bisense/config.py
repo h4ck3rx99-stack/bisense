@@ -77,6 +77,14 @@ class Settings(BaseSettings):
     allow_uploads: bool = False
     cors_origins: str = "http://localhost:5173"
 
+    def model_post_init(self, __context: object) -> None:
+        # Relative paths in .env ("./data") mean "relative to the repository root", wherever the
+        # command is run from (the CLI and server run inside server/).
+        if not self.data_dir.is_absolute():
+            self.data_dir = (REPO_ROOT / self.data_dir).resolve()
+        if not self.model_cache_dir.is_absolute():
+            self.model_cache_dir = (REPO_ROOT / self.model_cache_dir).resolve()
+
     # ---- derived paths -------------------------------------------------
     @property
     def index_dir(self) -> Path:
