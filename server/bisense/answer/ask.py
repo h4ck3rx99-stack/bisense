@@ -24,7 +24,7 @@ from bisense.answer import cache
 from bisense.answer.confidence import evidence_strength
 from bisense.answer.extractive import extractive_points
 from bisense.answer.generate import build_messages, correction_message, generate, rewrite_query
-from bisense.answer.llm_client import LLMUnavailable, get_llm
+from bisense.answer.llm_client import LLMUnavailable, get_llm, get_translation_llm
 from bisense.answer.present import (
     query_info,
     searched_summary,
@@ -306,7 +306,7 @@ def _decide(
         if plan.lang != "en" and live.answer_type not in ("insufficient_evidence",):
             yield ("stage", StageEvent(stage="translating"))
             t0 = time.perf_counter()
-            live = _translate(llm, live, plan.lang)
+            live = _translate(get_translation_llm(), live, plan.lang)
             stages["translate"] = round((time.perf_counter() - t0) * 1000, 1)
         live.lang = plan.lang  # type: ignore[assignment]
         live.generated_at = _now()

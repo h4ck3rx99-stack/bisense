@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-27T18:12:03+00:00",
+ "generated_at": "2026-09-27T18:34:38+00:00",
  "dataset_mode": "demo",
  "tiers": "B+C",
  "corpus": {
@@ -19,8 +19,8 @@
   "recall_at_5": 1.0,
   "mrr_at_10": 0.928,
   "exact_number_hit_at_1": 1.0,
-  "retrieval_p50_ms": 712.9,
-  "retrieval_p95_ms": 1164.3,
+  "retrieval_p50_ms": 506.8,
+  "retrieval_p95_ms": 715.0,
   "refusal_accuracy": 0.833,
   "false_refusal_rate": 0.02
  },

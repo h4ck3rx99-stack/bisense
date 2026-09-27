@@ -255,6 +255,12 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
                 cands[cid].boosts["clause_lookup"] = 1.0
             ordered = [cands[cid] for cid in direct] + [c for c in ordered if c.chunk_id not in set(direct)]
 
+    # Official list sections hold many unrelated products; keep only the header and the matching rows so
+    # neither the LLM nor the reader can mistake a neighbouring row for an answer.
+    for c in ordered[:30]:
+        if c.clause_kind == "list":
+            c.text = trim_list_rows(c.text, plan)
+
     t = time.perf_counter()
     context = _diversify(ordered, plan.intent, top_k, get_settings().context_token_budget)
     for i, c in enumerate(context, start=1):
@@ -311,13 +317,13 @@ def product_terms(plan: QueryPlan) -> tuple[set[str], set[str]]:
 
 
 def product_match(product_text: str, orig: set[str], exp: set[str]) -> float:
-    """How well a product name matches the query (0 = no match). Coverage of the user's words must be >= 60%,
+    """How well a product name matches the query (0 = no match). Coverage of the user's words must be >= 70%,
     or at least two glossary-expansion words must match (e.g. "TMT bars" -> "deformed steel bars")."""
     words = _stems(product_text)
     if not words:
         return 0.0
     o = len(orig & words)
-    if orig and o / len(orig) >= 0.6:
+    if orig and o / len(orig) >= 0.7:
         return o / len(orig) + 0.5 * o / len(words)
     e = len(exp & words)
     if e >= 3:
@@ -348,6 +354,31 @@ def product_probe(conn: sqlite3.Connection, plan: QueryPlan, limit: int = 3) -> 
         if len(out) >= limit:
             break
     return out
+
+
+def trim_list_rows(text: str, plan: QueryPlan) -> str:
+    """Keep the caption, the table header and the rows matching the query's product words or named
+    standard numbers. Rows are copied verbatim; if nothing matches, the text is returned unchanged."""
+    lines = text.splitlines()
+    table = [i for i, ln in enumerate(lines) if ln.startswith("|")]
+    if len(table) < 3:
+        return text
+    header_end = table[1] + 1  # header row + separator row
+    orig, exp = product_terms(plan)
+    bases = {s.base for s in map(stdnum.parse, plan.explicit_numbers) if s}
+    keep: list[str] = []
+    for ln in lines[header_end:]:
+        if not ln.startswith("|"):
+            continue
+        cells = [x.strip() for x in ln.strip().strip("|").split("|")]
+        nums = stdnum.find_all(ln)
+        if bases and any(n.base in bases for n in nums):
+            keep.append(ln)
+        elif not bases and product_match(" ".join(cells[2:-1]) if len(cells) > 3 else " ".join(cells[2:]), orig, exp) > 0:
+            keep.append(ln)
+    if not keep:
+        return text
+    return "\n".join(lines[:header_end] + keep)
 
 
 def clause_lookup(conn: sqlite3.Connection, standard_ids: list[int], refs: list[str]) -> list[int]:

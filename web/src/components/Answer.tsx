@@ -84,11 +84,17 @@ export function ScopeChip({ query, onClear }: { query: QueryInfo; onClear?: () =
   );
 }
 
+/** Model text sometimes copies Markdown table cells ("Max | 275 g"); show them as readable separators. */
+const tidy = (text: string) => text.replace(/\s\|\s/g, " · ");
+
+/** Citation ids not already shown inline as [Cn] markers (avoids duplicate chips). */
+const extraCitations = (text: string, ids: string[]) => ids.filter((id) => !text.includes(`[${id}]`));
+
 function PointText({ p, citations }: { p: Point; citations: Map<string, Citation> }) {
   return (
     <>
-      <WithCitations text={p.text} citations={citations} />
-      {p.citations.map((id) => (
+      <WithCitations text={tidy(p.text)} citations={citations} />
+      {extraCitations(p.text, p.citations).map((id) => (
         <CitationChip key={id} id={id} citations={citations} />
       ))}
     </>
@@ -179,8 +185,8 @@ export function RelevantStandards({ standards, citations }: { standards: Standar
             {s.number && <div className="text-[13px] text-ink-2">{shortTitle(s.title, 110)}</div>}
             {s.why && (
               <p className="mt-1 text-[14px]">
-                <WithCitations text={s.why} citations={citations} />
-                {s.citations.map((id) => (
+                <WithCitations text={tidy(s.why)} citations={citations} />
+                {extraCitations(s.why, s.citations).map((id) => (
                   <CitationChip key={id} id={id} citations={citations} />
                 ))}
               </p>

@@ -11,7 +11,7 @@ import json
 import sqlite3
 
 from bisense.answer import cache
-from bisense.answer.llm_client import LLMUnavailable, extract_json, get_llm
+from bisense.answer.llm_client import LLMUnavailable, extract_json, get_llm, get_translation_llm
 from bisense.answer.validate import SourceView, Validator
 from bisense.i18n.translate import translate_strings
 from bisense.retrieval.index import get_index
@@ -56,7 +56,7 @@ def plain_language(conn: sqlite3.Connection, standard_id: int, slug: str, lang: 
         if r.points:
             out[rid] = r.points[0].text
     if lang != "en" and out:
-        tr = translate_strings(llm, out, lang)
+        tr = translate_strings(get_translation_llm(), out, lang)
         if tr:
             out = tr
     cache.put_cached(key, {"items": out}, lang, index.version)

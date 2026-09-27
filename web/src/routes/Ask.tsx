@@ -112,7 +112,13 @@ export default function Ask() {
     const cited = new Set<string>();
     if (l?.answer) {
       const byId = new Map((l.evidence?.citations ?? []).map((c) => [c.id, c]));
-      l.answer.points.forEach((p) => p.citations.forEach((id) => byId.get(id) && cited.add(byId.get(id)!.slug)));
+      // Official list sections are not documents one follows up on; never carry them as scope.
+      l.answer.points.forEach((p) =>
+        p.citations.forEach((id) => {
+          const c = byId.get(id);
+          if (c && c.clause_kind !== "list") cited.add(c.slug);
+        }),
+      );
       l.answer.standards.forEach((s) => s.kind !== "catalogue" && cited.add(s.slug));
     }
     l?.info?.resolved_scope.forEach((s) => cited.add(s.slug));

@@ -227,6 +227,26 @@ def get_llm() -> LLMClient | FakeLLM | None:
     return _client
 
 
+_translator: LLMClient | None = None
+
+
+def get_translation_llm() -> LLMClient | FakeLLM | None:
+    """LLM used to translate validated answers. TRANSLATION_MODEL (same provider and key as the primary)
+    can differ from the answering model: measured on 2026-09-27, openai/gpt-oss-20b kept every placeholder
+    in Hindi and Kannada while gpt-oss-120b produced broken Hindi (see docs/DECISIONS.md)."""
+    global _translator
+    s = get_settings()
+    base = get_llm()
+    if base is None or isinstance(base, FakeLLM) or _overridden or not s.translation_model:
+        return base
+    if _translator is None:
+        _translator = LLMClient(s)
+        _translator.providers = [Provider("translation", s.llm_base_url.rstrip("/"), s.llm_api_key, s.translation_model)] + [
+            p for p in _translator.providers if p.name == "fallback"
+        ]
+    return _translator
+
+
 def set_llm(client: LLMClient | FakeLLM | None, override: bool = True) -> None:
     """Tests use this to inject a FakeLLM, or `set_llm(None)` to force extractive-only mode.
     `set_llm(None, override=False)` returns to the configured provider."""

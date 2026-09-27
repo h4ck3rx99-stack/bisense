@@ -67,6 +67,8 @@ class Settings(BaseSettings):
 
     languages: str = "en,hi,kn"
     translation_provider: str = "llm"
+    # Optional separate model (same provider/key) for translating answers; empty = the answering model.
+    translation_model: str = ""
     stt_provider: str = "browser"
     tts_provider: str = "browser"
     sarvam_api_key: str = ""
