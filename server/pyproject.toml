@@ -31,3 +31,45 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["bisense"]
+
+[tool.ruff]
+line-length = 160
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S"]
+ignore = [
+  "E501",   # long lines: SQL strings and UI-facing messages read better unwrapped
+  "S101",   # assert is fine in tests and invariants
+  "S608",   # SQL built only from code constants / placeholders (see comments at each site)
+  "B008",   # FastAPI's Depends()/Query() in defaults is the framework idiom
+  "S311",   # no cryptographic randomness used
+  "S603", "S607",  # subprocess calls with fixed arguments in `bisense doctor`
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["S", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+files = [
+  "bisense/stdnum.py",
+  "bisense/config.py",
+  "bisense/models.py",
+  "bisense/answer/validate.py",
+  "bisense/answer/confidence.py",
+  "bisense/i18n/protect.py",
+  "bisense/retrieval/fuse.py",
+  "bisense/retrieval/lexical.py",
+  "bisense/retrieval/query.py",
+  "bisense/ingest/clean.py",
+  "bisense/ingest/chunk.py",
+  "bisense/ingest/requirements.py",
+]
+ignore_missing_imports = true
+warn_unused_ignores = false
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["live: needs a real LLM key (skipped otherwise)"]

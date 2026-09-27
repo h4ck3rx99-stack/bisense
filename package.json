@@ -1,0 +1,28 @@
+{
+  "name": "bisense",
+  "private": true,
+  "version": "0.1.0",
+  "description": "BISense: evidence-first assistant for Indian Standards and BIS services (SIH 2026, SIH26107)",
+  "scripts": {
+    "setup": "node scripts/run.mjs setup",
+    "dev": "node scripts/run.mjs dev",
+    "ingest": "node scripts/run.mjs ingest",
+    "fetch-public": "node scripts/run.mjs fetch-public",
+    "inspect": "node scripts/run.mjs inspect",
+    "search:explain": "node scripts/run.mjs search:explain",
+    "eval": "node scripts/run.mjs eval",
+    "warm": "node scripts/run.mjs warm",
+    "demo": "node scripts/run.mjs demo",
+    "build": "node scripts/run.mjs build",
+    "start": "node scripts/run.mjs start",
+    "test": "node scripts/run.mjs test",
+    "lint": "node scripts/run.mjs lint",
+    "format": "node scripts/run.mjs format",
+    "typecheck": "node scripts/run.mjs typecheck",
+    "e2e": "node scripts/run.mjs e2e",
+    "check": "node scripts/run.mjs check",
+    "doctor": "node scripts/run.mjs doctor",
+    "gen:types": "node scripts/run.mjs gen:types"
+  },
+  "engines": { "node": ">=20" }
+}

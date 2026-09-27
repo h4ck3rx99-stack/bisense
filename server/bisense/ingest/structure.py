@@ -82,8 +82,16 @@ def build_clauses(pages: list[list[RawLine]]) -> list[ClauseDraft]:
         return len(clauses) - 1
 
     # Merge "1." alone on a line with the following line (common in Gazette orders).
+    # But a lone number right after an unfinished sentence ("... as prescribed in clause" / "8.") is the end
+    # of that sentence, not a new clause.
     merged: list[RawLine] = []
     for ln in all_lines:
+        if merged and re.fullmatch(r"\d{1,2}(\.\d{1,3})*\.?", ln.text) and len(merged) >= 1 and not merged[-1].is_table:
+            prev_text = merged[-1].text
+            if not re.search(r"[.:;)\]]$", prev_text) and re.search(r"\b(clause|clauses|table|annex|see|in|of|and|to|sub-clause)$", prev_text, re.I):
+                p = merged.pop()
+                merged.append(RawLine(f"{p.text} {ln.text}", p.page, p.size, p.bold, p.x0, p.y0))
+                continue
         if merged and re.fullmatch(r"\d{1,2}\.?", merged[-1].text) and not ln.is_table and ln.page == merged[-1].page:
             prev = merged.pop()
             merged.append(RawLine(prev.text.rstrip(".") + ". " + ln.text, ln.page, max(prev.size, ln.size), prev.bold or ln.bold, prev.x0, prev.y0))
@@ -258,7 +266,8 @@ def _accept_number(m: re.Match[str], ln: RawLine, last_top: int, open_numbers: d
             return False
         sequential = last_top < n <= last_top + 3
         strong = ln.bold or (rest and _is_upperish(rest)) or ln.size > body + 0.5
-        return bool(sequential and (strong or m.group("dot") or rest)) or bool(strong and n > last_top)
+        # A bold/upper-case heading may skip a few numbers, but never jump far ahead (that is a wrapped line).
+        return bool(sequential and (strong or m.group("dot") or rest)) or bool(strong and last_top < n <= last_top + 5)
     parent = ".".join(parts[:-1])
     if parent not in open_numbers and parts[0] != str(last_top):
         return False

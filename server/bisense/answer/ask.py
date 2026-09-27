@@ -93,20 +93,9 @@ def run_ask(req: AskRequest) -> Iterator[Event]:
             focus_slugs=list(ctx.focus_slugs) if ctx else [],
             open_slug=ctx.open_slug if ctx else None,
         )
-        plan = understand(conn, req.query, ui_lang=req.lang, context=client_ctx)
         llm = get_llm()
+        plan = prepare_plan(conn, req.query, req.lang, client_ctx, llm)
         tokens = {"prompt": 0, "completion": 0}
-
-        # Non-English queries: one LLM call rewrites to an English search query (identifiers protected).
-        if plan.lang != "en" and llm is not None and plan.intent != "out_of_scope":
-            try:
-                masked, originals = protect(plan.raw)
-                rw = rewrite_query(llm, masked, client_ctx.recent_questions)
-                english = restore(str(rw.get("english_query") or ""), originals) if "⟦" in str(rw.get("english_query") or "") else str(rw.get("english_query") or "")
-                kws = [str(k) for k in (rw.get("keywords") or []) if isinstance(k, str | int)][:8]
-                apply_rewrite(plan, english, kws, rw.get("intent") if isinstance(rw.get("intent"), str) else None)
-            except (LLMUnavailable, ValueError):
-                plan.notes.append("rewrite unavailable; used offline keyword translation")
         lap("understand", t0)
         yield "query", query_info(plan)
 
@@ -115,10 +104,7 @@ def run_ask(req: AskRequest) -> Iterator[Event]:
         # ---------------------------------------------------------------------------------------
         yield "stage", StageEvent(stage="searching", detail={"sources": sum(index.counts.get(k, 0) for k in ("standards_full_text", "guidance", "catalogue"))})
         t0 = time.perf_counter()
-        if plan.intent == "summarize" and len(plan.scope) == 1 and plan.scope[0].kind != "catalogue":
-            res = _summary_search(conn, plan)
-        else:
-            res = search(conn, plan)
+        res = retrieve(conn, plan)
         lap("retrieve", t0)
         stages.update({f"retrieve.{k}": v for k, v in res.timings.items()})
         citations = [to_citation(c, i) for i, c in enumerate(res.context, start=1)]
@@ -156,6 +142,40 @@ def run_ask(req: AskRequest) -> Iterator[Event]:
         conn.close()
 
 
+def prepare_plan(conn, query: str, ui_lang: str, client_ctx: ClientContext, llm) -> QueryPlan:
+    """Understand the query; for Hindi/Kannada, one LLM call rewrites it to English (identifiers protected).
+    Without an LLM the offline glossary keyword translation from `understand` is used."""
+    plan = understand(conn, query, ui_lang=ui_lang, context=client_ctx)
+    if plan.lang != "en" and llm is not None and plan.intent != "out_of_scope":
+        try:
+            masked, originals = protect(plan.raw)
+            rw = rewrite_query(llm, masked, client_ctx.recent_questions)
+            english = str(rw.get("english_query") or "")
+            if "⟦" in english:
+                english = restore(english, originals)
+            kws = [str(k) for k in (rw.get("keywords") or []) if isinstance(k, str | int)][:8]
+            apply_rewrite(plan, english, kws, rw.get("intent") if isinstance(rw.get("intent"), str) else None)
+        except (LLMUnavailable, ValueError):
+            plan.notes.append("rewrite unavailable; used offline keyword translation")
+    return plan
+
+
+def retrieve(conn, plan: QueryPlan) -> SearchResult:
+    """Retrieval used by /api/ask (and the evaluation, so it measures exactly this path)."""
+    if plan.intent == "summarize" and len(plan.scope) == 1 and plan.scope[0].kind != "catalogue":
+        return _summary_search(conn, plan)
+    if plan.scope_source == "context" and plan.scope:
+        # Rerank follow-ups with the scoped standard's title so pronouns have something to refer to.
+        titles = "; ".join(sc.title for sc in plan.scope)
+        original = plan.english_query
+        plan.english_query = f"{original} ({titles})"
+        try:
+            return search(conn, plan)
+        finally:
+            plan.english_query = original
+    return search(conn, plan)
+
+
 class _Decision:
     def __init__(self) -> None:
         self.events: list[Event] = []
@@ -178,7 +198,9 @@ def _gate_fails(res: SearchResult, plan: QueryPlan) -> bool:
     s = get_settings()
     if not res.context:
         return True
-    if plan.scope_source == "explicit" or plan.intent == "summarize":
+    # A named standard, or a follow-up about the standard in context: answer from that scope
+    # (the reranker scores pronoun questions like "what must be marked on it?" poorly).
+    if plan.scope_source in ("explicit", "context") or plan.intent == "summarize":
         return False
     if res.reranked and res.top_rerank is not None and res.top_rerank < s.gate_rerank_min:
         return True
@@ -231,6 +253,17 @@ def _decide(conn, req: AskRequest, plan: QueryPlan, res: SearchResult, citations
         t0 = time.perf_counter()
         live = _live_answer(llm, plan, res, citations, std_refs, tokens, d, conn)
         stages["llm_and_validate"] = round((time.perf_counter() - t0) * 1000, 1)
+        # Small models sometimes decline even when the best passage is a near-verbatim answer. With
+        # evidence this strong, show the passages verbatim instead of a refusal (labelled as such).
+        if (
+            live is not None
+            and live.answer_type == "insufficient_evidence"
+            and res.top_rerank is not None
+            and res.top_rerank >= settings.llm_refusal_override_min
+        ):
+            d.answer = _extractive(plan, res, std_refs, llm_configured=True)
+            d.answer.notice = "notice.extractive_llm_declined"
+            return d
 
     if live is not None:
         if plan.lang != "en" and live.answer_type not in ("insufficient_evidence",):

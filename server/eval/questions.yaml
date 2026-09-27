@@ -1,0 +1,411 @@
+# BISense evaluation set.
+#
+# Every answerable question was drafted by reading an ingested clause (origin: auto_drafted) and
+# records where the answer lives. The team should spot-check these (docs/TEAM_GUIDE.md).
+#
+# Fields
+#   id         unique id
+#   q          the question as a user would ask it (typos included on purpose in some)
+#   lang       en | hi | kn
+#   type       answerable | unanswerable | exact | compare | followup
+#   expect     list of acceptable evidence locations: {slug, clause?}; a hit = any retrieved chunk from that
+#              document (and clause, when given; clause prefixes like "4.3" also match "4.3.1")
+#   fact       a short verbatim fragment the correct answer should contain (checked in live mode)
+#   context    for follow-ups: the client context sent with the question
+#   origin     auto_drafted | team_verified
+
+questions:
+  # ------------------------------------------------------------------ demo pack (Tier C) ----------
+  - id: a01
+    q: What are the microbiological requirements for packaged drinking water?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-101-2026, clause: "4.3"}]
+    fact: "250 ml"
+    origin: auto_drafted
+  - id: a02
+    q: What is the maximum total dissolved solids allowed in packaged drinking water?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-101-2026, clause: "Table 1"}]
+    fact: "500"
+    origin: auto_drafted
+  - id: a03
+    q: how much can a container of drinking water be filled
+    lang: en
+    type: answerable
+    expect: [{slug: demo-101-2026, clause: "5.2"}, {slug: demo-102-2026, clause: "5.2"}]
+    fact: "97 percent"
+    origin: auto_drafted
+  - id: a04
+    q: What information must be marked on each container of packaged drinking water?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-101-2026, clause: "6.1"}]
+    fact: "Batch number"
+    origin: auto_drafted
+  - id: a05
+    q: Can minerals be added to natural mineral water?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-102-2026, clause: "4.1.3"}]
+    fact: "Minerals shall not be added"
+    origin: auto_drafted
+  - id: a06
+    q: What is the maximum mass of a two-wheeler helmet?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-201-2026, clause: "4.2"}]
+    fact: "1.2 kg"
+    origin: auto_drafted
+  - id: a07
+    q: How is the penetration test done on helmets?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-201-2026, clause: "8.3"}]
+    fact: "3 kg"
+    origin: auto_drafted
+  - id: a08
+    q: What peripheral vision must a riding helmet give?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-201-2026, clause: "4.3"}]
+    fact: "105 degrees"
+    origin: auto_drafted
+  - id: a09
+    q: What is the minimum elongation for DFe 500 TMT bars?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-301-2026, clause: "Table 2"}, {slug: demo-301-2026, clause: "4.2"}]
+    fact: "12.0"
+    origin: auto_drafted
+  - id: a10
+    q: What is the maximum carbon content in deformed steel bars?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-301-2026, clause: "Table 1"}, {slug: demo-301-2026, clause: "4.1"}]
+    fact: "0.30"
+    origin: auto_drafted
+  - id: a11
+    q: How often should steel bars be sampled for testing?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-301-2026, clause: "7.1"}]
+    fact: "100 tonnes"
+    origin: auto_drafted
+  - id: a12
+    q: What does thermo-mechanical treatment mean?
+    lang: en
+    type: answerable
+    expect: [{slug: demo-301-2026, clause: "3.3"}]
+    fact: "quenching"
+    origin: auto_drafted
+  # ------------------------------------------------------------------ official BIS pages (Tier B) --
+  - id: a13
+    q: What is HUID in hallmarked gold jewellery?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-hallmarking-faq, clause: "Q8"}]
+    fact: "six-digit alphanumeric"
+    origin: auto_drafted
+  - id: a14
+    q: How much does hallmarking of a gold article cost?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-hallmarking-faq, clause: "Q11"}]
+    fact: "Rs. 45"
+    origin: auto_drafted
+  - id: a15
+    q: Which caratages of gold jewellery can be hallmarked?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-hallmarking-faq, clause: "Q4"}]
+    fact: "22K(916)"
+    origin: auto_drafted
+  - id: a16
+    q: Can old jewellery be hallmarked?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-hallmarking-consumer-faq, clause: "Q10"}]
+    origin: auto_drafted
+  - id: a17
+    q: Can I get my hallmarked jewellery tested for purity as a consumer?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-hallmarking-faq, clause: "Q25"}, {slug: bis-hallmarking-consumer-protection}]
+    fact: "Rs. 200"
+    origin: auto_drafted
+  - id: a18
+    q: What is the application fee for a BIS product certification licence?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-product-certification-faq, clause: "Q14"}]
+    fact: "Rs. 1000"
+    origin: auto_drafted
+  - id: a19
+    q: How long does BIS take to grant a product licence?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-product-certification-faq, clause: "Q15"}, {slug: bis-guidelines-grant-of-licence-2026}]
+    origin: auto_drafted
+  - id: a20
+    q: How old can test reports be when applying for a BIS licence?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-product-certification-faq, clause: "Q13"}]
+    fact: "90 days"
+    origin: auto_drafted
+  - id: a21
+    q: Where can I get my product tested for BIS certification?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-lab-faq, clause: "Q1"}, {slug: bis-lab-faq, clause: "Q7"}, {slug: bis-product-certification-faq, clause: "Q12"}]
+    origin: auto_drafted
+  - id: a22
+    q: Do BIS labs test products for private customers?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-lab-faq, clause: "Q6"}]
+    origin: auto_drafted
+  - id: a23
+    q: How do I file a complaint about a fake ISI mark?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-consumer-faq, clause: "Q9"}, {slug: bis-consumer-faq, clause: "Q12"}, {slug: bis-consumer-complaint}, {slug: bis-consumer-faq, clause: "Q8"}]
+    origin: auto_drafted
+  - id: a24
+    q: Does a foreign manufacturer need an Indian representative for BIS licence?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-fmcs-faq, clause: "Q5"}, {slug: bis-fmcs-faq, clause: "Q6"}, {slug: bis-fmcs-faq, clause: "Q7"}]
+    fact: "Authorized Indian Representative"
+    origin: auto_drafted
+  - id: a25
+    q: Can an importer apply for a BIS licence on behalf of the manufacturer?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-fmcs-faq, clause: "Q17"}, {slug: bis-scheme-x-faq, clause: "Q15"}]
+    origin: auto_drafted
+  - id: a26
+    q: What is a Quality Control Order?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-scheme-x-faq, clause: "Q7"}, {slug: bis-product-certification-overview}]
+    origin: auto_drafted
+  - id: a27
+    q: Is BIS certification compulsory for two-wheeler helmets?
+    lang: en
+    type: answerable
+    expect: [{slug: qco-helmet-two-wheeler-2020}, {slug: bis-compulsory-scheme-i}]
+    fact: "4151"
+    origin: auto_drafted
+  - id: a28
+    q: What BIS standards apply to packaged drinking water?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-compulsory-scheme-i}, {slug: demo-101-2026, clause: "1"}]
+    fact: "14543"
+    origin: auto_drafted
+  - id: a29
+    q: When did the helmet quality control order come into force?
+    lang: en
+    type: answerable
+    expect: [{slug: qco-helmet-two-wheeler-2020, clause: "1"}]
+    fact: "2021"
+    origin: auto_drafted
+  - id: a30
+    q: What are cluster based test facilities for MSMEs?
+    lang: en
+    type: answerable
+    expect: [{slug: bis-guidelines-cluster-lab-msme}]
+    origin: auto_drafted
+  # ------------------------------------------------------------------ Hindi and Kannada ----------
+  - id: m01
+    q: पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?
+    lang: hi
+    type: answerable
+    expect: [{slug: bis-compulsory-scheme-i}, {slug: demo-101-2026}]
+    origin: auto_drafted
+  - id: m02
+    q: सोने के गहनों पर हॉलमार्किंग का शुल्क कितना है?
+    lang: hi
+    type: answerable
+    expect: [{slug: bis-hallmarking-faq, clause: "Q11"}]
+    origin: auto_drafted
+  - id: m03
+    q: दोपहिया हेलमेट के लिए BIS प्रमाणन अनिवार्य है क्या?
+    lang: hi
+    type: answerable
+    expect: [{slug: qco-helmet-two-wheeler-2020}, {slug: bis-compulsory-scheme-i}]
+    origin: auto_drafted
+  - id: m04
+    q: पैकेज्ड पेयजल के लिए परीक्षण आवश्यकताएँ क्या हैं?
+    lang: hi
+    type: answerable
+    expect: [{slug: demo-101-2026}]
+    origin: auto_drafted
+  - id: m05
+    q: ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?
+    lang: kn
+    type: answerable
+    expect: [{slug: bis-hallmarking-faq}, {slug: bis-hallmarking-consumer-faq}, {slug: bis-hallmarking-consumer-protection}, {slug: bis-hallmarking-overview}]
+    origin: auto_drafted
+  - id: m06
+    q: ಪ್ಯಾಕೇಜ್ ಮಾಡಿದ ಕುಡಿಯುವ ನೀರಿಗೆ ಯಾವ BIS ಮಾನದಂಡಗಳು ಅನ್ವಯಿಸುತ್ತವೆ?
+    lang: kn
+    type: answerable
+    expect: [{slug: bis-compulsory-scheme-i}, {slug: demo-101-2026}]
+    origin: auto_drafted
+  - id: m07
+    q: ಉತ್ಪನ್ನ ಪರೀಕ್ಷೆಗೆ ಯಾವ ಪ್ರಯೋಗಾಲಯ ಬಳಸಬೇಕು?
+    lang: kn
+    type: answerable
+    expect: [{slug: bis-lab-faq}, {slug: bis-product-certification-faq, clause: "Q12"}, {slug: bis-lab-list}, {slug: bis-lab-overview}, {slug: bis-lab-testing-overview}]
+    origin: auto_drafted
+  - id: m08
+    q: ದ್ವಿಚಕ್ರ ವಾಹನ ಹೆಲ್ಮೆಟ್‌ಗೆ ಪ್ರಮಾಣೀಕರಣ ಕಡ್ಡಾಯವೇ?
+    lang: kn
+    type: answerable
+    expect: [{slug: qco-helmet-two-wheeler-2020}, {slug: bis-compulsory-scheme-i}]
+    origin: auto_drafted
+  # ------------------------------------------------------------------ exact numbers and clauses ---
+  - id: e01
+    q: IS 4151
+    lang: en
+    type: exact
+    expect: [{slug: is-4151-2015}]
+    origin: auto_drafted
+  - id: e02
+    q: IS 1786
+    lang: en
+    type: exact
+    expect: [{slug: is-1786-2008}]
+    origin: auto_drafted
+  - id: e03
+    q: DEMO-101 clause 4.3.1
+    lang: en
+    type: exact
+    expect: [{slug: demo-101-2026, clause: "4.3.1"}]
+    fact: "250 ml"
+    origin: auto_drafted
+  - id: e04
+    q: What does clause 8.5 of DEMO-201 say?
+    lang: en
+    type: exact
+    expect: [{slug: demo-201-2026, clause: "8.5"}]
+    fact: "630 N"
+    origin: auto_drafted
+  - id: e05
+    q: IS 14543 packaged drinking water
+    lang: en
+    type: exact
+    expect: [{slug: is-14543}]
+    origin: auto_drafted
+  - id: e06
+    q: Table 2 of DEMO-301
+    lang: en
+    type: exact
+    expect: [{slug: demo-301-2026, clause: "Table 2"}]
+    origin: auto_drafted
+  # ------------------------------------------------------------------ comparisons ---------------
+  - id: c01
+    q: Compare DEMO-101 and DEMO-102
+    lang: en
+    type: compare
+    expect: [{slug: demo-101-2026}, {slug: demo-102-2026}]
+    origin: auto_drafted
+  - id: c02
+    q: What is the difference in total dissolved solids between DEMO-101 and DEMO-102?
+    lang: en
+    type: compare
+    expect: [{slug: demo-101-2026, clause: "Table 1"}, {slug: demo-102-2026, clause: "Table 1"}]
+    origin: auto_drafted
+  - id: c03
+    q: How does nitrate limit differ between packaged drinking water and natural mineral water?
+    lang: en
+    type: compare
+    expect: [{slug: demo-101-2026, clause: "Table 1"}, {slug: demo-102-2026, clause: "Table 1"}]
+    origin: auto_drafted
+  # ------------------------------------------------------------------ follow-ups (context) -------
+  - id: f01
+    q: What are the testing requirements?
+    lang: en
+    type: followup
+    context: {recent_questions: ["What BIS standards apply to packaged drinking water?"], focus_slugs: [demo-101-2026]}
+    expect: [{slug: demo-101-2026, clause: "8"}]
+    origin: auto_drafted
+  - id: f02
+    q: What must be marked on it?
+    lang: en
+    type: followup
+    context: {recent_questions: ["What is the maximum mass of a two-wheeler helmet?"], focus_slugs: [demo-201-2026]}
+    expect: [{slug: demo-201-2026, clause: "6"}]
+    origin: auto_drafted
+  - id: f03
+    q: How are samples selected?
+    lang: en
+    type: followup
+    context: {recent_questions: ["What is the minimum elongation for DFe 500 TMT bars?"], focus_slugs: [demo-301-2026]}
+    expect: [{slug: demo-301-2026, clause: "7"}]
+    origin: auto_drafted
+  # ------------------------------------------------------------------ unanswerable ---------------
+  - id: u01
+    q: What is the fine for selling uncertified helmets in Karnataka?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u02
+    q: What is the GST rate on packaged drinking water?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u03
+    q: Which company makes the best TMT bars in India?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u04
+    q: What is the maximum arsenic limit in packaged drinking water?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u05
+    q: What is the price of 22 carat gold today?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u06
+    q: What are the requirements for electric vehicle charging stations?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u07
+    q: How many helmets were seized by BIS last year?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u08
+    q: What is the impact test speed for bicycle helmets?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u09
+    q: What is the boiling point of water at 2000 metres altitude?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u10
+    q: Who is the current Director General of BIS?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u11
+    q: What colour must the chin strap of a helmet be?
+    lang: en
+    type: unanswerable
+    origin: auto_drafted
+  - id: u12
+    q: कर्नाटक में बिना प्रमाणन हेलमेट बेचने पर कितना जुर्माना है?
+    lang: hi
+    type: unanswerable
+    origin: auto_drafted

@@ -129,6 +129,8 @@ class LLMClient:
             body["response_format"] = {"type": "json_object"}
         if "11434" in p.base_url or "ollama" in p.base_url:
             body["reasoning_effort"] = "none"  # local reasoning models: skip hidden thinking tokens
+        elif "gpt-oss" in p.model:
+            body["reasoning_effort"] = "low"  # keep hidden reasoning short so it does not eat max_tokens
         headers = {"Content-Type": "application/json"}
         if p.api_key:
             headers["Authorization"] = f"Bearer {p.api_key}"
@@ -206,12 +208,15 @@ def default_fake_answer(messages: list[dict]) -> dict:
 
 
 _client: LLMClient | FakeLLM | None = None
+_overridden = False
 
 
 def get_llm() -> LLMClient | FakeLLM | None:
     """The configured LLM, or None when running in extractive-only mode."""
     global _client
     s = get_settings()
+    if _overridden:
+        return _client
     if _client is None:
         if s.llm_provider == "fake":
             _client = FakeLLM()
@@ -222,7 +227,9 @@ def get_llm() -> LLMClient | FakeLLM | None:
     return _client
 
 
-def set_llm(client: LLMClient | FakeLLM | None) -> None:
-    """Tests use this to inject a FakeLLM."""
-    global _client
+def set_llm(client: LLMClient | FakeLLM | None, override: bool = True) -> None:
+    """Tests use this to inject a FakeLLM, or `set_llm(None)` to force extractive-only mode.
+    `set_llm(None, override=False)` returns to the configured provider."""
+    global _client, _overridden
     _client = client
+    _overridden = override

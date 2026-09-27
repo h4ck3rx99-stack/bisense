@@ -1,5 +1,7 @@
 {
-  "brand": { "home": "BISense home" },
+  "brand": {
+    "home": "BISense home"
+  },
   "nav": {
     "main": "Main",
     "search": "Search",
@@ -22,7 +24,12 @@
     "backendDown": "Server unreachable",
     "noIndex": "Library not built yet"
   },
-  "action": { "retry": "Try again", "close": "Close", "clear": "Clear", "dismiss": "Dismiss" },
+  "action": {
+    "retry": "Try again",
+    "close": "Close",
+    "clear": "Clear",
+    "dismiss": "Dismiss"
+  },
   "error": {
     "title": "Something went wrong",
     "internal": "The server could not complete this request. Please try again.",
@@ -39,7 +46,9 @@
     "llm_unavailable": "AI is not available right now.",
     "page_unavailable": "The page image is not available."
   },
-  "offline": { "banner": "You are offline. Search, cached answers and verbatim clauses work locally; AI summaries need the internet unless a local model is configured." },
+  "offline": {
+    "banner": "You are offline. Search, cached answers and verbatim clauses work locally; AI summaries need the internet unless a local model is configured."
+  },
   "footer": {
     "disclaimer": "BISense is a prototype built for Smart India Hackathon 2026. It is not an official BIS service. Always verify against the official published standard.",
     "notExhaustive": "Answers are based only on the indexed library, which is not an exhaustive list of all Indian Standards."
@@ -84,21 +93,48 @@
     "workflows": "Workflows",
     "flowAskQuery": "What are the testing requirements for packaged drinking water?",
     "flow": {
-      "ask": { "title": "Ask", "body": "Evidence first, then a verified answer with clause citations." },
-      "requirements": { "title": "Requirements checklist", "body": "Every SHALL / SHOULD / MAY statement, with clause and page. Export CSV." },
-      "compare": { "title": "Compare two standards", "body": "Aspect by aspect, with aligned numeric limits." }
+      "ask": {
+        "title": "Ask",
+        "body": "Evidence first, then a verified answer with clause citations."
+      },
+      "requirements": {
+        "title": "Requirements checklist",
+        "body": "Every SHALL / SHOULD / MAY statement, with clause and page. Export CSV."
+      },
+      "compare": {
+        "title": "Compare two standards",
+        "body": "Aspect by aspect, with aligned numeric limits."
+      }
     },
     "recent": "Recently viewed",
     "recentEmpty": "Standards you open will appear here (stored only in this browser)."
   },
   "why": {
     "title": "Why not just ask an LLM?",
-    "cite": { "title": "Every fact is cited", "body": "Standard, clause, page and verbatim wording for each statement." },
-    "refuse": { "title": "It says when it doesn't know", "body": "If the indexed sources don't cover it, you get \"not found\", not a guess." },
-    "separate": { "title": "Source vs. interpretation", "body": "What the document says is kept visibly apart from what the AI thinks it means." },
-    "extract": { "title": "Requirements without generation", "body": "Requirement statements are extracted deterministically, with clause references, and exported as-is." },
-    "multilingual": { "title": "Hindi and Kannada, safely", "body": "Standard numbers, clause numbers, units and quotes are protected during translation." },
-    "inspect": { "title": "Inspectable retrieval", "body": "Sources, scores and removed statements are visible in the Retrieval details drawer." }
+    "cite": {
+      "title": "Every fact is cited",
+      "body": "Standard, clause, page and verbatim wording for each statement."
+    },
+    "refuse": {
+      "title": "It says when it doesn't know",
+      "body": "If the indexed sources don't cover it, you get \"not found\", not a guess."
+    },
+    "separate": {
+      "title": "Source vs. interpretation",
+      "body": "What the document says is kept visibly apart from what the AI thinks it means."
+    },
+    "extract": {
+      "title": "Requirements without generation",
+      "body": "Requirement statements are extracted deterministically, with clause references, and exported as-is."
+    },
+    "multilingual": {
+      "title": "Hindi and Kannada, safely",
+      "body": "Standard numbers, clause numbers, units and quotes are protected during translation."
+    },
+    "inspect": {
+      "title": "Inspectable retrieval",
+      "body": "Sources, scores and removed statements are visible in the Retrieval details drawer."
+    }
   },
   "stage": {
     "understanding": "Understanding question",
@@ -155,7 +191,8 @@
     "translationFailed": "Translation unavailable; showing English.",
     "showOriginal": "Show original English",
     "hideOriginal": "Hide original English",
-    "outOfScope": "BISense answers questions about Indian Standards and BIS services. Try asking about a product, a standard, certification, hallmarking or testing."
+    "outOfScope": "BISense answers questions about Indian Standards and BIS services. Try asking about a product, a standard, certification, hallmarking or testing.",
+    "extractiveDeclined": "The AI model did not use the retrieved passages, although they look highly relevant. Here they are verbatim — read the cited clauses."
   },
   "strength": {
     "strong": "Strong evidence",
@@ -219,7 +256,12 @@
     "drops_other": "Validation removals ({{count}})",
     "noDrops": "Nothing was removed: every statement matched its cited sources."
   },
-  "mode": { "live": "live", "cached": "cached", "extractive": "extractive", "none": "no AI needed" },
+  "mode": {
+    "live": "live",
+    "cached": "cached",
+    "extractive": "extractive",
+    "none": "no AI needed"
+  },
   "toast": {
     "copied": "Copied with citations.",
     "copyFailed": "Could not copy to the clipboard.",

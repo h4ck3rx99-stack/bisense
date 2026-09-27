@@ -20,6 +20,9 @@ from bisense.db import connect
 
 PROMPT_VERSION = "answer_v1"
 
+# Set by `bisense warm` so entries it produces are labelled "warmed" (still real pipeline outputs).
+WARMING = False
+
 
 def cache_key(kind: str, question: str, lang: str, scope: list[str], intent: str, index_version: str) -> str:
     raw = json.dumps([kind, " ".join(question.lower().split()), lang, sorted(scope), intent, index_version, PROMPT_VERSION])
@@ -30,8 +33,15 @@ def _conn() -> sqlite3.Connection:
     return connect(get_settings().db_path)
 
 
+def _disabled() -> bool:
+    # A FakeLLM's canned answers (tests, e2e) must never enter or be served from the real cache.
+    return get_settings().llm_provider == "fake"
+
+
 def get_cached(key: str) -> tuple[dict, str, str] | None:
     """(payload, source, created_at) or None."""
+    if _disabled():
+        return None
     try:
         conn = _conn()
         try:
@@ -46,6 +56,10 @@ def get_cached(key: str) -> tuple[dict, str, str] | None:
 
 
 def put_cached(key: str, payload: dict, lang: str, index_version: str, source: str = "live") -> None:
+    if _disabled():
+        return
+    if WARMING:
+        source = "warmed"
     try:
         conn = _conn()
         try:

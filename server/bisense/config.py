@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     gate_rerank_min: float = -4.0
     strength_strong_min: float = 3.0
     strength_moderate_min: float = 0.0
+    # If the LLM declines but the best passage scores at least this, show verbatim passages instead.
+    llm_refusal_override_min: float = 5.0
 
     languages: str = "en,hi,kn"
     translation_provider: str = "llm"

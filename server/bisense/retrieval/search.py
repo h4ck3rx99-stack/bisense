@@ -245,6 +245,16 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
         ordered = ordered[:1] + promoted + [c for c in ordered[1:] if c.chunk_id not in set(probe_ids)]
         timings["product_probe"] = _ms(t)
 
+    # Clause lookup ("clause 4.3.1 of DEMO-101", "Table 2 of DEMO-301"): direct database lookup, placed first.
+    if plan.clause_refs and plan.scope:
+        direct = clause_lookup(conn, [s.id for s in plan.scope], plan.clause_refs)
+        if direct:
+            extra = load_candidates(conn, [cid for cid in direct if cid not in cands])
+            cands.update(extra)
+            for cid in direct:
+                cands[cid].boosts["clause_lookup"] = 1.0
+            ordered = [cands[cid] for cid in direct] + [c for c in ordered if c.chunk_id not in set(direct)]
+
     t = time.perf_counter()
     context = _diversify(ordered, plan.intent, top_k, get_settings().context_token_budget)
     for i, c in enumerate(context, start=1):
@@ -317,6 +327,21 @@ def product_probe(conn: sqlite3.Connection, plan: QueryPlan, limit: int = 3) -> 
                 break
         if len(out) >= limit:
             break
+    return out
+
+
+def clause_lookup(conn: sqlite3.Connection, standard_ids: list[int], refs: list[str]) -> list[int]:
+    """Chunk ids of the named clauses (and their sub-clauses) within the scoped standards, in document order."""
+    out: list[int] = []
+    qs = ",".join("?" for _ in standard_ids)
+    for ref in refs:
+        ref = " ".join(ref.split())
+        rows = conn.execute(
+            f"SELECT ch.id FROM chunks ch JOIN clauses cl ON cl.id = ch.clause_id WHERE cl.standard_id IN ({qs}) "  # noqa: S608
+            "AND (LOWER(cl.number) = LOWER(?) OR cl.number LIKE ?) ORDER BY cl.ord, ch.ord LIMIT 6",
+            (*standard_ids, ref, f"{ref}.%"),
+        ).fetchall()
+        out += [r["id"] for r in rows if r["id"] not in out]
     return out
 
 

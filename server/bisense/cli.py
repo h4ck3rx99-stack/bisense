@@ -159,6 +159,66 @@ def search(
 
 
 @app.command()
+def doctor() -> None:
+    """Check the environment and print how to fix each problem."""
+    from bisense.ops import run_doctor
+
+    checks = run_doctor()
+    failed = False
+    for c in checks:
+        mark = "OK  " if c.ok else ("FAIL" if c.blocking else "WARN")
+        color = typer.colors.GREEN if c.ok else (typer.colors.RED if c.blocking else typer.colors.YELLOW)
+        typer.secho(f"[{mark}] {c.name}: {c.detail}", fg=color)
+        if not c.ok and c.fix:
+            typer.echo(f"       fix: {c.fix}")
+        failed = failed or (not c.ok and c.blocking)
+    if failed:
+        typer.secho("Doctor found blocking problems (see fixes above).", fg=typer.colors.RED)
+        raise typer.Exit(1)
+    typer.secho("Environment looks good.", fg=typer.colors.GREEN)
+
+
+@app.command()
+def models() -> None:
+    """Download the embedding and reranker models (once) so BISense works offline."""
+    from bisense.ops import download_models
+
+    download_models(log=typer.echo)
+
+
+@app.command()
+def warm() -> None:
+    """Run the demo questions through the live pipeline and cache the validated results."""
+    from bisense.ops import run_warm
+
+    out = run_warm(log=typer.echo)
+    typer.echo(json.dumps({k: v for k, v in out.items() if k != "items"}))
+
+
+@app.command("eval")
+def eval_cmd(
+    no_llm: bool = typer.Option(False, "--no-llm", help="Retrieval and evidence gate only"),
+    smoke: bool = typer.Option(False, "--smoke", help="Quick subset; does not write the report"),
+    compare: bool = typer.Option(False, "--compare", help="Also compare reranker on/off (retrieval only)"),
+    min_recall: float = typer.Option(0.0, help="Exit with an error if recall@5 is below this (used by `npm run check`)"),
+) -> None:
+    """Run the evaluation set and write docs/EVAL.md (real numbers only)."""
+    from bisense.evaluation import main
+
+    out = main(no_llm=no_llm, smoke=smoke, compare=compare, log=typer.echo)
+    typer.echo(json.dumps(out["metrics"], indent=1))
+    if out["calibration"]:
+        typer.echo(f"recommended GATE_RERANK_MIN = {out['calibration']['threshold']}")
+    for c in out["comparisons"]:
+        typer.echo(json.dumps(c))
+    if not smoke:
+        typer.echo("Wrote docs/EVAL.md and docs/eval/latest.json")
+    if (out["metrics"].get("recall_at_5") or 0) < min_recall:
+        typer.secho(f"recall@5 below {min_recall}", fg=typer.colors.RED)
+        raise typer.Exit(1)
+
+
+@app.command()
 def openapi(out: str = typer.Option("openapi.json", help="Output path (relative to server/)")) -> None:
     """Write the OpenAPI schema (used by `npm run gen:types` to generate frontend types)."""
     from pathlib import Path

@@ -1,0 +1,35 @@
+# Questions for the demo (docs/DEMO_SCRIPT.md). `npm run warm` runs each one through the REAL live
+# pipeline and stores the validated result in the answer cache (source = warmed), so the demo still
+# works if the internet or the LLM provider fails. Cached answers are pipeline outputs, never hand-written.
+#
+# context: sent like the browser does for follow-ups (previous questions + focused standards).
+
+questions:
+  - q: What BIS standards apply to packaged drinking water?          # J1 discover
+    lang: en
+  - q: What are the testing requirements?                            # J2 follow-up
+    lang: en
+    context: {recent_questions: ["What BIS standards apply to packaged drinking water?"], focus_slugs: [demo-101-2026]}
+  - q: Explain DEMO-101 in simple language.                          # J3 explain
+    lang: en
+    context: {open_slug: demo-101-2026, focus_slugs: [demo-101-2026], recent_questions: ["summary"]}
+  - q: Is BIS certification compulsory for two-wheeler helmets?      # J5 legal applicability
+    lang: en
+  - q: What requirements apply to my product?                        # J5 clarification
+    lang: en
+  - q: What requirements apply to two-wheeler helmet?                # J5 after picking a product
+    lang: en
+  - q: How can I check that gold jewellery is hallmarked?            # BIS services: hallmarking
+    lang: en
+  - q: Where can I get my product tested for BIS certification?      # BIS services: labs
+    lang: en
+  - q: पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?            # J7 Hindi
+    lang: hi
+  - q: ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?                # J7 Kannada
+    lang: kn
+  - q: What is the fine for selling uncertified helmets in Karnataka?  # J8 honest refusal
+    lang: en
+
+summaries: [demo-101-2026, demo-102-2026, demo-201-2026, demo-301-2026]
+compare_pairs:
+  - [demo-101-2026, demo-102-2026]

@@ -259,7 +259,7 @@ export function AnswerBlock({ answer, citations, onFollowUp, onPickOption }: { a
           <Info size={16} className="mt-0.5 shrink-0" aria-hidden />
           <div>
             <div className="font-medium">{t("answer.extractiveTitle")}</div>
-            <div className="text-[13px]">{t(answer.notice === "notice.extractive_no_key" ? "answer.extractiveNoKey" : "answer.extractiveFailed")}</div>
+            <div className="text-[13px]">{t(answer.notice === "notice.extractive_no_key" ? "answer.extractiveNoKey" : answer.notice === "notice.extractive_llm_declined" ? "answer.extractiveDeclined" : "answer.extractiveFailed")}</div>
           </div>
         </div>
       )}
