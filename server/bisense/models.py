@@ -84,8 +84,32 @@ class CompareRequest(BaseModel):
 
 
 class TTSRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=3000)
+    text: str = Field(min_length=1, max_length=400)
     lang: Lang = "en"
+
+
+class STTOut(BaseModel):
+    text: str  # empty when no speech was heard
+    no_speech: bool
+    language: str | None  # language the provider detected/used (ISO-639-1)
+    requested_language: str | None
+    duration_s: float | None
+    provider: str
+    model: str
+    ms: float
+
+
+class VoiceStatus(BaseModel):
+    stt_available: bool
+    stt_provider: str | None
+    stt_model: str | None
+    stt_languages: list[str]
+    tts_available: bool
+    tts_provider: str | None
+    tts_languages: list[str]
+    tts_problem: str | None = None  # last provider error code, e.g. "tts_terms_required"
+    max_seconds: int
+    max_bytes: int
 
 
 # ---------------------------------------------------------------------------------------------------
@@ -483,3 +507,6 @@ class HealthOut(BaseModel):
     demo_mode: bool
     version: str
     features: dict[str, bool]
+    voice: VoiceStatus | None = None
+    translation: dict[str, bool | str | None] = Field(default_factory=dict)
+    languages: dict[str, dict[str, bool]] = Field(default_factory=dict)

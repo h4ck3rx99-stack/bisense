@@ -39,9 +39,7 @@ def _document_kind(c: Candidate) -> str:
         return "sample data, not official"
     if c.text_scope == "product_manual":
         return f"BIS product manual for {c.number} (not the text of the standard)"
-    return {"government_notification": "government notification", "official_website": "official BIS web page"}.get(
-        c.source_type or "", "official BIS document"
-    )
+    return {"government_notification": "government notification", "official_website": "official BIS web page"}.get(c.source_type or "", "official BIS document")
 
 
 def build_sources_block(context: list[Candidate]) -> str:

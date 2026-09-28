@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     debug: bool = False
     demo_mode: bool = False
 
-    # auto | real | demo (see docs/DATA.md)
+    # official (default) | sample (adds the Tier D sample pack; see docs/DATA.md)
     dataset: str = "official"
     data_dir: Path = REPO_ROOT / "data"
 
@@ -69,9 +69,24 @@ class Settings(BaseSettings):
     translation_provider: str = "llm"
     # Optional separate model (same provider/key) for translating answers; empty = the answering model.
     translation_model: str = ""
-    stt_provider: str = "browser"
-    tts_provider: str = "browser"
-    sarvam_api_key: str = ""
+    # Voice (server side; keys never reach the browser). Provider "auto" uses Groq when a Groq key is
+    # available (STT_API_KEY, or LLM_API_KEY when LLM_BASE_URL is Groq); "none" disables the server
+    # provider and the browser's own speech features are used where they exist.
+    stt_provider: str = "auto"  # auto | openai_compatible | none
+    stt_base_url: str = "https://api.groq.com/openai/v1"
+    stt_api_key: str = ""
+    stt_model: str = "whisper-large-v3-turbo"
+    stt_fallback_model: str = "whisper-large-v3"
+    stt_timeout_s: float = 30.0
+    stt_max_bytes: int = 8_000_000
+    stt_max_seconds: int = 60
+    tts_provider: str = "auto"  # auto | openai_compatible | none
+    tts_base_url: str = "https://api.groq.com/openai/v1"
+    tts_api_key: str = ""
+    tts_model: str = "canopylabs/orpheus-v1-english"
+    tts_voice: str = "hannah"
+    tts_languages: str = "en"  # languages the configured TTS model can speak
+    tts_timeout_s: float = 30.0
 
     rate_limit_ask: str = "20/minute"
     allow_uploads: bool = False

@@ -26,8 +26,8 @@ from bisense.answer.extractive import extractive_points
 from bisense.answer.generate import build_messages, correction_message, generate, rewrite_query
 from bisense.answer.llm_client import LLMUnavailable, get_llm, get_translation_llm
 from bisense.answer.present import (
-    query_info,
     coverage_line,
+    query_info,
     scope_coverage,
     searched_summary,
     standard_ref_for_number,

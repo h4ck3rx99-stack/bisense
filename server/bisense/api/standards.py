@@ -26,6 +26,7 @@ from fastapi import APIRouter, Depends, Query, Request
 from fastapi.responses import Response
 
 from bisense import stdnum
+from bisense.answer.present import coverage_line
 from bisense.api.common import ApiError, get_db
 from bisense.config import get_settings
 from bisense.db import get_meta, loads
@@ -49,7 +50,6 @@ from bisense.models import (
     SuggestItem,
     SummaryOut,
 )
-from bisense.answer.present import coverage_line
 from bisense.retrieval.index import get_index
 
 router = APIRouter(prefix="/api", tags=["standards"])

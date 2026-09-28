@@ -65,6 +65,10 @@ files = [
   "bisense/ingest/clean.py",
   "bisense/ingest/chunk.py",
   "bisense/ingest/requirements.py",
+  "bisense/ingest/manifest.py",
+  "bisense/voice/__init__.py",
+  "bisense/voice/stt.py",
+  "bisense/voice/tts.py",
 ]
 ignore_missing_imports = true
 warn_unused_ignores = false
