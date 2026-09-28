@@ -269,6 +269,12 @@ questions:
     expect: [{slug: qco-helmet-two-wheeler-2020}, {slug: bis-compulsory-scheme-i}]
     origin: auto_drafted
   # ------------------------------------------------------------------ exact numbers and clauses ---
+  - id: j01
+    q: I manufacture plastic food containers. What BIS standards are relevant to me?
+    lang: en
+    type: answerable
+    expect: [{slug: is-10910-1984}, {slug: is-17569-2021}, {slug: is-15410-2003}]
+    origin: reference_journey_J1  # added 2026-09-28; not yet run against the official index (network blocked here)
   - id: e01
     q: IS 4151
     lang: en

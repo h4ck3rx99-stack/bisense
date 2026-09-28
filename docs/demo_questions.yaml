@@ -4,32 +4,33 @@
 #
 # context: sent like the browser does for follow-ups (previous questions + focused standards).
 
+# Default data mode is OFFICIAL (DATASET=official): these questions use official BIS documents only
+# (product manuals, compulsory-certification lists, BIS service pages). Run `npm run fetch-public` and
+# `npm run ingest` first.
 questions:
-  - q: What BIS standards apply to packaged drinking water?          # J1 discover
+  - q: I manufacture plastic food containers. What BIS standards are relevant to me?   # J1 discover
     lang: en
-  - q: What are the testing requirements?                            # J2 follow-up
+  - q: Is BIS certification compulsory for two-wheeler helmets?      # J2 is there a standard / is it compulsory
     lang: en
-    context: {recent_questions: ["What BIS standards apply to packaged drinking water?"], focus_slugs: [demo-101-2026]}
-  - q: Explain DEMO-101 in simple language.                          # J3 explain
+  - q: Explain IS 4151 in simple language.                           # J3 explain this standard
     lang: en
-    context: {open_slug: demo-101-2026, focus_slugs: [demo-101-2026], recent_questions: ["summary"]}
-  - q: Is BIS certification compulsory for two-wheeler helmets?      # J5 legal applicability
+    context: {open_slug: is-4151-2015, focus_slugs: [is-4151-2015], recent_questions: ["summary"]}
+  - q: What are the important requirements?                          # J4 follow-up inherits the standard
     lang: en
-  - q: What requirements apply to my product?                        # J5 clarification
-    lang: en
-  - q: What requirements apply to two-wheeler helmet?                # J5 after picking a product
+    context: {recent_questions: ["Explain IS 4151 in simple language."], focus_slugs: [is-4151-2015]}
+  - q: What requirements apply to my product?                        # clarification path
     lang: en
   - q: How can I check that gold jewellery is hallmarked?            # BIS services: hallmarking
     lang: en
   - q: Where can I get my product tested for BIS certification?      # BIS services: labs
     lang: en
-  - q: पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?            # J7 Hindi
+  - q: पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?            # Hindi
     lang: hi
-  - q: ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?                # J7 Kannada
+  - q: ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?                # Kannada
     lang: kn
-  - q: What is the fine for selling uncertified helmets in Karnataka?  # J8 honest refusal
+  - q: What is the fine for selling uncertified helmets in Karnataka?  # J6 honest refusal
     lang: en
 
-summaries: [demo-101-2026, demo-102-2026, demo-201-2026, demo-301-2026]
+summaries: [is-4151-2015, is-1786-2008, is-10910-1984]
 compare_pairs:
-  - [demo-101-2026, demo-102-2026]
+  - [is-4151-2015, is-2925-1984]   # two-wheeler helmets vs industrial safety helmets (both official manuals)
