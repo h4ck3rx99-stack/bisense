@@ -83,7 +83,7 @@ for (const [name, code, message] of [
     await mic(page).click();
     await expect(page.getByTestId("voice-message")).toContainText(message);
     await box(page).fill("helmet standard");
-    await expect(page.getByRole("button", { name: "Ask" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Ask", exact: true })).toBeEnabled();
   });
 }
 

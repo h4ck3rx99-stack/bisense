@@ -354,11 +354,11 @@
     "notFoundBody": "No document with this address is in the library.",
     "tab": {
       "overview": "Overview",
-      "clauses": "Clauses",
-      "requirements": "Requirements",
+      "clauses": "Full text & clauses",
+      "requirements": "Important requirements",
       "requirementsObligations": "Obligations",
-      "references": "References",
-      "ask": "Ask"
+      "references": "Related & compare",
+      "ask": "Ask about this"
     },
     "scope": "Scope",
     "about": "About this document",
@@ -678,5 +678,12 @@
     "seeAll": "See all {{count}}",
     "switch": "Prefer to ask directly?",
     "switchLink": "Type or speak your question"
+  },
+  "glance": {
+    "title": "At a glance",
+    "covers": "What it covers (from the source)",
+    "who": "Who it's for",
+    "status": "Status and revision",
+    "sourceDetails": "Source details"
   }
 }
