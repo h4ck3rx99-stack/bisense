@@ -138,3 +138,16 @@ test("next-step chip 'Ask in हिंदी' switches the whole interface and r
   await expect(page.getByRole("heading", { name: "मुख्य बातें, स्रोत से" }).or(page.getByText("सबसे प्रासंगिक खंड")).first()).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "English", exact: true }).click();
 });
+
+test("Hindi UI: quoted evidence stays original; machine translation is optional and honest when unavailable", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "हिन्दी" }).click();
+  await page.goto("/ask?q=" + encodeURIComponent("What is the maximum mass of a two-wheeler helmet?") + "&lang=hi");
+  const card = page.locator("article[id^=evidence-]").first();
+  await expect(card).toBeVisible({ timeout: 60_000 });
+  await expect(card.locator("p[lang=en]").first()).toBeVisible();
+  await card.getByRole("button", { name: "अनुवाद दिखाएँ" }).click();
+  // the e2e server's fake model cannot translate, so the UI must say so and keep the original
+  await expect(card.getByText("अभी अनुवाद उपलब्ध नहीं है। मूल शब्द ऊपर दिए गए हैं।")).toBeVisible();
+  await page.getByRole("button", { name: "English", exact: true }).click();
+});

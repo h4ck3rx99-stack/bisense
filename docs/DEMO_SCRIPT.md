@@ -1,45 +1,46 @@
 # Demo script (about 4½ minutes)
 
-Setup before judges arrive: laptop on power, `npm run demo` running, browser at http://127.0.0.1:8000,
-zoom 110%, language EN, one tab. Run `npm run warm` earlier the same day (with internet) so every question
-below also has a cached answer produced by the same live pipeline.
+**Before judges arrive (same day, with internet):** `npm run fetch-public`, `npm run ingest`, `npm run warm`
+(runs every question below through the real pipeline and caches the validated result), then `npm run demo`.
+Browser at http://127.0.0.1:8000, zoom 110 %, language EN, one tab. For a phone demo, serve over HTTPS
+(README → "Serving over HTTPS"), otherwise the microphone is blocked.
 
-**Say up front, honestly:** "Full texts of Indian Standards need official BIS access, so the four clause-level
-documents in this demo are synthetic and labelled DEMO- everywhere. Everything else — the certification,
-hallmarking, lab and consumer pages and the compulsory-certification lists — is real official BIS content,
-and real standards drop in through the same ingestion."
+Data mode is **official** (`DATASET=official`): every source on screen is an official BIS document, BIS web
+page or government notification. Say it once: "Full texts of Indian Standards need a BIS account, so for
+most standards BISense has the official product manual or the official list entry — and it tells you which."
 
-| Time | Who | Click / type | Say |
+| Time | Who | Do | Say |
 |---|---|---|---|
-| 0:00 | Presenter (P6) | Home page | "MSMEs and consumers can't easily find which Indian Standard applies and what it requires. Chatbots guess. BISense answers only from an indexed library and shows the exact clause." Point at the three "Why not just ask an LLM?" points. |
-| 0:20 | Driver (P4) | Click example **"What BIS standards apply to packaged drinking water?"** | "Evidence appears first, then the answer." Point at the **official BIS list row: IS 14543 — de-notified from compulsory certification**, next to the synthetic DEMO-101 specification. "Legal status comes only from an official list, never from the AI." |
-| 0:50 | P4 | Type follow-up **"What are the testing requirements?"** | Point at the scope chip "Continuing with DEMO-101". Hover a citation chip → popover; click it → evidence card flashes; click **Open clause** → explorer opens at the clause, highlighted; click **View page** → original PDF page with the quote highlighted. |
-| 1:40 | P4 | Explorer **Overview → "Explain this in simple language"** | "Every point cites a clause; numbers stay exact." Point at the amber **AI interpretation** box vs **From the sources**. |
-| 2:00 | P4 | Home → **Compare two standards** workflow (DEMO-101 vs DEMO-102) | Scroll to **Numeric limits (verbatim)**: TDS 500 vs 150 to 700 — "copied from both tables, not computed". Point at "Not found in the indexed text" where a side is silent. |
-| 2:40 | P4 | Ask **"What requirements apply to my product?"** → pick **two-wheeler helmet** | "One clarifying question, then standards with evidence." Point at **Compulsory certification (official list)** for IS 4151 citing the Helmet QCO. Open DEMO-201 → **Requirements** → **Export CSV** (and show the print checklist). "Extracted without AI; a study aid, not a certification." |
-| 3:10 | P5 | Switch to **हिं**; tap the mic, say **"पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?"** (or click the Hindi example) | "Same pipeline: searched in English, answer translated back with standard numbers and quotes protected. 'Show original English' is one click." Optionally switch to **ಕನ್ನಡ** and click the Kannada example. |
-| 3:40 | P3 | Ask **"What is the fine for selling uncertified helmets in Karnataka?"** | "It says this isn't stated in the indexed sources — no guess, and no AI call was even needed." Open **Retrieval details**: scores, the gate, removed statements. |
-| 4:00 | P6 | **About** page | Pipeline diagram; **real evaluation numbers** (recall@5, refusal accuracy, false refusals) with the date; data sources with URLs and retrieval dates. |
-| 4:30 | P6 | — | "Evidence first, honest refusal, official sources, three languages, runs on a laptop with free tools. Thank you." |
+| 0:00 | Presenter | Home page | "If you make, sell or buy a product in India, which BIS standard applies, and what does it ask? BISense answers in plain words and shows the official source for every fact." Point at the coverage line: "It says exactly how much it covers." |
+| 0:20 | Driver | Tap **Find standards for my product** → **Standards for a product** → type **plastic food containers** → **Find** (J1, J5) | "No BIS words needed." Short answer, key points, then the relevant standards as cards with plain titles first (IS 10910, IS 17569 …). Tap **Sources**: "Bureau of Indian Standards · Product Manual for IS … · Page …". |
+| 1:00 | Driver | Tap a key point's **Exact wording and source** → tap citation **1** | "Beginners see a short statement; the exact source sentence is one tap away, highlighted." Evidence card → **Open clause** / **View page** (original page, sentence highlighted). |
+| 1:30 | Driver | Home → example **Is BIS certification compulsory for two-wheeler helmets?** (J2) | "Legal status comes only from the official list and the Helmet Quality Control Order — never from the AI." Point at the badge and its source. |
+| 1:50 | Driver | Next step **Explain simply** (J3), then type **What are the important requirements?** (J4) | The "About: IS 4151:2015" chip shows the follow-up kept its standard. Point at the amber **What this means for you — explanation written by BISense (AI interpretation)**, separate from the key points "from the source". |
+| 2:30 | Second speaker | Next step **Ask in हिंदी**, or switch to **ಕನ್ನಡ** and tap the mic: "ಹೆಲ್ಮೆಟ್‌ಗೆ ಯಾವ ಮಾನದಂಡ ಇದೆ?" | "One language setting drives the screen, the microphone and the answer. Standard numbers and quotes are protected during translation; the source wording stays original." Tap the speaker for read-aloud (English server voice; Hindi/Kannada if the device has a voice — it says so if not). |
+| 3:10 | Third speaker | Ask **What is the fine for selling uncertified helmets in Karnataka?** (J6) | "It says this isn't in the BIS sources it has, and suggests what to try — no guess, no AI call." |
+| 3:30 | Driver | Standard page **IS 4151** → **At a glance** → **Related & compare** → **Compare with another standard** → IS 2925 (J7) | "Experts still get everything: exact numbers, clauses, verbatim evidence, comparison." On an answer open **Retrieval details**: interpreted query, passages with scores, which were cited, removed statements, timings, live/cached/evidence-only. |
+| 4:10 | Presenter | About page | Data sources with URLs and retrieval dates; evaluation numbers with their date. "Official sources, honest refusals, three languages, runs on one laptop with free tools." |
 
-## If the internet or the LLM fails
+## If the internet or a provider fails
 
-- `DEMO_MODE=true` (set by `npm run demo`) tries the live LLM first, then the answer cached by `npm run warm`
-  (labelled "Answer generated earlier by the same pipeline"), then verbatim clauses. Nothing needs changing on stage.
-- Safe questions with cached answers: the 11 questions in `docs/demo_questions.yaml` (all of the above), the
-  four "Explain in simple language" summaries, and DEMO-101 vs DEMO-102 compare.
-- Fully offline still works: search, explorer, clause viewer, page images, requirements + CSV, compare
-  numeric table, library, and extractive answers. Browser voice input needs internet in Chrome; typing always works.
-- If an answer shows "AI summary unavailable", say: "That's the fallback — verbatim clauses, still cited."
+- `npm run demo` sets `DEMO_MODE=true`: live LLM first, then the answer cached by `npm run warm` (labelled
+  "Answer generated earlier by the same pipeline"), then the evidence-only answer ("AI summary unavailable
+  right now; here is what the sources say"). Nothing needs changing on stage.
+- Works fully offline once set up: search, guided path, standard pages, clauses, page images, requirements +
+  CSV, compare table, evidence-only answers, Hindi/Kannada questions (glossary keyword fallback), read-aloud
+  where the device has voices.
+- Needs internet: the LLM (summaries, translation of answers), server speech-to-text and server voice.
+  Without them the mic falls back to the browser's recognition (Chrome/Edge) and typing always works.
+- If the reranker model was never downloaded, `/api/health` says so and search still works (slightly
+  weaker ranking). Run `npm run setup` once with internet to fix it.
 
 ## Likely judge questions (answers grounded in the implementation)
 
-- **"How do you stop hallucinations?"** Three layers: the evidence gate refuses before any LLM call when no passage is relevant; the prompt allows only the numbered sources; then a deterministic validator (`server/bisense/answer/validate.py`) removes any statement whose citation, quote, number, standard number or clause reference isn't in the cited source. Removals are visible in Retrieval details. Measured drop rate and refusal accuracy are on the About page.
-- **"Is this real BIS data?"** The official pages, orders and compulsory-certification lists are real (URLs and retrieval dates in `data/sources.yaml`). The four clause-level documents are synthetic because standards' full texts need official access; they're labelled on every screen, export and citation.
-- **"What if the LLM is down or there's no key?"** Extractive mode: the same retrieval, verbatim clauses, clearly labelled. Demo mode also serves warmed answers.
-- **"How is legal applicability decided?"** Only from indexed official lists/orders (e.g. Helmet QCO 2020 → IS 4151). "SHALL" in a standard is shown separately and never implies legal obligation.
-- **"Why not fine-tune a model?"** Retrieval keeps answers traceable and updatable by re-indexing; no training data or GPU needed.
-- **"How does Hindi/Kannada work?"** Query rewritten to English (identifiers protected), retrieval and validation in English, validated answer translated back; placeholders ⟦0⟧ guarantee numbers and standard numbers survive. Without an LLM, a glossary keyword map still searches.
-- **"How accurate is it?"** Point to docs/EVAL.md: 62 questions, recall@5 1.0, refusal accuracy 1.0, false refusals 0.06 with Groq on 2026-09-28 — and that the demo corpus is small and partly synthetic.
-- **"Cost?"** Zero: open-source components, local embeddings, free-tier or local LLM, one laptop.
-- **"How would BIS deploy it?"** Point ingestion at the licensed standards collection, run the same container, keep it internal; add languages with one registry entry and one strings file.
+- **"Is this real BIS data?"** Yes by default: bis.gov.in pages, the compulsory-certification lists, 12 official product manuals, and Quality Control Orders, each with URL and retrieval date (`data/public/fetch_log.yaml`). Sample data exists only for development, is off by default, and is labelled "Sample data, not official" everywhere when switched on.
+- **"How do you stop hallucinations?"** The evidence gate refuses before any AI call when nothing relevant is found; the prompt sees only numbered sources; a deterministic validator (`server/bisense/answer/validate.py`) removes any statement whose citation, quote, number or standard number is not in the cited source. `tests/test_rag_proof.py` proves it: remove a document and the fact disappears even from a model that "knows" it.
+- **"What if the AI is down?"** Evidence-only answers from the same retrieval, clearly labelled; demo mode also serves warmed answers.
+- **"How is compulsory certification decided?"** Only from the official lists and orders. "Shall" in a standard is shown separately and never implies a legal obligation.
+- **"How do Hindi and Kannada work?"** The question is turned into English for searching (identifiers protected), the validated answer is translated back with placeholders so numbers and standard numbers survive; quoted source text stays original with an optional translation. Without an AI key a glossary keyword map still searches.
+- **"Does the microphone really work?"** Audio is recorded in the browser and sent to the server (keys never reach the browser) for Whisper transcription in English, Hindi and Kannada; the transcript lands in the box for correction. Tested with a fake microphone in Chrome and real audio fixtures.
+- **"Accuracy?"** docs/EVAL.md: the question set, the date, the model and the numbers, including refusal accuracy and false refusals.
+- **"Cost?"** Zero: open-source components, local search models, free-tier or local LLM, one laptop.

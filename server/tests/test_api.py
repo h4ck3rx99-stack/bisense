@@ -103,3 +103,26 @@ def test_health_reports_unavailable_reranker_with_a_fix(client, monkeypatch):
     # search still works without it
     r = client.post("/api/search", json={"query": "helmet mass", "lang": "en"})
     assert r.status_code == 200 and r.json()["citations"]
+
+
+def test_translate_protects_identifiers_and_degrades_honestly(client, fake_llm):
+    import json as _json
+
+    from bisense.answer.llm_client import FakeLLM, set_llm
+    from bisense.api import misc
+
+    misc._translation_cache.clear()
+    set_llm(None)
+    r = client.post("/api/translate", json={"texts": ["IS 302 clause 5.2 requires 0.5 mg/l."], "lang": "hi"})
+    assert r.status_code == 200 and r.json() == {"available": False, "translations": []}
+
+    def responder(messages):
+        masked = _json.loads(messages[-1]["content"])
+        return _json.dumps({k: f"अनुवाद {v}" for k, v in masked.items()}, ensure_ascii=False)
+
+    set_llm(FakeLLM(responder=responder))
+    r = client.post("/api/translate", json={"texts": ["IS 302 clause 5.2 requires 0.5 mg/l."], "lang": "hi"})
+    out = r.json()
+    assert out["available"] and "IS 302" in out["translations"][0] and "0.5 mg/l" in out["translations"][0]
+    assert client.post("/api/translate", json={"texts": ["x" * 1501], "lang": "hi"}).status_code == 422
+    assert client.post("/api/translate", json={"texts": [], "lang": "hi"}).status_code == 422

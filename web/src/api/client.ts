@@ -13,6 +13,7 @@ import type {
   SummaryOut,
   ClauseOut,
   STTOut,
+  TranslateOut,
   VoiceStatus,
 } from "./types";
 
@@ -79,6 +80,8 @@ export const api = {
     request<SearchResponse>("/api/search", { method: "POST", body: JSON.stringify({ query, lang, context }) }),
   compare: (a: string, b: string, lang: Lang) => request<CompareResponse>("/api/compare", { method: "POST", body: JSON.stringify({ a, b, lang }) }),
   eval: () => request<EvalSummary>("/api/eval"),
+  /** Labelled machine translation of quoted source passages (shown under the original, never instead of it). */
+  translate: (texts: string[], lang: Lang) => request<TranslateOut>("/api/translate", { method: "POST", body: JSON.stringify({ texts, lang }) }),
   voiceStatus: () => request<VoiceStatus>("/api/voice/status"),
   /** Speech-to-text on the server (multipart upload; the browser never sees a provider key). */
   stt: async (audio: Blob, lang: Lang, signal?: AbortSignal) => {

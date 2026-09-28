@@ -16,7 +16,7 @@ from fastapi.responses import Response
 from bisense.api.ask import check_rate
 from bisense.api.common import ApiError, get_db
 from bisense.config import get_settings
-from bisense.models import AskTrace, CompareRequest, CompareResponse, HealthOut, STTOut, TTSRequest, VoiceStatus
+from bisense.models import AskTrace, CompareRequest, CompareResponse, HealthOut, STTOut, TranslateOut, TranslateRequest, TTSRequest, VoiceStatus
 from bisense.retrieval.index import IndexMissing, get_index
 from bisense.voice import VoiceError, stt_config, tts_config, tts_languages
 
@@ -131,6 +131,31 @@ def compare(req: CompareRequest, request: Request, conn: sqlite3.Connection = De
     if req.a == req.b:
         raise ApiError(422, "compare_same")
     return run_compare(conn, req.a, req.b, req.lang)
+
+
+_translation_cache: dict[tuple[str, str], str] = {}
+
+
+@router.post("/translate", response_model=TranslateOut)
+def translate(req: TranslateRequest, request: Request) -> TranslateOut:
+    """Labelled machine translation shown UNDER a quoted source passage (the original is always shown).
+    Identifiers (standard numbers, clauses, units, numbers) are protected; results are cached per language."""
+    from bisense.answer.llm_client import get_translation_llm
+    from bisense.i18n.translate import translate_strings
+
+    check_rate(request)
+    if req.lang == "en":
+        return TranslateOut(available=True, translations=list(req.texts))
+    missing = [t for t in req.texts if (req.lang, t) not in _translation_cache]
+    if missing:
+        out = translate_strings(get_translation_llm(), {f"t{i}": t for i, t in enumerate(missing)}, req.lang)
+        if out is None:
+            return TranslateOut(available=False)
+        for i, t in enumerate(missing):
+            if len(_translation_cache) > 2000:
+                _translation_cache.clear()
+            _translation_cache[(req.lang, t)] = out[f"t{i}"]
+    return TranslateOut(available=True, translations=[_translation_cache[(req.lang, t)] for t in req.texts])
 
 
 def voice_status() -> VoiceStatus:

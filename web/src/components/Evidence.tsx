@@ -4,8 +4,9 @@ import * as Popover from "@radix-ui/react-popover";
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
-import { ExternalLink, FileText, Image as ImageIcon } from "lucide-react";
-import type { Citation } from "../api/types";
+import { ExternalLink, FileText, Image as ImageIcon, Languages } from "lucide-react";
+import type { Citation, Lang } from "../api/types";
+import { api } from "../api/client";
 import { Badge, SourceBadge } from "./ui";
 import { Highlighted, Markdown } from "./Markdown";
 import { clauseLink, humanSource, isWebPage, shortTitle, sourceLabel } from "../lib/format";
@@ -91,6 +92,42 @@ export function WithCitations({ text, citations }: { text: string; citations: Ma
   );
 }
 
+/** "Show translation" under a quoted passage in a Hindi/Kannada UI. The original stays on screen and is
+ *  the authority; the translation is labelled as machine translation. */
+function PassageTranslation({ text }: { text: string }) {
+  const { t, i18n } = useTranslation();
+  const lang = i18n.language as Lang;
+  const [state, setState] = useState<"idle" | "loading" | "done" | "unavailable">("idle");
+  const [out, setOut] = useState("");
+  if (lang === "en") return null;
+  const load = async () => {
+    setState("loading");
+    try {
+      const r = await api.translate([text], lang);
+      if (r.available && r.translations[0]) {
+        setOut(r.translations[0]);
+        setState("done");
+      } else setState("unavailable");
+    } catch {
+      setState("unavailable");
+    }
+  };
+  if (state === "done")
+    return (
+      <div className="mt-2 rounded-md bg-surface-2 px-2.5 py-2 text-[14px]" lang={lang}>
+        <div className="mb-0.5 text-xs font-medium text-ink-3">{t("evidence.machineTranslation")}</div>
+        <p className="whitespace-pre-line text-ink-2">{out}</p>
+      </div>
+    );
+  if (state === "unavailable") return <p className="mt-2 text-xs text-ink-3">{t("evidence.translationUnavailable")}</p>;
+  return (
+    <button type="button" onClick={load} disabled={state === "loading"} aria-busy={state === "loading"} className="mt-1 inline-flex min-h-8 items-center gap-1 text-xs font-medium text-accent hover:underline disabled:opacity-60">
+      <Languages size={13} aria-hidden />
+      {state === "loading" ? t("evidence.translating") : t("evidence.showTranslation")}
+    </button>
+  );
+}
+
 export function EvidenceCard({ c, quote, cited, actions }: { c: Citation; quote?: string | null; cited?: boolean; actions?: ReactNode }) {
   const { t } = useTranslation();
   const [preview, setPreview] = useState(false);
@@ -114,7 +151,8 @@ export function EvidenceCard({ c, quote, cited, actions }: { c: Citation; quote?
         </div>
       </header>
       <div className="text-[14px] leading-relaxed text-ink">
-        {isTable ? <Markdown text={c.snippet} /> : <p className="whitespace-pre-line"><Highlighted text={c.snippet} phrase={quote} /></p>}
+        {isTable ? <Markdown text={c.snippet} /> : <p className="whitespace-pre-line" lang="en"><Highlighted text={c.snippet} phrase={quote} /></p>}
+        {!isTable && <PassageTranslation text={c.snippet} />}
       </div>
       <footer className="mt-2 flex flex-wrap items-center gap-1">
         <Link to={clauseLink(c.slug, c.clause_number)} className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-[13px] font-medium hover:bg-surface-2">

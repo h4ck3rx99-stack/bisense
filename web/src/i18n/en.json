@@ -277,7 +277,11 @@
     "previewNote": "Original page with the quoted text highlighted.",
     "previewUnavailable": "The page image could not be loaded.",
     "pageAlt": "Page {{n}} of {{source}}",
-    "noLink": "Stored copy (no public link)"
+    "noLink": "Stored copy (no public link)",
+    "showTranslation": "Show translation",
+    "translating": "Translating…",
+    "machineTranslation": "Machine translation. The original wording above is what the source says.",
+    "translationUnavailable": "Translation isn't available right now. The original wording is shown above."
   },
   "trace": {
     "open": "Retrieval details",
