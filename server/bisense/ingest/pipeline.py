@@ -30,8 +30,8 @@ from bisense import stdnum
 from bisense.config import Settings
 from bisense.db import connect, get_meta, init_schema, set_meta
 from bisense.ingest import catalogue, html_parse, parse
-from bisense.ingest.clean import strip_parallel_devanagari
 from bisense.ingest.chunk import CHUNKER_VERSION, build_embed_text, chunk_clause
+from bisense.ingest.clean import strip_parallel_devanagari
 from bisense.ingest.demo_pack import build_demo_pack
 from bisense.ingest.manifest import SourceFile, discover, draft_entry, save_manifest
 from bisense.ingest.pdf_parse import IngestError
