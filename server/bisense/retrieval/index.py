@@ -80,6 +80,13 @@ def get_index(force: bool = False) -> LoadedIndex:
             std_of = dict(conn.execute("SELECT id, standard_id FROM chunks").fetchall())
             counts = {
                 "standards_full_text": conn.execute("SELECT COUNT(*) FROM standards WHERE kind = 'standard'").fetchone()[0],
+                # Coverage honesty: what BISense actually holds per standard (see schema.sql text_scope).
+                "standards_total": conn.execute(
+                    "SELECT COUNT(DISTINCT base_number) FROM standards WHERE kind IN ('standard', 'catalogue') AND synthetic = 0 AND base_number IS NOT NULL"
+                ).fetchone()[0],
+                "standards_with_full_text": conn.execute("SELECT COUNT(*) FROM standards WHERE text_scope = 'full_text' AND synthetic = 0").fetchone()[0],
+                "standards_with_manual": conn.execute("SELECT COUNT(*) FROM standards WHERE text_scope = 'product_manual'").fetchone()[0],
+                "sample_documents": conn.execute("SELECT COUNT(*) FROM standards WHERE synthetic = 1").fetchone()[0],
                 "guidance": conn.execute("SELECT COUNT(*) FROM standards WHERE kind IN ('guidance', 'order')").fetchone()[0],
                 "catalogue": conn.execute("SELECT COUNT(*) FROM standards WHERE kind = 'catalogue'").fetchone()[0],
                 "chunks": len(chunk_ids),

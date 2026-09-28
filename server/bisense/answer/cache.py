@@ -18,7 +18,7 @@ from datetime import UTC, datetime
 from bisense.config import get_settings
 from bisense.db import connect
 
-PROMPT_VERSION = "answer_v1.1"
+PROMPT_VERSION = "answer_v2"
 
 # Set by `bisense warm` so entries it produces are labelled "warmed" (still real pipeline outputs).
 WARMING = False

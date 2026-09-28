@@ -27,6 +27,8 @@ from bisense.answer.generate import build_messages, correction_message, generate
 from bisense.answer.llm_client import LLMUnavailable, get_llm, get_translation_llm
 from bisense.answer.present import (
     query_info,
+    coverage_line,
+    scope_coverage,
     searched_summary,
     standard_ref_for_number,
     summary_context,
@@ -43,6 +45,7 @@ from bisense.models import (
     AskRequest,
     AskTrace,
     Citation,
+    CoverageNote,
     DoneEvent,
     EvidenceEvent,
     OriginalAnswer,
@@ -124,6 +127,8 @@ def run_ask(req: AskRequest) -> Iterator[Event]:
         decision = yield from _decide(conn, req, plan, res, citations, std_refs, llm, tokens, stages, index.version)
         final = decision.answer
         final.searched_summary = searched_summary(index.counts)
+        final.library_note = coverage_line(index.counts)
+        final.coverage = [CoverageNote(**c) for c in scope_coverage(conn, [s.slug for s in plan.scope])]
         final.synthetic_used = any(c.synthetic for c in res.context)
 
         total = round((time.perf_counter() - t_start) * 1000, 1)

@@ -1,6 +1,6 @@
 """BISense command-line interface (typer).
 
-    bisense ingest [PATH] [--rebuild] [--only NAME] [--ocr auto|off|force] [--dataset auto|real|demo]
+    bisense ingest [PATH] [--rebuild] [--only NAME] [--ocr auto|off|force] [--dataset official|sample]
     bisense fetch-public [--refresh]
     bisense inspect SLUG [--clause 4.2]
     bisense search "query" [--explain]
@@ -43,7 +43,7 @@ def ingest(
     rebuild: bool = typer.Option(False, help="Re-parse every file and rebuild the index"),
     only: str = typer.Option(None, help="Re-parse only this file (name or stem)"),
     ocr: str = typer.Option("auto", help="auto | off | force"),
-    dataset: str = typer.Option(None, help="auto | real | demo (default: DATASET env)"),
+    dataset: str = typer.Option(None, help="official | sample (default: DATASET env; sample adds the labelled Tier D sample pack)"),
 ) -> None:
     """Parse documents and (re)build the search index."""
     from bisense.ingest.pdf_parse import IngestError

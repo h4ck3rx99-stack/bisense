@@ -3,7 +3,7 @@
 
 def test_health_and_library(client):
     h = client.get("/api/health").json()
-    assert h["status"] in ("ok", "degraded") and h["dataset_mode"] == "demo"
+    assert h["status"] in ("ok", "degraded") and h["dataset_mode"] == "sample"
     assert h["counts"]["standards_full_text"] == 4
     lib = client.get("/api/library").json()
     assert lib["counts"]["chunks"] > 50 and lib["categories"]

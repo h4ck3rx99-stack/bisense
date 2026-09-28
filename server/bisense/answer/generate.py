@@ -1,7 +1,7 @@
 """Prompt assembly and the LLM call for grounded answers.
 
 Instruction channels are strictly separated (prompt-injection defence):
-  - system message: fixed, versioned instructions only (prompts/answer_v1.txt);
+  - system message: fixed, versioned instructions only (prompts/answer_v2.txt);
   - user message: three delimited blocks -- <user_question>, <sources> (untrusted retrieved text,
     one <source id="C1" ...> per passage) and <context> (resolved scope ids only).
 Retrieved text never goes into the system message, and the model has no tools.
@@ -19,7 +19,7 @@ from bisense.retrieval.query import QueryPlan
 from bisense.retrieval.search import Candidate
 
 PROMPTS = Path(__file__).with_name("prompts")
-ANSWER_SYSTEM = (PROMPTS / "answer_v1.txt").read_text(encoding="utf-8")
+ANSWER_SYSTEM = (PROMPTS / "answer_v2.txt").read_text(encoding="utf-8")
 REWRITE_SYSTEM = (PROMPTS / "rewrite_v1.txt").read_text(encoding="utf-8")
 
 _TAG_RE = re.compile(r"</?\s*(source|sources|user_question|context|intent|system)\b[^>]*>", re.I)
@@ -34,13 +34,23 @@ def _attr(v: str | None) -> str:
     return html.escape(v or "", quote=True)
 
 
+def _document_kind(c: Candidate) -> str:
+    if c.synthetic:
+        return "sample data, not official"
+    if c.text_scope == "product_manual":
+        return f"BIS product manual for {c.number} (not the text of the standard)"
+    return {"government_notification": "government notification", "official_website": "official BIS web page"}.get(
+        c.source_type or "", "official BIS document"
+    )
+
+
 def build_sources_block(context: list[Candidate]) -> str:
     parts = []
     for c in context:
         parts.append(
             f'<source id="{c.citation_id}" standard="{_attr(c.number or "")}" title="{_attr(c.title)}" '
             f'clause="{_attr(f"{c.clause_number} {c.clause_heading}".strip())}" page="{c.page_start}" '
-            f'type="{_attr(c.std_kind)}" synthetic="{str(c.synthetic).lower()}">\n{_clean(c.text)}\n</source>'
+            f'type="{_attr(c.std_kind)}" document="{_attr(_document_kind(c))}" synthetic="{str(c.synthetic).lower()}">\n{_clean(c.text)}\n</source>'
         )
     return "<sources>\n" + "\n".join(parts) + "\n</sources>"
 

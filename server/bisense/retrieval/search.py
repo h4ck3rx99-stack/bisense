@@ -50,6 +50,10 @@ class Candidate:
     doc_type: str
     source_url: str | None
     has_pdf: bool
+    text_scope: str = "full_text"
+    document_title: str | None = None
+    source_org: str | None = None
+    source_type: str | None = None
     lexical_rank: int | None = None
     lexical_score: float | None = None
     vector_rank: int | None = None
@@ -95,7 +99,7 @@ _CHUNK_SQL = """
 SELECT ch.id AS chunk_id, ch.text, ch.page_start, ch.page_end, ch.standard_id,
        cl.id AS clause_id, cl.number AS clause_number, cl.heading AS clause_heading, cl.kind AS clause_kind, cl.path AS clause_path,
        s.slug, s.number_canonical, s.title, s.kind AS std_kind, s.synthetic, s.tier, s.source_url,
-       d.doc_type, d.file_name
+       s.text_scope, d.title AS document_title, d.source_org, d.source_type, d.doc_type, d.file_name
 FROM chunks ch
 JOIN clauses cl ON cl.id = ch.clause_id
 JOIN standards s ON s.id = ch.standard_id
@@ -130,6 +134,10 @@ def load_candidates(conn: sqlite3.Connection, chunk_ids: list[int]) -> dict[int,
             doc_type=r["doc_type"] or "",
             source_url=r["source_url"],
             has_pdf=bool(r["file_name"] and r["file_name"].lower().endswith(".pdf")),
+            text_scope=r["text_scope"],
+            document_title=r["document_title"],
+            source_org=r["source_org"],
+            source_type=r["source_type"],
         )
     return out
 

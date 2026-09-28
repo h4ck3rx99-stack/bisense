@@ -9,8 +9,13 @@ CREATE TABLE IF NOT EXISTS documents (
     id              INTEGER PRIMARY KEY,
     file_name       TEXT NOT NULL,
     sha256          TEXT NOT NULL UNIQUE,
-    tier            TEXT NOT NULL,              -- A | B | C
-    doc_type        TEXT NOT NULL,              -- standard | government_order | catalogue_page | guidance_page | synthetic_demo
+    tier            TEXT NOT NULL,              -- A official BIS document | B official BIS website | C government notification | D sample (not official)
+    doc_type        TEXT NOT NULL,              -- standard | product_manual | guidance_pdf | guidance_page | catalogue_page | government_order | synthetic_demo
+    title           TEXT,
+    source_org      TEXT,
+    source_type     TEXT,                       -- official_document | official_website | government_notification | sample
+    verification_status TEXT NOT NULL DEFAULT 'unverified',  -- verified | unverified | sample
+    access_note     TEXT,
     source_url      TEXT,
     obtained_on     TEXT,
     pages           INTEGER NOT NULL DEFAULT 1,
@@ -50,7 +55,19 @@ CREATE TABLE IF NOT EXISTS standards (
     synthetic                 INTEGER NOT NULL DEFAULT 0,
     needs_review              INTEGER NOT NULL DEFAULT 0,
     source_url                TEXT,
-    tier                      TEXT NOT NULL DEFAULT 'A'
+    tier                      TEXT NOT NULL DEFAULT 'A',
+    -- What BISense actually holds for this entry:
+    --   full_text        the standard itself
+    --   product_manual   the official BIS product manual (sampling, tests, licence scope), not the standard text
+    --   page             an official page, list or notification
+    --   metadata_only    number + title from an official list; no text
+    --   sample           synthetic sample document (not official)
+    text_scope                TEXT NOT NULL DEFAULT 'full_text',
+    document_title            TEXT,
+    source_org                TEXT,
+    source_type               TEXT,
+    verification_status       TEXT NOT NULL DEFAULT 'unverified',
+    access_note               TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_standards_base ON standards(base_number);
 

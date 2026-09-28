@@ -17,6 +17,7 @@ import dataclasses
 import hashlib
 import json
 import os
+import re
 import sqlite3
 import time
 from collections.abc import Callable
@@ -38,6 +39,9 @@ from bisense.ingest.terms import extract_amendments, extract_references, extract
 from bisense.ingest.types import ClauseDraft, ParsedDoc
 
 Log = Callable[[str], None]
+
+# Bump when build_database changes what it writes (part of index_version).
+BUILDER_VERSION = "build-2"
 
 
 def sha256_file(path: Path) -> str:
@@ -97,11 +101,47 @@ def parse_file(sf: SourceFile, sha: str, processed_dir: Path, force: bool, ocr_m
 
 KIND_BY_DOCTYPE = {
     "standard": "standard",
+    "product_manual": "standard",
     "synthetic_demo": "standard",
+    "guidance_pdf": "guidance",
     "guidance_page": "guidance",
     "catalogue_page": "guidance",
     "government_order": "order",
 }
+
+
+TEXT_SCOPE_BY_DOCTYPE = {
+    "standard": "full_text",
+    "product_manual": "product_manual",
+    "synthetic_demo": "sample",
+}
+
+
+_ANNEX_RE = re.compile(r"^Annex(?:ure)?\s+([A-Z])$")
+_PLAIN_NUMBER_RE = re.compile(r"^\d+(?:\.\d+)*$")
+
+
+def qualify_annex_numbers(clauses: list[ClauseDraft]) -> None:
+    """Number clauses inside an annex the way BIS prints them ("B-3.1"), so a numbered item in Annex B is never
+    mistaken for clause 3.1 of the main text (product manuals restart numbering inside each annex)."""
+    for c in clauses:
+        if not _PLAIN_NUMBER_RE.match(c.number):
+            continue
+        j = c.parent
+        while j is not None:
+            m = _ANNEX_RE.match(clauses[j].number)
+            if m:
+                c.number = f"{m.group(1)}-{c.number}"
+                break
+            j = clauses[j].parent
+
+
+def mark_manual_sections(clauses: list[ClauseDraft]) -> None:
+    """Section numbers in a BIS product manual are the manual's own ("§2.1"), never clauses of the standard.
+    The clause references *inside* the text (e.g. "Clause 6.7 of IS 4151") are left untouched."""
+    for c in clauses:
+        if _PLAIN_NUMBER_RE.match(c.number):
+            c.number = f"§{c.number}"
 
 
 def _clause_path(clauses: list[ClauseDraft], i: int) -> str:
@@ -126,7 +166,9 @@ def _standard_fields(sf: SourceFile, doc: ParsedDoc) -> dict:
         slug = stdnum.slugify_number(canonical)
     else:
         slug = stdnum.slugify_number(sf.path.stem)
-    title = e.get("title") or doc.detected_title or sf.path.stem
+    document_title = e.get("title") or doc.detected_title or sf.path.stem
+    # A product manual is filed under its standard: the library row is titled with the standard's title.
+    title = e.get("standard_title") or document_title
     status_verified = e.get("status_verified_on")
     if doc.last_updated and not status_verified:
         status_verified = doc.last_updated
@@ -153,6 +195,12 @@ def _standard_fields(sf: SourceFile, doc: ParsedDoc) -> dict:
         "needs_review": 1 if (e.get("needs_review") or sf.drafted) else 0,
         "source_url": e.get("source_url"),
         "tier": sf.tier,
+        "text_scope": TEXT_SCOPE_BY_DOCTYPE.get(doc_type, "page"),
+        "document_title": document_title,
+        "source_org": e.get("source_org"),
+        "source_type": e.get("source_type"),
+        "verification_status": e.get("verification_status") or ("sample" if e.get("synthetic") else "unverified"),
+        "access_note": e.get("access_note"),
     }
 
 
@@ -186,6 +234,11 @@ def build_database(db_path: Path, parsed: list[tuple[SourceFile, str, ParsedDoc]
                 "sha256": sha,
                 "tier": sf.tier,
                 "doc_type": e.get("doc_type", "standard"),
+                "title": e.get("title"),
+                "source_org": e.get("source_org"),
+                "source_type": e.get("source_type"),
+                "verification_status": e.get("verification_status") or "unverified",
+                "access_note": e.get("access_note"),
                 "source_url": e.get("source_url"),
                 "obtained_on": e.get("obtained_on"),
                 "pages": doc.pages,
@@ -199,6 +252,10 @@ def build_database(db_path: Path, parsed: list[tuple[SourceFile, str, ParsedDoc]
         )
         fields = _standard_fields(sf, doc)
         fields["document_id"] = doc_id
+        if e.get("doc_type") == "product_manual":
+            mark_manual_sections(doc.clauses)
+        elif e.get("doc_type") == "standard":
+            qualify_annex_numbers(doc.clauses)
         # Guard against slug collisions (two files for the same standard number).
         existing = conn.execute("SELECT id FROM standards WHERE slug = ?", (fields["slug"],)).fetchone()
         if existing:
@@ -372,6 +429,12 @@ def build_database(db_path: Path, parsed: list[tuple[SourceFile, str, ParsedDoc]
                     "needs_review": 0,
                     "source_url": None,
                     "tier": "B",
+                    "text_scope": "metadata_only",
+                    "document_title": None,
+                    "source_org": "Bureau of Indian Standards",
+                    "source_type": "official_website",
+                    "verification_status": "verified",
+                    "access_note": "Number and title from the official BIS list of products under compulsory certification. The standard's text is not in BISense.",
                 },
             )
             standard_ids_by_base[sn.base] = target_id
@@ -484,7 +547,7 @@ def run_ingest(
     dataset = dataset or settings.dataset
 
     discovery, entries = discover(data_dir, dataset)
-    if "C" in discovery.tiers:
+    if "D" in discovery.tiers:
         build_demo_pack(data_dir / "demo")
 
     parsed: list[tuple[SourceFile, str, ParsedDoc]] = []
@@ -517,6 +580,7 @@ def run_ingest(
                 for sf, sha, _ in parsed
             ),
             "chunker": CHUNKER_VERSION,
+            "builder": BUILDER_VERSION,
             "parsers": [parse.PARSER_VERSION, html_parse.PARSER_VERSION, catalogue.PARSER_VERSION],
             "model": settings.embedding_model,
             "dataset": discovery.dataset_mode,

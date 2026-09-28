@@ -188,3 +188,91 @@ pages:
     title: Guidelines for Utilisation of Cluster Based Testing Facility by MSMEs
     category: Laboratories
     doc_type: guidance_page
+
+  # --- Official BIS product manuals (per-product certification documents; list page:
+  #     https://www.bis.gov.in/product-certification/product-specific-information-2/product-manuals/ )
+  #     These are official BIS documents about a standard, not the text of the standard itself.
+  - file: pm-is-4151-2015.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2024/12/PM_IS_4151_-Dec-24.pdf
+    title: Product Manual for IS 4151:2015 — Protective Helmet for Two Wheeler Riders
+    standard_number: IS 4151:2015
+    standard_title: Protective Helmet for Two Wheeler Riders
+    category: Automotive and road safety
+    doc_type: product_manual
+  - file: pm-is-2925-1984.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/IS-2925-Product-Manual.pdf
+    title: Product Manual for IS 2925:1984 — Industrial Safety Helmets
+    standard_number: IS 2925:1984
+    standard_title: Industrial Safety Helmets
+    category: Personal protective equipment
+    doc_type: product_manual
+  - file: pm-is-2347-2023.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2025/02/PM-IS-2347.pdf
+    title: Product Manual for IS 2347:2023 — Domestic Pressure Cooker
+    standard_number: IS 2347:2023
+    standard_title: Domestic Pressure Cooker
+    category: Kitchen and household
+    doc_type: product_manual
+  - file: pm-is-366-1991.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2019/09/PM_IS-366_1.pdf
+    title: Product Manual for IS 366:1991 — Electric Iron
+    standard_number: IS 366:1991
+    standard_title: Electric Iron
+    category: Household electrical
+    doc_type: product_manual
+  - file: pm-is-1786-2008.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2020/07/PM-IS-1786-JULY-2020-Revised-4.pdf
+    title: Product Manual for IS 1786:2008 — High Strength Deformed Steel Bars and Wires for Concrete Reinforcement
+    standard_number: IS 1786:2008
+    standard_title: High Strength Deformed Steel Bars and Wires for Concrete Reinforcement
+    category: Construction and building materials
+    doc_type: product_manual
+  - file: pm-is-13688-2020.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2020/12/PM_IS_13688_01012021.pdf
+    title: Product Manual for IS 13688:2020 — Packaged Pasteurized Milk
+    standard_number: IS 13688:2020
+    standard_title: Packaged Pasteurized Milk
+    category: Food and drinking water
+    doc_type: product_manual
+  - file: pm-is-14625-2015.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2023/04/Final-Product-Manual-IS-14625-2015Amd-34.pdf
+    title: Product Manual for IS 14625:2015 — Plastic Feeding Bottles
+    standard_number: IS 14625:2015
+    standard_title: Plastic Feeding Bottles
+    category: Food contact and packaging
+    doc_type: product_manual
+  - file: pm-is-1475-2024.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2024/09/PM-IS-1475-Sep-2024.pdf
+    title: Product Manual for IS 1475:2024 — Drinking Water Coolers
+    standard_number: IS 1475:2024
+    standard_title: Drinking Water Coolers
+    category: Household electrical
+    doc_type: product_manual
+  - file: pm-is-15410-2003.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2022/11/Product-Manual-15410-with-Amd-6-and-7.pdf
+    title: Product Manual for IS 15410:2003 — Plastics Bottles/Containers for Packaged Natural Mineral Water and Packaged Drinking Water
+    standard_number: IS 15410:2003
+    standard_title: Plastics Bottles/Containers for Packaged Natural Mineral Water and Packaged Drinking Water
+    category: Food contact and packaging
+    doc_type: product_manual
+  - file: pm-is-6312-1994.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2021/10/PM-IS-6312-Approved.pdf
+    title: Product Manual for IS 6312:1994 — Polyethylene Containers for the Transport of Materials
+    standard_number: IS 6312:1994
+    standard_title: Polyethylene Containers for the Transport of Materials
+    category: Food contact and packaging
+    doc_type: product_manual
+  - file: pm-is-10910-1984.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2022/09/Final-PM-IS-10910-CMD2.pdf
+    title: Product Manual for IS 10910:1984 — Polypropylene and its Copolymers for its Safe Use in Contact with Foodstuffs, Pharmaceuticals and Drinking Water
+    standard_number: IS 10910:1984
+    standard_title: Polypropylene and its Copolymers for its Safe Use in Contact with Foodstuffs, Pharmaceuticals and Drinking Water
+    category: Food contact and packaging
+    doc_type: product_manual
+  - file: pm-is-17569-2021.pdf
+    url: https://www.bis.gov.in/wp-content/uploads/2024/12/PM-IS-17569.pdf
+    title: Product Manual for IS 17569:2021 — Insulated Containers for Food Storage
+    standard_number: IS 17569:2021
+    standard_title: Insulated Containers for Food Storage
+    category: Food contact and packaging
+    doc_type: product_manual

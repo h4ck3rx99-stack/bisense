@@ -121,6 +121,12 @@ class Citation(BaseModel):
     doc_type: str
     url: str | None
     has_page_image: bool
+    # Provenance, for human-readable citations and source badges.
+    text_scope: str = "full_text"  # full_text | product_manual | page | metadata_only | sample
+    document_title: str | None = None
+    source_org: str | None = None
+    source_type: str | None = None  # official_document | official_website | government_notification | sample
+    source_label: str = ""  # "Bureau of Indian Standards · IS 4151:2015 product manual · Section 2.1 · Page 7"
 
 
 class Point(BaseModel):
@@ -158,6 +164,13 @@ class OriginalAnswer(BaseModel):
     follow_ups: list[str]
 
 
+class CoverageNote(BaseModel):
+    slug: str
+    number: str | None
+    title: str
+    text_scope: str  # metadata_only | product_manual
+
+
 class Answer(BaseModel):
     answer_type: AnswerType
     summary: str = ""
@@ -182,6 +195,8 @@ class Answer(BaseModel):
     searched_summary: str = ""  # "Searched 34 sources (4 full-text standards ...)"
     library_note: str = ""
     synthetic_used: bool = False
+    # Standards named in the question whose full text BISense does not hold.
+    coverage: list[CoverageNote] = Field(default_factory=list)
 
 
 class ScopeItemOut(BaseModel):
@@ -262,6 +277,7 @@ class CategoryCount(BaseModel):
 
 
 class LibraryOut(BaseModel):
+    coverage: str  # "BISense currently covers N standards (full text available for M; ...)"
     dataset_mode: str
     index_version: str
     built_at: str
@@ -284,6 +300,8 @@ class StandardSummary(BaseModel):
     synthetic: bool
     needs_review: bool
     tier: str
+    text_scope: str = "full_text"  # full_text | product_manual | page | metadata_only | sample
+    source_type: str | None = None
     clause_count: int = 0
     requirement_count: int = 0
 
@@ -359,6 +377,12 @@ class Provenance(BaseModel):
     pages: int | None
     language: str | None
     warnings: list[str] = Field(default_factory=list)
+    document_title: str | None = None
+    source_org: str | None = None
+    source_type: str | None = None
+    verification_status: str = "unverified"  # verified | unverified | sample
+    access_note: str | None = None
+    text_scope: str = "full_text"
 
 
 class CompulsoryEvidence(BaseModel):

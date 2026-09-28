@@ -49,13 +49,14 @@ from bisense.models import (
     SuggestItem,
     SummaryOut,
 )
+from bisense.answer.present import coverage_line
 from bisense.retrieval.index import get_index
 
 router = APIRouter(prefix="/api", tags=["standards"])
 
 _SUMMARY_COLS = (
     "s.id, s.slug, s.kind, s.number_canonical, s.title, s.year, s.category, s.status, s.compulsory_certification, "
-    "s.catalogue_only, s.synthetic, s.needs_review, s.tier, "
+    "s.catalogue_only, s.synthetic, s.needs_review, s.tier, s.text_scope, s.source_type, "
     "(SELECT COUNT(*) FROM clauses c WHERE c.standard_id = s.id) AS clause_count, "
     "(SELECT COUNT(*) FROM requirements r WHERE r.standard_id = s.id) AS requirement_count"
 )
@@ -75,6 +76,8 @@ def _summary(r: sqlite3.Row) -> StandardSummary:
         synthetic=bool(r["synthetic"]),
         needs_review=bool(r["needs_review"]),
         tier=r["tier"],
+        text_scope=r["text_scope"],
+        source_type=r["source_type"],
         clause_count=r["clause_count"],
         requirement_count=r["requirement_count"],
     )
@@ -106,6 +109,7 @@ def library(conn: sqlite3.Connection = Depends(get_db)) -> LibraryOut:
         )
     ]
     return LibraryOut(
+        coverage=coverage_line(index.counts),
         dataset_mode=index.dataset_mode,
         index_version=index.version,
         built_at=get_meta(conn, "built_at") or "",
@@ -123,7 +127,7 @@ def list_standards(
     kind: str | None = Query(None, pattern=r"^(standard|guidance|order|catalogue)(,(standard|guidance|order|catalogue))*$"),
     category: str | None = Query(None, max_length=200),
     compulsory: str | None = Query(None, pattern=r"^(yes|denotified|unknown|no)$"),
-    tier: str | None = Query(None, pattern=r"^[ABC]$"),
+    tier: str | None = Query(None, pattern=r"^[ABCD]$"),
     year_from: int | None = Query(None, ge=1900, le=2100),
     year_to: int | None = Query(None, ge=1900, le=2100),
     sort: str = Query("relevance", pattern=r"^(relevance|number|title|year)$"),
@@ -323,6 +327,12 @@ def standard_detail(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> St
             pages=doc["pages"] if doc else None,
             language=doc["language"] if doc else None,
             warnings=loads(doc["warnings_json"], []) if doc else [],
+            document_title=s["document_title"] or (doc["title"] if doc else None),
+            source_org=s["source_org"],
+            source_type=s["source_type"],
+            verification_status=s["verification_status"],
+            access_note=s["access_note"],
+            text_scope=s["text_scope"],
         ),
         compulsory=CompulsoryEvidence(
             status=s["compulsory_certification"], source=s["compulsory_source"], slug=ev.get("slug"), clause_number=ev.get("clause_number")
@@ -510,13 +520,21 @@ def summary(slug: str, request: Request, lang: str = Query("en", pattern=r"^(en|
 def _source_path(conn: sqlite3.Connection, s: sqlite3.Row) -> Path | None:
     if not s["document_id"]:
         return None
-    d = conn.execute("SELECT file_name, tier FROM documents WHERE id = ?", (s["document_id"],)).fetchone()
+    d = conn.execute("SELECT file_name, doc_type FROM documents WHERE id = ?", (s["document_id"],)).fetchone()
     if not d or not d["file_name"].lower().endswith(".pdf"):
         return None
     data = get_settings().data_dir
-    folder = {"A": data / "raw", "B": data / "public", "C": data / "demo" / "pdf"}.get(d["tier"])
-    p = folder / d["file_name"] if folder else None
-    return p if p and p.exists() else None
+    if d["doc_type"] == "synthetic_demo":
+        folders = [data / "demo" / "pdf"]
+    elif d["doc_type"] == "standard":
+        folders = [data / "raw"]
+    else:
+        folders = [data / "public"]
+    for folder in folders:
+        p = folder / d["file_name"]
+        if p.exists():
+            return p
+    return None
 
 
 @router.get("/standards/{slug}/pages/{n}.png")

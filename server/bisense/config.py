@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     demo_mode: bool = False
 
     # auto | real | demo (see docs/DATA.md)
-    dataset: str = "auto"
+    dataset: str = "official"
     data_dir: Path = REPO_ROOT / "data"
 
     # LLM: any OpenAI-compatible chat endpoint. "fake" is used by tests; "none" forces extractive.
