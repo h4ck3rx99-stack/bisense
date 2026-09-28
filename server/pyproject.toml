@@ -17,6 +17,7 @@ dependencies = [
     "beautifulsoup4",
     "fpdf2",
     "python-multipart",
+    "faster-whisper>=1.2.1",
 ]
 
 [dependency-groups]

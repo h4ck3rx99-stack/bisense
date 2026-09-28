@@ -30,6 +30,19 @@ from bisense.ingest.types import ClauseDraft, ParsedDoc
 PARSER_VERSION = "catalogue-1.1"
 
 
+def short_category(text: str, limit: int = 80) -> str:
+    """A readable category name from a list heading. Some headings on the official page are a whole
+    history of Quality Control Orders in one cell; keep the first line, before "(Quality Control) Order",
+    without a leading "1. List of", cut at a word boundary."""
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    first = re.sub(r"^\d+\.\s*", "", first)
+    first = re.sub(r"^List of\s+", "", first, flags=re.I)
+    first = re.split(r"\s*\(Quality Control\)", first, maxsplit=1)[0].strip()
+    if len(first) > limit:
+        first = first[:limit].rsplit(" ", 1)[0].rstrip(",;:-") + "…"
+    return first
+
+
 def _cell_text(td: Tag) -> str:
     for br in td.find_all("br"):
         br.replace_with(" ")
@@ -105,7 +118,7 @@ def parse_catalogue_document(path: Path) -> ParsedDoc:
         prev = table.find_previous(["h1", "h2", "h3", "h4", "p", "strong"])
         table_heading = normalize_text(prev.get_text(" ")) if prev else ""
 
-        category = table_heading if c_title is not None else ""
+        category = short_category(table_heading) if c_title is not None else ""
         group_rows: list[list[str]] = []
         pending_meta: list[dict] = []
         for row in grid[1:]:
@@ -114,7 +127,7 @@ def parse_catalogue_document(path: Path) -> ParsedDoc:
             if len(distinct) == 1 and not stdnum.parse(next(iter(distinct))):
                 _flush(clauses, group_rows, pending_meta, rows_out, category, table_heading, section_counter := [section_n])
                 section_n = section_counter[0]
-                category = next(iter(distinct))
+                category = short_category(next(iter(distinct)))
                 continue
             row = [" ".join(c.split()) for c in row]
             is_raw = row[c_is] if c_is < len(row) else ""
@@ -144,7 +157,7 @@ def parse_catalogue_document(path: Path) -> ParsedDoc:
                         "title": std_title or product,
                         "order": order,
                         "status": status,
-                        "category": category or table_heading,
+                        "category": category or short_category(table_heading),
                     }
                 )
         _flush(clauses, group_rows, pending_meta, rows_out, category, table_heading, section_counter := [section_n])

@@ -16,7 +16,26 @@ observed; compiling is not enough.
 - Earlier evidence from the first repair pass (same day, with network and a Groq key) is listed separately
   and marked **"previous pass"**. It was not re-run here.
 
-## Quality gates (this pass)
+## Pass 3 (2026-09-28, network available, no Groq key)
+
+- Official data downloaded (44 files, one dropped connection recovered by retry); index: 42 official documents,
+  12 product manuals, 924 official product rows, 729 metadata-only standards; real embedding and reranker models.
+- `pytest`: 166 passed, 7 skipped (Groq-only tests). Includes `test_rag_proof.py` on the official data
+  (known-answer, ablation, refusal, injection, provenance) — run for the first time since pass 1.
+- `vitest`: 15 passed. Playwright: **26 passed, 0 skipped** with `E2E_STT_PROVIDER=local` (real microphone
+  flow via local Whisper, official catalogue entry, guided path on official categories).
+- `bisense eval --no-llm` on 63 questions (official + sample index): recall@5 **1.00**, MRR@10 0.89,
+  exact-number hit@1 1.00, refusal accuracy 0.83, false refusals 0.02 (same as before the ranking changes).
+  Journey J1 "plastic food containers": expected manual at rank 2; the answer lists IS 17569 (compulsory),
+  IS 10910, IS 6312, IS 15410 and the official list row for insulated food containers.
+- Found and fixed while verifying: two allow-listed BIS pages are now empty landing pages (removed); one
+  official category name was a whole paragraph of order history (cleaned); list rows printed raw table
+  markup in no-key answers (now readable rows, and not labelled as exact wording); no-key "which standard"
+  answers showed marking/annex boilerplate (now one about-passage per standard, list rows first);
+  an `.env` from the old example (`STT_PROVIDER=browser`) kept the new mic off (old values now mean `auto`);
+  the launcher would not install the new speech parts for existing users (setup-version check).
+
+## Quality gates (pass 2)
 
 | Command | Result |
 |---|---|
@@ -48,6 +67,8 @@ observed; compiling is not enough.
 | Identifier protection in translation | `test_protect.py` incl. "IS 302 (Part 1):2008 clause 5.2.3 requires ≤ 0.5 mg/l" | Pass | — |
 | UI string parity (en/hi/kn) | vitest key-parity test | Pass | — |
 | Microphone states, errors, cleanup | e2e (fake-microphone Chrome): denied / no device / busy each explained with typing still working; cancel releases every track; STT 503 explained; language switch cancels recording | Pass | Real device check (below) |
+| Microphone with **no key** (local Whisper) — pass 3 | Root cause of "mic doesn't ask for permission": without a key the mic never called `getUserMedia`; it used the browser recognizer (missing in Firefox, broken in Brave) or showed "unavailable". Now local Whisper runs on the server. `tests/test_voice_local.py` (real audio): English WebM, Hindi in Devanagari, Kannada refused (garbled in our test), silence → no speech; e2e `E2E_STT_PROVIDER=local`: fake mic → permission → level meter → local Whisper → "which Indian standard applies to helmets for two wheeler riders" in the box → answer | Pass | Permission prompt on a real browser (below) |
+| Official data download — pass 3 | `npm run fetch-public` against bis.gov.in: the old code stopped at file 3 after a dropped connection and still wrote the log; the new code retried and completed 44/44 files ("All official files are present."). `tests/test_fetch_public.py`: retry, skip, resume, domain allow-list | Pass | — |
 | Server STT (Groq Whisper) | **previous pass**: live transcription tests in English, Hindi, Kannada with real audio (WAV/WebM/Ogg) and the fake-microphone → transcript → answer e2e. Here: skipped (api.groq.com blocked) | Not re-run | Run `npm run test` and `npm run e2e` with a Groq key |
 | Spoken standard numbers | vitest: "I S fourteen five four three" → "IS 14543", "IS fourteen five forty three" → "IS 14543"; **fixed** "the limit is 10 mg" no longer becomes "IS 10" | Pass | — |
 | Read-aloud (TTS) | e2e: chunks spoken in the answer language, stopped on navigation; "not available for this language on this device" shown honestly; text answer unaffected | Pass | Listening check (below). Server TTS (Groq Orpheus, English) — previous pass |

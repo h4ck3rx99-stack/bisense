@@ -23,7 +23,7 @@ from pydantic import BaseModel
 
 from bisense.answer import cache
 from bisense.answer.confidence import evidence_strength
-from bisense.answer.extractive import extractive_points, strong_context
+from bisense.answer.extractive import extractive_points
 from bisense.answer.generate import build_messages, correction_message, generate, rewrite_query
 from bisense.answer.llm_client import LLMUnavailable, get_llm, get_translation_llm
 from bisense.answer.present import (
@@ -447,8 +447,9 @@ def _merge_standards(conn, validated: list[dict], retrieved: list[StandardRef]) 
 
 
 def _extractive(plan: QueryPlan, res: SearchResult, std_refs: list[StandardRef], llm_configured: bool) -> Answer:
-    points = extractive_points(res.context)
-    shown = {c.slug for c in strong_context(res.context)}
+    discover = plan.intent in ("discover", "applicability")
+    points = extractive_points(res.context, discover=discover, query=plan.english_query)
+    shown = {c.slug for p in points for c in res.context if c.citation_id in p.citations}
     return Answer(
         answer_type="answer",
         summary="",

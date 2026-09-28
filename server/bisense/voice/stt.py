@@ -1,22 +1,26 @@
-"""Speech-to-text through an OpenAI-compatible /audio/transcriptions endpoint (Groq Whisper by default).
+"""Speech-to-text: an OpenAI-compatible /audio/transcriptions endpoint (Groq Whisper) when a key exists,
+otherwise local Whisper on this computer (faster-whisper, no key, works offline once the model is downloaded).
 
 Checked against Groq's documentation on 2026-09-28: models whisper-large-v3-turbo / whisper-large-v3;
 formats flac, mp3, mp4, mpeg, mpga, m4a, ogg, wav, webm; 25 MB free-tier limit; `language` is ISO-639-1;
 `response_format=verbose_json` returns duration and per-segment no_speech_prob.
 
 Fallback chain: primary model -> fallback model (on provider/model errors) -> the browser's own speech
-recognition (decided by the UI when this raises).
+recognition (decided by the UI when this raises). Local mode offers only the languages it transcribes
+well (STT_LOCAL_LANGUAGES, default en,hi); others are refused with "stt_language_unsupported".
 """
 
 from __future__ import annotations
 
+import io
+import threading
 import time
 from dataclasses import dataclass
 
 import httpx
 
 from bisense.config import Settings
-from bisense.voice import VoiceError, stt_config
+from bisense.voice import VoiceError, stt_config, stt_languages, stt_mode
 
 # MIME types browsers produce with MediaRecorder, plus common upload types. Parameters (";codecs=opus")
 # are stripped before the check.
@@ -118,11 +122,17 @@ def wav_is_silent(data: bytes) -> bool:
 
 
 def transcribe(data: bytes, ext: str, lang: str | None, settings: Settings) -> Transcript:
-    cfg = stt_config(settings)
-    if cfg is None:
+    mode = stt_mode(settings)
+    if mode is None:
         raise VoiceError(503, "stt_unavailable")
+    if lang and lang not in stt_languages(settings):
+        raise VoiceError(422, "stt_language_unsupported", lang)
     if ext == "wav" and wav_is_silent(data):
         return Transcript(text="", language=LANGS.get(lang or ""), duration_s=_wav_seconds(data), model="", provider="local-check", no_speech=True, ms=0.0)
+    if mode == "local":
+        return _local(data, LANGS.get(lang or ""), settings)
+    cfg = stt_config(settings)
+    assert cfg is not None
     base_url, key = cfg
     language = LANGS.get(lang or "")
     models = [m for m in (settings.stt_model, settings.stt_fallback_model) if m]
@@ -187,6 +197,57 @@ def _call(base_url: str, key: str, model: str, data: bytes, ext: str, language: 
         provider="groq" if "groq.com" in base_url else "openai_compatible",
         no_speech=no_speech,
         ms=ms,
+    )
+
+
+_local_model = None
+_local_lock = threading.Lock()
+
+
+def load_local_model(settings: Settings):
+    """Load (downloading once, ~460 MB for "small") the local Whisper model. Thread-safe."""
+    global _local_model
+    with _local_lock:
+        if _local_model is None:
+            from faster_whisper import WhisperModel
+
+            root = settings.model_cache_dir / "whisper"
+            root.mkdir(parents=True, exist_ok=True)
+            _local_model = WhisperModel(settings.stt_local_model, device="cpu", compute_type="int8", download_root=str(root))
+        return _local_model
+
+
+def _local(data: bytes, language: str | None, settings: Settings) -> Transcript:
+    t0 = time.perf_counter()
+    try:
+        model = load_local_model(settings)
+    except Exception as exc:  # no internet on the first use, disk full ...
+        raise VoiceError(503, "stt_unavailable", f"local model: {type(exc).__name__}") from exc
+    try:
+        with _local_lock:  # one transcription at a time on a laptop CPU
+            segments, info = model.transcribe(
+                io.BytesIO(data),
+                language=language,
+                beam_size=1,
+                vad_filter=True,
+                condition_on_previous_text=False,
+                initial_prompt=EN_PROMPT if language == "en" else None,
+            )
+            segs = list(segments)
+    except Exception as exc:  # PyAV could not decode the container
+        raise VoiceError(422, "audio_unreadable", type(exc).__name__) from exc
+    if info.duration and info.duration > settings.stt_max_seconds + 1:
+        raise VoiceError(413, "audio_too_long")
+    text = " ".join(" ".join(seg.text for seg in segs).split())
+    no_speech = not text or text.lower() in HALLUCINATIONS or all(seg.no_speech_prob > NO_SPEECH_PROB for seg in segs)
+    return Transcript(
+        text="" if no_speech else text,
+        language=info.language or language,
+        duration_s=round(float(info.duration), 2) if info.duration else None,
+        model=settings.stt_local_model,
+        provider="local",
+        no_speech=no_speech,
+        ms=round((time.perf_counter() - t0) * 1000, 1),
     )
 
 

@@ -81,10 +81,11 @@ one port.
 ## Quick start
 
 **Windows, one click:** install [Node.js LTS](https://nodejs.org) and [uv](https://docs.astral.sh/uv/) (or
-Python 3.12), then double-click **`start-bisense.bat`**. The first run installs everything, downloads the
-official BIS data and builds the index (10–20 minutes); later runs start in seconds. The browser opens by
-itself at http://127.0.0.1:8000. Without internet on the first run it starts in labelled sample mode and
-switches to the official data the next time it runs online. Close the window to stop BISense.
+Python 3.12), then double-click **`start-bisense.bat`**. The first run installs everything (including the
+offline speech model, ~460 MB), downloads the official BIS data and builds the index (15–30 minutes); later
+runs start in seconds. The browser opens by itself at http://127.0.0.1:8000. If bis.gov.in drops the
+connection, the download retries and resumes on the next run; without internet on the first run it starts in
+labelled sample mode and switches to the official data the next time it runs online. Close the window to stop BISense.
 
 **Step by step (Windows, macOS, Linux):**
 
@@ -103,11 +104,16 @@ cd bisense
 npm run setup
 ```
 
-Creates `.env` from `.env.example`, installs dependencies and downloads the search models (~100 MB, once).
+Creates `.env` from `.env.example`, installs dependencies and downloads the search models (~100 MB) and the
+offline speech-to-text model (Whisper small, ~460 MB), once.
 
 ```bash
 npm run fetch-public
 ```
+
+Downloads the 44 allow-listed official files (~3 minutes, polite 3 s pace). bis.gov.in sometimes drops a
+connection: each file is retried, a file that still fails is skipped, and running the command again resumes.
+It prints "All official files are present." when complete.
 
 ```bash
 npm run ingest
@@ -129,11 +135,12 @@ the real pipeline ([docs/DEMO_SCRIPT.md](docs/DEMO_SCRIPT.md)).
 | LLM (answers, summaries, translation) | `LLM_BASE_URL=https://api.groq.com/openai/v1`, `LLM_MODEL=openai/gpt-oss-120b`, `LLM_ALT_MODEL=openai/gpt-oss-20b`, `TRANSLATION_MODEL=openai/gpt-oss-20b`, `LLM_API_KEY=…` | console.groq.com/keys (free tier, no card) |
 | LLM alternative | `LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai`, `LLM_MODEL=gemini-2.5-flash` | aistudio.google.com |
 | Offline LLM | `LLM_BASE_URL=http://localhost:11434/v1`, `LLM_MODEL=llama3.2` | ollama.com (start with `OLLAMA_CONTEXT_LENGTH=8192`) |
-| Speech-to-text (en, hi, kn) | nothing extra with a Groq LLM key (same key reused); or `STT_API_KEY` | Groq (Whisper `whisper-large-v3-turbo`) |
+| Speech-to-text (en, hi, kn) | nothing extra with a Groq LLM key (same key reused); or `STT_API_KEY`. Without a key, local Whisper handles English and Hindi | Groq (Whisper `whisper-large-v3-turbo`) |
 | Server voice (English) | nothing extra with a Groq key; accept the Orpheus model terms once in the Groq console | Groq (`canopylabs/orpheus-v1-english`) |
 
 Without any key BISense still works: evidence-only answers ("AI summary unavailable right now; here is what
-the sources say"), browser speech recognition in Chrome/Edge, device voices for read-aloud, typing always.
+the sources say"), the microphone through local Whisper (English, Hindi) on this computer, device voices for
+read-aloud, typing always.
 Keys live only in `.env` (gitignored), are never sent to the browser and never logged.
 
 ## Voice and languages
@@ -143,8 +150,8 @@ Keys live only in `.env` (gitignored), are never sent to the browser and never l
 | Screen text | yes | yes (draft, native review pending) | yes (draft, native review pending) |
 | Questions | yes | yes (LLM pivot; glossary keywords without an LLM) | same |
 | Answers | yes | translated after validation, identifiers protected (needs LLM) | same |
-| Microphone (server) | Groq Whisper | Groq Whisper | Groq Whisper |
-| Microphone (no key) | browser recognition (Chrome/Edge) | browser recognition where supported | browser recognition where supported |
+| Microphone (with Groq key) | Groq Whisper | Groq Whisper | Groq Whisper |
+| Microphone (no key) | local Whisper small, offline | local Whisper small, offline | browser recognition (Chrome/Edge) where available; otherwise the UI says so — local Whisper produced garbled Kannada in our test, so it is not used |
 | Read-aloud | server voice (Groq) or device voice | device voice if installed | device voice if installed (often missing on desktops; the UI says so) |
 
 Quoted source text is never translated in place; an optional "Show translation" under each passage is

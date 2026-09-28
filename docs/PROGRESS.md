@@ -28,12 +28,16 @@ Remaining items need the team (official data fetch, keys, real devices, native s
     official data; DATA.md rewritten for tiers A–D.
   - Docs: VERIFICATION (new), README, DATA, DEMO_SCRIPT, DECISIONS, REALITY_AUDIT, JUDGE_REVIEW; screenshots.
 
+- Repair pass 3 (2026-09-28, network available): mic without a key (local Whisper, en/hi); resilient
+  official-data download; official index built and evaluated (recall@5 1.00); RAG proofs on official data
+  pass; e2e 26/26; readable no-key answers; category names; launcher upgrades existing installs.
+
 ## In progress
 - (none)
 
 ## Next (team — cannot be done from a network-blocked environment)
-1. `npm run fetch-public` → `npm run ingest` → `npm run test` (runs `test_rag_proof.py` on official data)
-   → `npm run eval` (updates docs/EVAL.md; confirm J1 "plastic food containers" and the ranking change).
+1. Done in pass 3 (official data, proofs, eval without LLM). Remaining: `npm run eval` WITH a Groq key to
+   refresh docs/EVAL.md answer metrics.
 2. Add a Groq key to `.env`, run `npm run test` and `npm run e2e` again (live STT/TTS/LLM tests), then
    `npm run warm`.
 3. Manual checks in docs/VERIFICATION.md (microphone on desktop Chrome and a phone over HTTPS, read-aloud,

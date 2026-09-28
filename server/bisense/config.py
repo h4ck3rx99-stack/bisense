@@ -12,6 +12,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # server/bisense/config.py -> repository root is two levels above the package directory.
@@ -74,10 +75,10 @@ class Settings(BaseSettings):
     translation_provider: str = "llm"
     # Optional separate model (same provider/key) for translating answers; empty = the answering model.
     translation_model: str = ""
-    # Voice (server side; keys never reach the browser). Provider "auto" uses Groq when a Groq key is
-    # available (STT_API_KEY, or LLM_API_KEY when LLM_BASE_URL is Groq); "none" disables the server
-    # provider and the browser's own speech features are used where they exist.
-    stt_provider: str = "auto"  # auto | openai_compatible | none
+    # Voice (server side; keys never reach the browser). STT provider "auto" uses Groq when a Groq key is
+    # available (STT_API_KEY, or LLM_API_KEY when LLM_BASE_URL is Groq), otherwise local Whisper on this
+    # computer (no key; model downloaded once by `npm run setup`). "none" disables server speech-to-text.
+    stt_provider: str = "auto"  # auto | openai_compatible | local | none
     stt_base_url: str = "https://api.groq.com/openai/v1"
     stt_api_key: str = ""
     stt_model: str = "whisper-large-v3-turbo"
@@ -85,7 +86,20 @@ class Settings(BaseSettings):
     stt_timeout_s: float = 30.0
     stt_max_bytes: int = 8_000_000
     stt_max_seconds: int = 60
+    # Local Whisper (faster-whisper). Measured 2026-09-28 on the test clips: "small" transcribes English and
+    # Hindi correctly in ~2 s on a 4-core CPU; Kannada came out garbled, so it is not offered locally.
+    stt_local_model: str = "small"
+    stt_local_languages: str = "en,hi"
     tts_provider: str = "auto"  # auto | openai_compatible | none
+
+    @field_validator("stt_provider", "tts_provider", mode="before")
+    @classmethod
+    def _voice_provider(cls, v: object) -> str:
+        """Older .env files (made from an earlier .env.example) say "browser" or "groq"; treat any value
+        that is not a known provider as "auto", so upgrading never silently switches voice off."""
+        value = str(v or "").strip().lower()
+        return value if value in ("auto", "openai_compatible", "local", "none") else "auto"
+
     tts_base_url: str = "https://api.groq.com/openai/v1"
     tts_api_key: str = ""
     tts_model: str = "canopylabs/orpheus-v1-english"

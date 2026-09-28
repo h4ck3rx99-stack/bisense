@@ -126,6 +126,16 @@ def download_models(log=print) -> None:
     embed_query("model check")
     log(f"Downloading/checking reranker {s.reranker_model} ...")
     rerank("model check", ["passage"])
+    from bisense.voice import stt_mode
+
+    if stt_mode(s) == "local":
+        from bisense.voice.stt import load_local_model
+
+        log(f"Downloading/checking local speech-to-text model (Whisper {s.stt_local_model}, ~460 MB once) ...")
+        try:
+            load_local_model(s)
+        except Exception as exc:  # voice is optional; typing always works
+            log(f"  could not prepare local speech-to-text ({type(exc).__name__}); the microphone will use the browser instead")
     log(f"Models ready in {s.model_cache_dir}")
 
 

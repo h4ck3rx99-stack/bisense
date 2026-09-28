@@ -32,11 +32,42 @@ def resolve_key(settings: Settings, base_url: str, explicit_key: str) -> str:
     return ""
 
 
+def local_stt_installed() -> bool:
+    try:
+        import faster_whisper  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+def stt_mode(settings: Settings) -> str | None:
+    """ "remote" (OpenAI-compatible API, e.g. Groq), "local" (Whisper on this computer) or None."""
+    if settings.stt_provider == "none":
+        return None
+    if settings.stt_provider == "local":
+        return "local" if local_stt_installed() else None
+    if stt_config(settings) is not None:
+        return "remote"
+    # auto without a key: local Whisper (not in tests with the fake LLM, which must never load a model)
+    if settings.stt_provider == "auto" and settings.llm_provider != "fake" and local_stt_installed():
+        return "local"
+    return None
+
+
+def stt_languages(settings: Settings) -> list[str]:
+    mode = stt_mode(settings)
+    if mode == "remote":
+        return ["en", "hi", "kn"]
+    if mode == "local":
+        return [x.strip() for x in settings.stt_local_languages.split(",") if x.strip()]
+    return []
+
+
 def stt_config(settings: Settings) -> tuple[str, str] | None:
     """(base_url, key) when server STT is usable, else None."""
     # With the fake test LLM, "auto" never reaches a real provider; an explicit provider still does
     # (the fake-microphone e2e test sets STT_PROVIDER=openai_compatible).
-    if settings.stt_provider == "none" or (settings.stt_provider == "auto" and settings.llm_provider == "fake" and not settings.stt_api_key):
+    if settings.stt_provider in ("none", "local") or (settings.stt_provider == "auto" and settings.llm_provider == "fake" and not settings.stt_api_key):
         return None
     key = resolve_key(settings, settings.stt_base_url, settings.stt_api_key)
     return (settings.stt_base_url.rstrip("/"), key) if key and settings.stt_base_url else None
