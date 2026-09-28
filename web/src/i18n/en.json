@@ -89,9 +89,10 @@
       "no_speech": "We didn't hear anything. Check your microphone, speak a little louder, and try again.",
       "too_short": "That was too short. Hold the mic a moment longer and speak your question.",
       "server": "Speech recognition failed this time. Try again, or type your question.",
-      "unavailable": "Speech recognition isn't set up on this BISense server. Type your question instead.",
+      "unavailable": "Voice input isn't ready on this computer yet. Run start-bisense.bat (or npm run setup) once with internet, or type your question.",
       "network": "Couldn't reach the BISense server. Check your connection and try again.",
-      "langBrowser": "Your browser can't recognise {{lang}} speech. Type your question instead."
+      "langBrowser": "Your browser can't recognise {{lang}} speech. Type your question instead.",
+      "langServer": "Voice input for {{lang}} isn't available on this computer yet (it works for {{others}}). Type your question, or add a Groq key for {{lang}} speech."
     }
   },
   "home": {

@@ -1,6 +1,7 @@
 @echo off
 rem BISense one-click start for Windows. Double-click this file.
-rem First run: installs everything, downloads the official BIS data and builds the index (10-20 minutes).
+rem First run: installs everything (incl. the offline speech model, ~460 MB), downloads the official BIS
+rem data and builds the index (15-30 minutes, needs internet).
 rem Later runs: starts straight away. Close this window (or press Ctrl+C) to stop BISense.
 setlocal
 cd /d "%~dp0"
@@ -43,12 +44,22 @@ if errorlevel 1 (
   goto :fail
 )
 
-rem --- 3. Official BIS data (downloaded once) ------------------------------------------------------
+rem --- 3. Official BIS data (downloaded once; resumes if a previous download was interrupted) ---------
 :data
-if exist "data\public\fetch_log.yaml" goto :index
-echo  [2/3] Downloading official BIS pages and documents (once; needs internet)...
+if exist "data\public\COMPLETE" goto :index
+echo  [2/3] Downloading official BIS pages and documents (needs internet; resumes where it stopped)...
 call npm run fetch-public
-if exist "data\public\fetch_log.yaml" goto :index
+rem New files arrived: refresh the index (only changed files are re-read).
+set REBUILD=1
+if exist "data\public\COMPLETE" goto :index
+if exist "data\public\fetch_log.yaml" (
+  echo.
+  echo  [!] Some official files could not be downloaded right now. BISense starts with the ones it has;
+  echo      run this file again later to fetch the rest.
+  echo.
+  goto :index
+)
+set REBUILD=
 echo.
 echo  [!] The official BIS data could not be downloaded (no internet?).
 echo      Starting in SAMPLE MODE: sample documents only, labelled "Sample data, not official".
@@ -68,6 +79,7 @@ if exist "data\index\sample-mode.flag" (
   del /q "data\index\sample-mode.flag" >nul 2>nul
   if exist "data\index\bisense.db" del /q "data\index\bisense.db" >nul 2>nul
 )
+if defined REBUILD goto :ingest
 if exist "data\index\bisense.db" goto :run
 :ingest
 echo  [3/3] Building the search index...

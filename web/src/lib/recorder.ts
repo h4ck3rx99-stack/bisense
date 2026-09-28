@@ -45,6 +45,7 @@ export function sttErrorFrom(e: unknown): MicError {
   if (e instanceof ApiError) {
     if (e.status === 0) return new MicError("network");
     if (e.code === "stt_unavailable") return new MicError("unavailable");
+    if (e.code === "stt_language_unsupported") return new MicError("unavailable", e.code);
     if (e.code === "audio_empty") return new MicError("too_short");
     return new MicError("server", e.code);
   }

@@ -50,7 +50,9 @@ export const SearchBar = forwardRef<SearchBarHandle, Props>(function SearchBar(
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const recRef = useRef<Recognizer | null>(null);
   const status = useVoiceStatus();
-  const serverStt = status.data?.stt_available === true && micSupport() === null;
+  // Server speech-to-text (Groq, or local Whisper with no key) for the selected language. It records with
+  // getUserMedia, which is what makes the browser ask for microphone permission.
+  const serverStt = status.data?.stt_available === true && micSupport() === null && (status.data?.stt_languages ?? []).includes(lang);
   const browserStt = sttSupported();
 
   const onVoice = ({ text, language }: VoiceResult) => {
@@ -188,6 +190,12 @@ export const SearchBar = forwardRef<SearchBarHandle, Props>(function SearchBar(
       return;
     }
     const why = micSupport();
+    const langs = status.data?.stt_languages ?? [];
+    if (!why && status.data?.stt_available && !langs.includes(lang)) {
+      // e.g. local Whisper transcribes English and Hindi well, but not Kannada
+      setVoiceMsg(t("voice.err.langServer", { lang: langInfo(lang).name, others: langs.map((l) => langInfo(l as Lang).name).join(", ") }));
+      return;
+    }
     setVoiceMsg(t(`voice.err.${why ?? (status.isError ? "network" : "unavailable")}`));
   };
 

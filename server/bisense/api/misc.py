@@ -18,7 +18,7 @@ from bisense.api.common import ApiError, get_db
 from bisense.config import get_settings
 from bisense.models import AskTrace, CompareRequest, CompareResponse, HealthOut, STTOut, TranslateOut, TranslateRequest, TTSRequest, VoiceStatus
 from bisense.retrieval.index import IndexMissing, get_index
-from bisense.voice import VoiceError, stt_config, tts_config, tts_languages
+from bisense.voice import VoiceError, stt_config, stt_languages, stt_mode, tts_config, tts_languages
 
 router = APIRouter(prefix="/api", tags=["misc"])
 VERSION = "0.1.0"
@@ -116,7 +116,7 @@ def _capabilities() -> dict:
 def _features() -> dict[str, bool]:
     s = get_settings()
     return {
-        "server_stt": stt_config(s) is not None,
+        "server_stt": stt_mode(s) is not None,
         "server_tts": tts_config(s) is not None,
         "uploads": s.allow_uploads,
         "debug": s.debug,
@@ -163,12 +163,13 @@ def voice_status() -> VoiceStatus:
 
     s = get_settings()
     stt = stt_config(s)
+    mode = stt_mode(s)
     tts = tts_config(s)
     return VoiceStatus(
-        stt_available=stt is not None,
-        stt_provider=("groq" if "groq.com" in stt[0] else "openai_compatible") if stt else None,
-        stt_model=s.stt_model if stt else None,
-        stt_languages=["en", "hi", "kn"] if stt else [],
+        stt_available=mode is not None,
+        stt_provider=("local" if mode == "local" else ("groq" if stt and "groq.com" in stt[0] else "openai_compatible")) if mode else None,
+        stt_model=(s.stt_local_model if mode == "local" else s.stt_model) if mode else None,
+        stt_languages=stt_languages(s),
         tts_available=tts is not None,
         tts_provider=("groq" if "groq.com" in tts[0] else "openai_compatible") if tts else None,
         tts_languages=tts_languages(s),

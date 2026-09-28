@@ -93,8 +93,21 @@ def fetch_public(refresh: bool = typer.Option(False, help="Download again even i
     """Download Tier B official BIS pages listed in data/public_sources.yaml."""
     from bisense.ingest.fetch_public import fetch_all
 
-    log = fetch_all(get_settings().data_dir, refresh=refresh, log=typer.echo)
-    typer.echo(f"{len(log)} files recorded in data/public/fetch_log.yaml")
+    data_dir = get_settings().data_dir
+    result = fetch_all(data_dir, refresh=refresh, log=typer.echo)
+    marker = data_dir / "public" / "COMPLETE"
+    typer.echo(f"{len(result)} files recorded in data/public/fetch_log.yaml")
+    if result.missing:
+        marker.unlink(missing_ok=True)
+        typer.secho(
+            f"{len(result.missing)} official files could not be downloaded this time: {', '.join(result.missing[:5])}"
+            + (" ..." if len(result.missing) > 5 else "")
+            + "\nRun `npm run fetch-public` again to resume; BISense works with the files it already has.",
+            fg=typer.colors.YELLOW,
+        )
+        raise typer.Exit(3)
+    marker.write_text("all official files in data/public_sources.yaml are present\n", encoding="utf-8")
+    typer.secho("All official files are present.", fg=typer.colors.GREEN)
 
 
 @app.command()
