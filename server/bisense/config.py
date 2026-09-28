@@ -61,6 +61,8 @@ class Settings(BaseSettings):
     # Gate thresholds (calibrated by `bisense eval`, see docs/EVAL.md).
     gate_rerank_min: float = -4.0
     gate_rerank_min_no_llm: float = 1.0
+    # Used only when the reranker cannot be loaded: minimum cosine similarity of the best passage.
+    gate_vector_min: float = 0.62
     strength_strong_min: float = 3.0
     strength_moderate_min: float = 0.0
     # If the LLM declines but the best passage scores at least this, show verbatim passages instead.

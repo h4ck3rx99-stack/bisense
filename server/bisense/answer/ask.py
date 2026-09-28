@@ -221,6 +221,23 @@ def _gate_fails(res: SearchResult, plan: QueryPlan, llm_available: bool = True) 
         return False
     if res.reranked and res.top_rerank is not None and res.top_rerank < threshold:
         return True
+    if not res.reranked and _weak_without_reranker(res, llm_available):
+        return True
+    return False
+
+
+def _weak_without_reranker(res: SearchResult, llm_available: bool) -> bool:
+    """Evidence gate used when the reranker model could not be loaded (e.g. first run offline).
+
+    Uses the embedding similarity of the best passage instead of the cross-encoder score. Without an
+    LLM (nothing else can decline) a keyword match in the top passages is also required.
+    """
+    s = get_settings()
+    best = max((c.vector_score or 0.0) for c in res.context)
+    if best < s.gate_vector_min:
+        return True
+    if not llm_available and not any(c.lexical_rank is not None for c in res.context[:3]):
+        return True
     return False
 
 
