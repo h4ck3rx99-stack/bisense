@@ -11,6 +11,7 @@ data/public/*
 data/processed/
 data/index/*
 !data/index/.gitkeep
+data/index-e2e/
 data/models/
 data/cache/
 

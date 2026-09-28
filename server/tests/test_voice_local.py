@@ -44,7 +44,8 @@ def test_english_browser_recording(client, local):
     r = _stt(client, "en_helmet.webm", "audio/webm;codecs=opus", "en")
     assert r.status_code == 200, r.text
     body = r.json()
-    assert body["provider"] == "local" and "helmet" in body["text"].lower() and "two wheeler" in body["text"].lower()
+    text = body["text"].lower().replace("-", " ")  # Whisper writes "two wheeler" or "two-wheeler"
+    assert body["provider"] == "local" and "helmet" in text and "two wheeler" in text
 
 
 def test_hindi_in_devanagari(client, local):

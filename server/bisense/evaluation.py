@@ -13,6 +13,7 @@ Real numbers only: whatever the run produces is written, including misses agains
 from __future__ import annotations
 
 import json
+import os
 import statistics
 import time
 from dataclasses import dataclass, field
@@ -127,18 +128,35 @@ def run_answers(questions: list[dict], results: dict[str, QResult], log=print) -
     from bisense.answer.ask import run_ask
     from bisense.models import AskContext, AskRequest
 
-    for i, q in enumerate(questions, start=1):
-        c = q.get("context") or {}
-        req = AskRequest(query=q["q"], lang=q.get("lang", "en"), context=AskContext(**c) if c else None)
-        t0 = time.perf_counter()
-        answer = None
-        trace = None
+    s = get_settings()
+    # Free-tier providers limit tokens per minute (Groq: ~8k/min per model, ~3-4k per answer). Pace the run
+    # so the metrics measure the model, not the rate limit; a fallback caused by a provider failure is
+    # retried once after a pause and recorded in the notes.
+    live = s.llm_provider not in ("fake", "none") and s.llm_configured
+    pace = float(os.environ.get("EVAL_PACE_S", "15" if live else "0"))
+
+    def ask_once(req):
+        answer = trace = None
         for ev, data in run_ask(req):
             if ev == "answer":
                 answer = data
             elif ev == "trace":
                 trace = data
+        return answer, trace
+
+    for i, q in enumerate(questions, start=1):
+        c = q.get("context") or {}
+        req = AskRequest(query=q["q"], lang=q.get("lang", "en"), context=AskContext(**c) if c else None)
+        if pace and i > 1:
+            time.sleep(pace)
+        t0 = time.perf_counter()
+        answer, trace = ask_once(req)
         r = results[q["id"]]
+        if live and answer is not None and answer.notice == "notice.extractive_llm_failed":
+            r.notes.append("provider failed once (rate limit?); retried after 45 s")
+            time.sleep(45)
+            t0 = time.perf_counter()
+            answer, trace = ask_once(req)
         r.answer_ms = round((time.perf_counter() - t0) * 1000, 1)
         if answer is None:
             r.notes.append("no answer event")
