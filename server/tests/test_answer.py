@@ -143,3 +143,12 @@ def test_compare_rejects_cells_citing_another_aspect(built_index):
     finally:
         conn.close()
         set_llm(None, override=False)
+
+
+def test_list_rows_read_as_rows_not_table_markup():
+    from bisense.answer.extractive import first_sentences
+
+    table = "Domestic Pressure Cooker\n| Sl No. | IS No. | Product | Notification / status |\n|---|---|---|---|\n| 260. | IS 2347:2017 | Domestic Pressure Cooker | 48. Domestic Pressure Cooker (Quality Control) Order, 2020 |"
+    out = first_sentences(table)
+    assert out == "IS 2347:2017 — Domestic Pressure Cooker — 48. Domestic Pressure Cooker (Quality Control) Order, 2020"
+    assert "---" not in out and "Sl No" not in out

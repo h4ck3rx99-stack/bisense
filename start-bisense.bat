@@ -34,10 +34,15 @@ if errorlevel 1 (
 rem --- 2. First-time setup (dependencies, .env, search models) --------------------------------------
 if not exist "web\node_modules" goto :setup
 if not exist ".env" goto :setup
+rem New BISense versions may need new parts (e.g. the offline speech model): rerun setup once when
+rem scripts\setup-version.txt differs from what the last setup recorded.
+if not exist "data\.setup-version" goto :setup
+fc /b "scripts\setup-version.txt" "data\.setup-version" >nul 2>nul
+if errorlevel 1 goto :setup
 goto :data
 
 :setup
-echo  [1/3] First-time setup: installing dependencies and search models...
+echo  [1/3] Setup: installing dependencies, search models and the offline speech model...
 call npm run setup
 if errorlevel 1 (
   echo  [!] Setup failed. Check your internet connection and the messages above.

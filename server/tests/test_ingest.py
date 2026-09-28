@@ -144,3 +144,13 @@ def test_corrupt_and_non_pdf_files_fail_clearly(tmp_path):
     broken.write_bytes(b"%PDF-1.7\n garbage garbage")
     with pytest.raises(IngestError):
         extract_pdf(broken)
+
+
+def test_short_category_names_from_official_list_headings():
+    from bisense.ingest.catalogue import short_category
+
+    qco_history = "Footwear made from all-Rubber and all Polymeric material and its components (Quality Control) Order, 2020 \n (S.O. No. 3858 (E) 27/10/2020) \n more orders ..."
+    assert short_category(qco_history) == "Footwear made from all-Rubber and all Polymeric material and its components"
+    assert short_category("Steel and Iron Products") == "Steel and Iron Products"
+    long = short_category("1. List of Electronics and IT Goods under the Compulsory Registration Scheme for Self Declaration of conformity notified by MeitY")
+    assert long.startswith("Electronics and IT Goods") and len(long) <= 81 and long.endswith("…")

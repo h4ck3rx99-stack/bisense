@@ -16,7 +16,26 @@ observed; compiling is not enough.
 - Earlier evidence from the first repair pass (same day, with network and a Groq key) is listed separately
   and marked **"previous pass"**. It was not re-run here.
 
-## Quality gates (this pass)
+## Pass 3 (2026-09-28, network available, no Groq key)
+
+- Official data downloaded (44 files, one dropped connection recovered by retry); index: 42 official documents,
+  12 product manuals, 924 official product rows, 729 metadata-only standards; real embedding and reranker models.
+- `pytest`: 166 passed, 7 skipped (Groq-only tests). Includes `test_rag_proof.py` on the official data
+  (known-answer, ablation, refusal, injection, provenance) — run for the first time since pass 1.
+- `vitest`: 15 passed. Playwright: **26 passed, 0 skipped** with `E2E_STT_PROVIDER=local` (real microphone
+  flow via local Whisper, official catalogue entry, guided path on official categories).
+- `bisense eval --no-llm` on 63 questions (official + sample index): recall@5 **1.00**, MRR@10 0.89,
+  exact-number hit@1 1.00, refusal accuracy 0.83, false refusals 0.02 (same as before the ranking changes).
+  Journey J1 "plastic food containers": expected manual at rank 2; the answer lists IS 17569 (compulsory),
+  IS 10910, IS 6312, IS 15410 and the official list row for insulated food containers.
+- Found and fixed while verifying: two allow-listed BIS pages are now empty landing pages (removed); one
+  official category name was a whole paragraph of order history (cleaned); list rows printed raw table
+  markup in no-key answers (now readable rows, and not labelled as exact wording); no-key "which standard"
+  answers showed marking/annex boilerplate (now one about-passage per standard, list rows first);
+  an `.env` from the old example (`STT_PROVIDER=browser`) kept the new mic off (old values now mean `auto`);
+  the launcher would not install the new speech parts for existing users (setup-version check).
+
+## Quality gates (pass 2)
 
 | Command | Result |
 |---|---|

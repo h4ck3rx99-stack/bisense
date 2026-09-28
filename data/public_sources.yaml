@@ -34,11 +34,6 @@ pages:
     title: Product Certification — FAQ
     category: Product certification
     doc_type: guidance_page
-  - file: bis-compulsory-registration.html
-    url: https://www.bis.gov.in/product-certification/compulsory-registration/?lang=en
-    title: Compulsory Registration Scheme
-    category: Product certification
-    doc_type: guidance_page
   - file: bis-fmcs-overview.html
     url: https://www.bis.gov.in/fmcs/fmcs-overview/?lang=en
     title: Foreign Manufacturers Certification Scheme (FMCS) — Overview
@@ -47,11 +42,6 @@ pages:
   - file: bis-fmcs-faq.html
     url: https://www.bis.gov.in/fmcs/fmcs-faqs/?lang=en
     title: Foreign Manufacturers Certification Scheme (FMCS) — FAQ
-    category: Product certification
-    doc_type: guidance_page
-  - file: bis-scheme-x.html
-    url: https://www.bis.gov.in/scheme-x-certification/?lang=en
-    title: Scheme X Certification
     category: Product certification
     doc_type: guidance_page
   - file: bis-scheme-x-faq.html

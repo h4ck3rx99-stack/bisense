@@ -12,6 +12,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # server/bisense/config.py -> repository root is two levels above the package directory.
@@ -90,6 +91,15 @@ class Settings(BaseSettings):
     stt_local_model: str = "small"
     stt_local_languages: str = "en,hi"
     tts_provider: str = "auto"  # auto | openai_compatible | none
+
+    @field_validator("stt_provider", "tts_provider", mode="before")
+    @classmethod
+    def _voice_provider(cls, v: object) -> str:
+        """Older .env files (made from an earlier .env.example) say "browser" or "groq"; treat any value
+        that is not a known provider as "auto", so upgrading never silently switches voice off."""
+        value = str(v or "").strip().lower()
+        return value if value in ("auto", "openai_compatible", "local", "none") else "auto"
+
     tts_base_url: str = "https://api.groq.com/openai/v1"
     tts_api_key: str = ""
     tts_model: str = "canopylabs/orpheus-v1-english"

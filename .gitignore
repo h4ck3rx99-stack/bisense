@@ -36,3 +36,4 @@ web/blob-report/
 Thumbs.db
 *.log
 *.tmp
+data/.setup-version

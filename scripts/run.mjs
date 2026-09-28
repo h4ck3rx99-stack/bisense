@@ -64,6 +64,8 @@ const tasks = {
     }
     run("npm", [existsSync(join(WEB, "package-lock.json")) ? "ci" : "install"], { cwd: WEB });
     pyRun(["bisense", "models"]);
+    // Records which dependency set is installed; start-bisense.bat reruns setup when scripts/setup-version.txt changes.
+    copyFileSync(join(ROOT, "scripts", "setup-version.txt"), join(ROOT, "data", ".setup-version"));
     console.log("\n✓ Setup done. Next: npm run ingest   then   npm run demo");
   },
   dev() {

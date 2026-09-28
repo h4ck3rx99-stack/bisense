@@ -168,7 +168,7 @@ export default function Guide() {
                     type="button"
                     aria-pressed={category === c.category}
                     onClick={() => setCategory(c.category)}
-                    className={`min-h-10 rounded-md border px-3 text-[13px] ${category === c.category ? "border-accent bg-accent-soft text-accent-strong" : "border-line bg-surface text-ink-2 hover:border-accent"}`}
+                    className={`min-h-10 rounded-md border px-3 py-1 text-left text-[13px] ${category === c.category ? "border-accent bg-accent-soft text-accent-strong" : "border-line bg-surface text-ink-2 hover:border-accent"}`}
                   >
                     {c.category} <span className="text-ink-3">({c.count})</span>
                   </button>

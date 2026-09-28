@@ -84,15 +84,16 @@ test("explorer tabs, requirements CSV and checklist", async ({ page }) => {
 });
 
 test("catalogue-only entry shows official compulsory-certification evidence", async ({ page, request }) => {
-  test.skip((await request.get("/api/standards/is-4151-2015")).status() === 404, "official data not loaded (npm run fetch-public && npm run ingest)");
-  await page.goto("/standards/is-4151-2015");
+  // IS 7466 (rubber gaskets for pressure cookers) is known only from the official compulsory-certification list
+  test.skip((await request.get("/api/standards/is-7466-1994")).status() === 404, "official data not loaded (npm run fetch-public && npm run ingest)");
+  await page.goto("/standards/is-7466-1994");
   await expect(page.getByText("Metadata only. Full text not indexed.").first()).toBeVisible();
   await expect(page.getByText(/Listed as under compulsory BIS certification/)).toBeVisible();
 });
 
 test("library filters and compare with numeric alignment", async ({ page }) => {
   await page.goto("/standards?kind=standard");
-  await expect(page.getByText("4 results")).toBeVisible();
+  await expect(page.getByText(/^\d+ results?$/).first()).toBeVisible();
   await expectNoSeriousA11yIssues(page);
   await page.goto("/compare?a=demo-101-2026&b=demo-102-2026");
   await expect(page.getByRole("heading", { name: "Numeric limits (verbatim)" })).toBeVisible({ timeout: 60_000 });
@@ -113,10 +114,13 @@ test("guided path: goal -> category from the data -> real standards -> open one"
   await page.goto("/");
   await page.getByRole("link", { name: "Find standards for my product" }).click();
   await expect(page.getByRole("heading", { name: "Which product?" })).toBeVisible();
-  await page.getByRole("button", { name: /Automotive and road safety/ }).click();
-  await expect(page.getByText(/Automotive and road safety: 1 in the library/)).toBeVisible();
+  // categories come from whatever data is loaded (official lists, or the sample pack)
+  const first = page.getByRole("group", { name: "Categories in the library" }).getByRole("button").first();
+  const name = ((await first.textContent()) ?? "").replace(/\s*\(\d+\)\s*$/, "").trim();
+  await first.click();
+  await expect(page.getByText(`${name}: `, { exact: false }).first()).toBeVisible();
   await page.getByRole("link", { name: "Open" }).first().click();
-  await expect(page).toHaveURL(/\/standards\/demo-201-2026/);
+  await expect(page).toHaveURL(/\/standards\/[a-z0-9-]+/);
   await expectNoSeriousA11yIssues(page);
 });
 
