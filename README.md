@@ -80,6 +80,14 @@ one port.
 
 ## Quick start
 
+**Windows, one click:** install [Node.js LTS](https://nodejs.org) and [uv](https://docs.astral.sh/uv/) (or
+Python 3.12), then double-click **`start-bisense.bat`**. The first run installs everything, downloads the
+official BIS data and builds the index (10–20 minutes); later runs start in seconds. The browser opens by
+itself at http://127.0.0.1:8000. Without internet on the first run it starts in labelled sample mode and
+switches to the official data the next time it runs online. Close the window to stop BISense.
+
+**Step by step (Windows, macOS, Linux):**
+
 Prerequisites: **Python 3.11 or 3.12**, **Node.js 20+**, [uv](https://docs.astral.sh/uv/) (recommended; without
 uv, `npm run setup` falls back to `python -m venv` + pip). Every command works in Windows PowerShell, macOS and Linux.
 
