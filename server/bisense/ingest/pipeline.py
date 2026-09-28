@@ -30,6 +30,7 @@ from bisense import stdnum
 from bisense.config import Settings
 from bisense.db import connect, get_meta, init_schema, set_meta
 from bisense.ingest import catalogue, html_parse, parse
+from bisense.ingest.clean import strip_parallel_devanagari
 from bisense.ingest.chunk import CHUNKER_VERSION, build_embed_text, chunk_clause
 from bisense.ingest.demo_pack import build_demo_pack
 from bisense.ingest.manifest import SourceFile, discover, draft_entry, save_manifest
@@ -41,7 +42,7 @@ from bisense.ingest.types import ClauseDraft, ParsedDoc
 Log = Callable[[str], None]
 
 # Bump when build_database changes what it writes (part of index_version).
-BUILDER_VERSION = "build-2"
+BUILDER_VERSION = "build-3"
 
 
 def sha256_file(path: Path) -> str:
@@ -142,6 +143,14 @@ def mark_manual_sections(clauses: list[ClauseDraft]) -> None:
     for c in clauses:
         if _PLAIN_NUMBER_RE.match(c.number):
             c.number = f"§{c.number}"
+
+
+def drop_parallel_hindi(clauses: list[ClauseDraft]) -> None:
+    for c in clauses:
+        c.heading = strip_parallel_devanagari(c.heading)
+        c.paragraphs = [strip_parallel_devanagari(p) for p in c.paragraphs]
+        if c.table_rows:
+            c.table_rows = [[strip_parallel_devanagari(cell) for cell in row] for row in c.table_rows]
 
 
 def _clause_path(clauses: list[ClauseDraft], i: int) -> str:
@@ -254,6 +263,7 @@ def build_database(db_path: Path, parsed: list[tuple[SourceFile, str, ParsedDoc]
         fields["document_id"] = doc_id
         if e.get("doc_type") == "product_manual":
             mark_manual_sections(doc.clauses)
+            drop_parallel_hindi(doc.clauses)
         elif e.get("doc_type") == "standard":
             qualify_annex_numbers(doc.clauses)
         # Guard against slug collisions (two files for the same standard number).

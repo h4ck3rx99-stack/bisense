@@ -48,6 +48,10 @@ def providers_from_settings(s: Settings) -> list[Provider]:
     out = []
     if s.llm_base_url and s.llm_model:
         out.append(Provider("primary", s.llm_base_url.rstrip("/"), s.llm_api_key, s.llm_model))
+        # A second model on the same provider: free tiers limit tokens per minute per model, so a
+        # rate-limited primary falls through to it before the (slower) fallback provider.
+        if s.llm_alt_model and s.llm_alt_model != s.llm_model:
+            out.append(Provider("primary-alt", s.llm_base_url.rstrip("/"), s.llm_api_key, s.llm_alt_model))
     if s.llm_fallback_base_url and s.llm_fallback_model:
         out.append(Provider("fallback", s.llm_fallback_base_url.rstrip("/"), s.llm_fallback_api_key, s.llm_fallback_model))
     return out
@@ -97,6 +101,15 @@ def extract_json(text: str) -> dict:
     raise ValueError("no JSON object found in model output")
 
 
+def _retry_after(resp: httpx.Response) -> float:
+    """Seconds until a rate-limited model has capacity ("retry-after", or Groq's "38.7s"/"1m5s" reset headers)."""
+    raw = resp.headers.get("retry-after") or resp.headers.get("x-ratelimit-reset-tokens") or ""
+    m = re.fullmatch(r"(?:(\d+)m)?([\d.]+)s?", raw.strip())
+    if not m:
+        return 20.0
+    return min(120.0, float(m.group(1) or 0) * 60 + float(m.group(2)))
+
+
 class LLMClient:
     def __init__(self, settings: Settings | None = None):
         self.settings = settings or get_settings()
@@ -117,6 +130,11 @@ class LLMClient:
                 continue
             try:
                 return self._call(p, messages, json_mode, max_tokens or self.settings.llm_max_tokens, temperature)
+            except httpx.HTTPStatusError as exc:
+                # Rate limited: skip this model until the provider says it has capacity again.
+                wait = _retry_after(exc.response) if exc.response.status_code == 429 else 30.0
+                self._down_until[p.name] = time.monotonic() + wait
+                errors.append(f"{p.name}: HTTP {exc.response.status_code}")
             except (httpx.HTTPError, ValueError, KeyError) as exc:
                 # Remember the failure briefly so a dead provider does not add a timeout to every request.
                 self._down_until[p.name] = time.monotonic() + 30

@@ -193,3 +193,17 @@ def page_is_garbled(lines: list[str]) -> bool:
         return False
     bad = sum(1 for ln in content if looks_like_legacy_font(ln) or is_broken_devanagari(ln))
     return bad / len(content) > 0.5
+
+
+_DEVANAGARI_RUN = re.compile(r"[ऀ-ॿ꣠-ꣿ][ऀ-ॿ꣠-ꣿ‌‍\s/,:()-]*")
+_LATIN = re.compile(r"[A-Za-z]")
+
+
+def strip_parallel_devanagari(text: str) -> str:
+    """Bilingual BIS documents print every label twice ("मानक संख्या IS No."). When a piece of text also
+    has English, drop the Hindi half so the index is not doubled (the page image keeps the original).
+    Text that is only Hindi is kept as it is."""
+    if len(_LATIN.findall(text)) < 3 or not _DEVANAGARI_RUN.search(text):
+        return text
+    out = _DEVANAGARI_RUN.sub(" ", text)
+    return re.sub(r"[ 	]{2,}", " ", out).strip()

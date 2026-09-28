@@ -40,6 +40,7 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key: str = ""
     llm_model: str = ""
+    llm_alt_model: str = ""  # optional second model on the same provider (used when the first is rate-limited)
     llm_fallback_base_url: str = ""
     llm_fallback_api_key: str = ""
     llm_fallback_model: str = ""

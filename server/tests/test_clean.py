@@ -59,3 +59,12 @@ def test_legacy_hindi_font_detection():
     assert not looks_like_legacy_font("The Bureau shall be the certifying authority.")
     assert page_is_garbled(["jftLVªh laö Mhö ,yö&33004@99", "izkf/dkj ls izdkf'kr vlk/kj.k", "Hkkx II—[k.M 3—mi -[k.M (ii)"])
     assert not page_is_garbled(["This Order may be called the Helmet (Quality Control) Order.", "It shall come into force on 1 June 2021."])
+
+
+def test_parallel_hindi_labels_dropped_only_when_english_is_present():
+    from bisense.ingest.clean import strip_parallel_devanagari as strip
+
+    assert strip("मानक संख्या IS No.") == "IS No."
+    assert strip("नमून ेका पररमाण Sample quantity") == "Sample quantity"
+    assert strip("9 Helmets + 3m chin strap") == "9 Helmets + 3m chin strap"
+    assert strip("केवल हिंदी पाठ") == "केवल हिंदी पाठ"  # Hindi-only text is kept
