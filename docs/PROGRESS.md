@@ -1,8 +1,8 @@
 # Progress
 
 ## Current step
-Repair, verify and redesign pass — complete for everything that can be verified without network access.
-Remaining items need the team (official data fetch, keys, real devices, native speakers).
+Pass 4 (with a Groq key) complete: live tests, live eval, live browser checks, fixes. Remaining items need the
+team (real devices, native speakers, Groq console, Docker) or tomorrow's Groq allowance (full eval re-run).
 
 ## Done
 - First build (2026-09-27): ingestion, hybrid retrieval, grounded answering + validator, translation, compare,
@@ -32,23 +32,28 @@ Remaining items need the team (official data fetch, keys, real devices, native s
   official-data download; official index built and evaluated (recall@5 1.00); RAG proofs on official data
   pass; e2e 26/26; readable no-key answers; category names; launcher upgrades existing installs.
 
+- Pass 4 (2026-09-28, Groq key): 175 pytest / 15 vitest / 26 e2e with nothing skipped; live eval (recall@5 0.98,
+  refusal 0.917, false refusals 0.02, answer p50 1.5 s); honest library counts; sample/official never merged in
+  one statement; different-product questions refused; daily provider limit reported and not retried; e2e on its
+  own index; paced eval; `npm run warm` on the official index. Details: VERIFICATION.md "Pass 4".
+
 ## In progress
 - (none)
 
-## Next (team — cannot be done from a network-blocked environment)
-1. Done in pass 3 (official data, proofs, eval without LLM). Remaining: `npm run eval` WITH a Groq key to
-   refresh docs/EVAL.md answer metrics.
-2. Add a Groq key to `.env`, run `npm run test` and `npm run e2e` again (live STT/TTS/LLM tests), then
-   `npm run warm`.
-3. Manual checks in docs/VERIFICATION.md (microphone on desktop Chrome and a phone over HTTPS, read-aloud,
-   10 citations).
-4. Native-speaker review of Hindi/Kannada strings and glossary keywords.
-5. Rehearse docs/DEMO_SCRIPT.md twice.
+## Next (team)
+1. Re-run `npm run eval` once Groq's daily allowance has recovered (not on demo day) to confirm the numbers with
+   prompt `answer_v2.1`.
+2. Run `npm run warm` again the day before the demo (cache is keyed by index + prompt version).
+3. Groq console: accept the terms for `canopylabs/orpheus-v1-english` (server read-aloud, English).
+4. Manual checks in VERIFICATION.md: microphone on a laptop and on a phone over HTTPS, read-aloud, 10 citations.
+5. Native-speaker review of Hindi/Kannada strings and glossary keywords.
+6. `docker build -t bisense .` once (never built).
+7. Rehearse DEMO_SCRIPT.md twice.
 
 ## Known issues
 - Not verified in this pass: anything needing bis.gov.in, Groq or HuggingFace (see VERIFICATION.md).
 - Without both the reranker model and an LLM, refusal accuracy is lower (11/12 in the eval).
-- Answer p50 ≈ 5.6 s with Groq (pass 1 measurement), above the 5 s budget.
+- Groq free tier: about 60 AI answers per model per day (200k tokens/day); afterwards answers are verbatim passages with a clear notice. Warm the cache before a demo.
 - Docker image not built in either pass.
 
 ## Cut features

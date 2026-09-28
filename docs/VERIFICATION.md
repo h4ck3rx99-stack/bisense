@@ -16,6 +16,42 @@ observed; compiling is not enough.
 - Earlier evidence from the first repair pass (same day, with network and a Groq key) is listed separately
   and marked **"previous pass"**. It was not re-run here.
 
+## Pass 4 (2026-09-28, network and a Groq key)
+
+- `pytest`: **175 passed, 0 skipped** (live Groq Whisper in English/Hindi/Kannada, local Whisper, RAG proofs on
+  official data). `vitest`: 15 passed. Playwright: **26 passed, 0 skipped**, including the real round trip
+  fake microphone → Groq Whisper → transcript in the box → answer.
+- `npm run eval` with `openai/gpt-oss-120b` (alternate `openai/gpt-oss-20b`), 63 questions, on the e2e index
+  (official data + labelled sample pack): recall@5 **0.98**, MRR@10 0.86, exact-number hit@1 **1.00**,
+  refusal accuracy **0.917** (11/12), false refusals **0.02**, drop rate 0.017, fact hit **1.00**,
+  answer p50 **1.5 s** / p95 4.2 s (pass 1: 5.6 s). 2 of 63 answers fell back to verbatim passages after a
+  provider rate limit (noted per question in `docs/eval/latest.json`). This run used prompt `answer_v2`;
+  the two fixes below (`answer_v2.1` + validator rule) were checked on the failing cases and by tests, and
+  a full re-run is **pending** (Groq's daily allowance was used up by this run).
+- Live browser checks (official index): English, Hindi and Kannada questions answered and cited to the
+  official list rows and product manuals; guided path on official categories.
+- Found and fixed:
+  - The top bar showed "12 full-text" standards; they are BIS product manuals (0 full-text standards). Now
+    "12 product manuals"; the "not found" page counts were corrected the same way.
+  - Sample mode: a live summary credited a sample document's "eight helmets" to the official IS 4151 manual
+    (which says 9). The validator now drops any statement citing both sample and official sources
+    (`test_sample_and_official_sources_are_never_merged_into_one_statement`).
+  - Eval u08 ("impact test speed for bicycle helmets") was answered from the two-wheeler helmet document.
+    Prompt rule: sources about a different product or without the asked value → "not in the sources".
+    Re-checked live: now refused with the gap named.
+  - Groq free tier has a **daily** cap (200k tokens and 1k requests per model). After it, every question
+    was a slow failed call. Now the client honours the provider's wait, stops calling the exhausted model,
+    and the answer says "today's free AI allowance is used up, back in about N min"
+    (`test_daily_provider_limit_is_reported_and_not_retried`). Eval waits out the limit instead of scoring
+    fallbacks.
+  - e2e depended on the working index being in sample mode (8 failures on a default official-only index).
+    It now builds and uses `data/index-e2e` (`INDEX_PATH`), leaving `data/index` untouched.
+- `npm run warm` (official index): 8 demo answers cached live; the Kannada hallmark question, the three standard
+  summaries and the compare fell back to verbatim passages because the daily allowance ran out mid-run; the
+  "fine in Karnataka" question was correctly refused. Re-run the day before the demo.
+- Server read-aloud (Groq Orpheus) returns `model_terms_required`: the account admin must accept the model's
+  terms once in the Groq console. Browser voices are used meanwhile; the UI reports it.
+
 ## Pass 3 (2026-09-28, network available, no Groq key)
 
 - Official data downloaded (44 files, one dropped connection recovered by retry); index: 42 official documents,
