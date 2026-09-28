@@ -139,7 +139,10 @@
     "whatIsBis": "What is BIS?",
     "whatIsBisBody": "The Bureau of Indian Standards is India's national standards body. It publishes Indian Standards (IS) and runs product certification such as the ISI mark.",
     "learnMore": "Learn more on bis.gov.in",
-    "coverage": "{{line}} BISense is not an official BIS service."
+    "coverageLine": "BISense currently covers {{total}} standards (full text available for {{full}}, official BIS product manual for {{manual}}, the rest by number and title from official BIS lists) and {{pages}} official BIS pages and orders.",
+    "coverageSample_one": "Plus {{count}} sample document (not official).",
+    "coverageSample_other": "Plus {{count}} sample documents (not official).",
+    "notOfficial": "BISense is not an official BIS service."
   },
   "why": {
     "title": "Why not just ask an LLM?",

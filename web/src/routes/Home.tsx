@@ -11,20 +11,27 @@ import { useHealth, useLibrary } from "../lib/hooks";
 import { recentStandards } from "../lib/storage";
 import { shortTitle } from "../lib/format";
 
-// Official data: each example is in docs/demo_questions.yaml and checked by `npm run eval` / `npm run warm`.
-const OFFICIAL_EXAMPLES: { q: string; lang: string }[] = [
-  { q: "Is BIS certification compulsory for two-wheeler helmets?", lang: "en" },
-  { q: "How can I check that gold jewellery is hallmarked?", lang: "en" },
-  { q: "Where can I get my product tested for BIS certification?", lang: "en" },
-  { q: "पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?", lang: "hi" },
-  { q: "ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?", lang: "kn" },
-];
-// Sample mode (DATASET=sample): questions the sample pack can answer (tests/test_rag_mechanism.py, e2e).
-const SAMPLE_EXAMPLES: { q: string; lang: string }[] = [
-  { q: "What must be marked on a two-wheeler helmet?", lang: "en" },
-  { q: "What are the requirements for packaged drinking water?", lang: "en" },
-  { q: "How are bundles of steel bars tied?", lang: "en" },
-];
+// Example questions per UI language. Official-data examples are in docs/demo_questions.yaml and checked by
+// `npm run eval` / `npm run warm`; sample-mode examples are checked in tests/test_rag_mechanism.py and e2e.
+type Example = { q: string; lang: string };
+const OFFICIAL_EXAMPLES: Record<string, Example[]> = {
+  en: [
+    { q: "Is BIS certification compulsory for two-wheeler helmets?", lang: "en" },
+    { q: "How can I check that gold jewellery is hallmarked?", lang: "en" },
+    { q: "Where can I get my product tested for BIS certification?", lang: "en" },
+  ],
+  hi: [{ q: "पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?", lang: "hi" }, { q: "सोने के गहनों पर हॉलमार्किंग का शुल्क कितना है?", lang: "hi" }],
+  kn: [{ q: "ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?", lang: "kn" }, { q: "ಉತ್ಪನ್ನ ಪರೀಕ್ಷೆಗೆ ಯಾವ ಪ್ರಯೋಗಾಲಯ ಬಳಸಬೇಕು?", lang: "kn" }],
+};
+const SAMPLE_EXAMPLES: Record<string, Example[]> = {
+  en: [
+    { q: "What must be marked on a two-wheeler helmet?", lang: "en" },
+    { q: "What are the requirements for packaged drinking water?", lang: "en" },
+    { q: "How are bundles of steel bars tied?", lang: "en" },
+  ],
+  hi: [{ q: "हेलमेट पर क्या चिह्न लगाना जरूरी है?", lang: "hi" }, { q: "पैकेज्ड पेयजल के लिए परीक्षण आवश्यकताएँ क्या हैं?", lang: "hi" }],
+  kn: [{ q: "ಹೆಲ್ಮೆಟ್ ಮೇಲೆ ಏನು ಗುರುತು ಇರಬೇಕು?", lang: "kn" }, { q: "ಪ್ಯಾಕ್ ಮಾಡಿದ ಕುಡಿಯುವ ನೀರಿಗೆ ಅವಶ್ಯಕತೆಗಳು ಯಾವುವು?", lang: "kn" }],
+};
 
 const DOORS: { k: string; to: string; icon: LucideIcon }[] = [
   { k: "product", to: "/guide?goal=product", icon: Package },
@@ -44,7 +51,10 @@ export default function Home() {
   const recent = useMemo(() => recentStandards(), []);
   const go = (q: string) => nav(`/ask?q=${encodeURIComponent(q)}&lang=${i18n.language}`);
   const sample = health.data?.dataset_mode === "sample";
-  const examples = sample ? SAMPLE_EXAMPLES : OFFICIAL_EXAMPLES;
+  const set = sample ? SAMPLE_EXAMPLES : OFFICIAL_EXAMPLES;
+  // Questions in the selected language first, then one English example.
+  const examples = i18n.language === "en" ? set.en : [...(set[i18n.language] ?? []), set.en[0]];
+  const c = library.data?.counts;
 
   // "Something else" in the guided path lands here with the input focused.
   useEffect(() => {
@@ -110,7 +120,14 @@ export default function Home() {
             <ExternalLink size={12} aria-hidden />
           </a>
         </p>
-        {!library.data ? <Skeleton className="h-4 w-2/3" /> : <p className="text-[13px] text-ink-3">{t("home.coverage", { line: library.data.coverage })}</p>}
+        {!c ? (
+          <Skeleton className="h-4 w-2/3" />
+        ) : (
+          <p className="text-[13px] text-ink-3">
+            {t("home.coverageLine", { total: c.standards_total ?? 0, full: c.standards_with_full_text ?? 0, manual: c.standards_with_manual ?? 0, pages: c.guidance ?? 0 })}
+            {c.sample_documents ? ` ${t("home.coverageSample", { count: c.sample_documents })}` : ""} {t("home.notOfficial")}
+          </p>
+        )}
       </section>
 
       {recent.length > 0 && (
