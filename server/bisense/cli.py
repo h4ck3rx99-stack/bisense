@@ -215,6 +215,17 @@ def eval_cmd(
         typer.echo(json.dumps(c))
     if not smoke:
         typer.echo("Wrote the evaluation report (docs/EVAL.md or docs/eval/no_llm.json)")
+    if min_recall:
+        from bisense.retrieval.index import get_index
+
+        counts = get_index().counts
+        # The question set expects official BIS documents; without them recall says nothing about the code.
+        if not counts.get("guidance") and not counts.get("standards_total"):
+            typer.secho(
+                "Official BIS data is not in the index, so the recall threshold was not applied. Run `npm run fetch-public` and `npm run ingest`.",
+                fg=typer.colors.YELLOW,
+            )
+            return
     if (out["metrics"].get("recall_at_5") or 0) < min_recall:
         typer.secho(f"recall@5 below {min_recall}", fg=typer.colors.RED)
         raise typer.Exit(1)

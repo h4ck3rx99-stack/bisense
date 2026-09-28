@@ -73,7 +73,10 @@ def health() -> HealthOut:
         rr = {"reranker": "ready", "fix": None}
     elif rerank.load_error():
         status = "degraded"
-        rr = {"reranker": "unavailable", "fix": "Run `npm run setup` once with internet access to download the reranker model. Until then answers use keyword + meaning search only."}
+        rr = {
+            "reranker": "unavailable",
+            "fix": "Run `npm run setup` once with internet access to download the reranker model. Until then answers use keyword + meaning search only.",
+        }
     else:
         rr = {"reranker": "not_loaded", "fix": None}
     return HealthOut(
