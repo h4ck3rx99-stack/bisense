@@ -21,9 +21,9 @@ observed; compiling is not enough.
 | Command | Result |
 |---|---|
 | `npm run check` (ruff, ruff format, mypy, eslint, tsc, pytest, vitest, web build, eval smoke) | **Pass** — "All quality gates passed" |
-| `npm run test` (backend) | 148 passed, 14 skipped (skips: official data not fetched, or no live LLM/STT/TTS key) |
+| `npm run test` (backend) | 149 passed, 14 skipped (skips: official data not fetched, or no live LLM/STT/TTS key) |
 | `npx vitest run` | 15 passed |
-| `npm run e2e` (Playwright: desktop, 390×844 mobile, fake-microphone Chrome; axe on key pages; fails on any console error) | 23 passed, 2 skipped (real Whisper round trip — no key; official catalogue entry — no official data) |
+| `npm run e2e` (Playwright: desktop, 390×844 mobile, fake-microphone Chrome; axe on key pages; fails on any console error) | 24 passed, 2 skipped (real Whisper round trip — no key; official catalogue entry — no official data) |
 
 ## Feature by feature
 
@@ -44,6 +44,7 @@ observed; compiling is not enough.
 | Compare | e2e `library filters and compare with numeric alignment` | Pass | Compare two official manuals (IS 4151 vs IS 2925) once data is fetched |
 | Language selector drives UI, answer language, STT and TTS | e2e: switching changes `html lang` and strings; "Ask in हिंदी" re-asks in Hindi; answer `lang` = selected language (`test_retrieval`); recorder is cancelled on language change (e2e) | Pass | Translated answers need an LLM: **previous pass** verified Hindi and Kannada answers with identifiers preserved (`demo-5-hindi.png`) |
 | Hindi / Kannada questions without an LLM | Real pipeline: "हेलमेट पर क्या चिह्न लगाना जरूरी है?", "ಹೆಲ್ಮೆಟ್ ಮೇಲೆ ಏನು ಗುರುತು ಇರಬೇಕು?", "पैकेज्ड पेयजल …" each retrieved the right clauses (glossary keyword fallback); screenshot `ask-desktop-hi.png` | Pass | Native-speaker review of strings (below) |
+| Quoted evidence stays original; optional machine translation | e2e (Hindi UI): passage marked `lang="en"`, "अनुवाद दिखाएँ" → with no working model the UI says translation is unavailable and keeps the original; `test_translate_protects_identifiers_and_degrades_honestly` (IS 302, 0.5 mg/l survive; size limits) | Pass | A real Hindi/Kannada translation of a passage needs an LLM key |
 | Identifier protection in translation | `test_protect.py` incl. "IS 302 (Part 1):2008 clause 5.2.3 requires ≤ 0.5 mg/l" | Pass | — |
 | UI string parity (en/hi/kn) | vitest key-parity test | Pass | — |
 | Microphone states, errors, cleanup | e2e (fake-microphone Chrome): denied / no device / busy each explained with typing still working; cancel releases every track; STT 503 explained; language switch cancels recording | Pass | Real device check (below) |

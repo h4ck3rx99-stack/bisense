@@ -1,5 +1,5 @@
 // /compare?a=&b= — aligned two-standard comparison. Every cell cites a source or says
-// "Not found in the indexed text". Numeric limits are aligned deterministically and shown verbatim.
+// "Not found in the source". Numeric limits are aligned deterministically and shown verbatim.
 import { useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useSearchParams } from "react-router-dom";
@@ -11,9 +11,18 @@ import { StandardPicker } from "../components/StandardPicker";
 import { CitationActivateContext, CitationChip, EvidenceCard, focusEvidence } from "../components/Evidence";
 import { EmptyState, ErrorState, SectionTitle, Skeleton, SyntheticBadge } from "../components/ui";
 import { shortTitle } from "../lib/format";
+import { useHealth } from "../lib/hooks";
 
 export default function Compare() {
   const { t, i18n } = useTranslation();
+  const health = useHealth();
+  // Example pair that exists in the loaded data: the sample pair, or two official helmet product manuals.
+  const example =
+    health.data?.dataset_mode === "sample"
+      ? { to: "/compare?a=demo-101-2026&b=demo-102-2026", label: "compare.example" }
+      : (health.data?.counts?.standards_with_manual ?? 0) >= 2
+        ? { to: "/compare?a=is-4151-2015&b=is-2925-1984", label: "compare.exampleOfficial" }
+        : null;
   const [params, setParams] = useSearchParams();
   const a = params.get("a");
   const b = params.get("b");
@@ -39,9 +48,11 @@ export default function Compare() {
       <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
         <StandardPicker label={t("compare.a")} value={pa ?? (a && q.data ? toItem(q.data.a) : null)} exclude={b ?? undefined} onChange={(s) => { setPa(s); setPair(s, pb ?? (q.data ? toItem(q.data.b) : null)); }} />
         <StandardPicker label={t("compare.b")} value={pb ?? (b && q.data ? toItem(q.data.b) : null)} exclude={a ?? undefined} onChange={(s) => { setPb(s); setPair(pa ?? (q.data ? toItem(q.data.a) : null), s); }} />
-        <Link to="/compare?a=demo-101-2026&b=demo-102-2026" className="inline-flex h-10 items-center text-[13px]">
-          {t("compare.example")}
-        </Link>
+        {example && (
+          <Link to={example.to} className="inline-flex h-10 items-center text-[13px]">
+            {t(example.label)}
+          </Link>
+        )}
       </div>
 
       {!a || !b ? (

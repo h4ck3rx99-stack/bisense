@@ -519,13 +519,13 @@
     "a": "Standard A",
     "b": "Standard B",
     "pickerPlaceholder": "Type a number or title…",
-    "example": "Example: DEMO-101 vs DEMO-102",
+    "example": "Example: two sample documents (DEMO-101 vs DEMO-102)",
     "emptyTitle": "Pick two standards to compare",
     "emptyBody": "Choose two full-text standards. BISense lines up scope, definitions, requirements, tests, sampling, marking and packing, and aligns numeric limits from their tables.",
     "loading": "Collecting clauses from both standards and verifying each cell…",
     "tableCaption": "Aspect-by-aspect comparison",
     "aspect": "Aspect",
-    "notFound": "Not found in the indexed text",
+    "notFound": "Not found in the source",
     "notInTable": "not in table",
     "numericTitle": "Numeric limits (verbatim)",
     "numericNote": "Rows aligned by parameter name from both standards' tables. Values are copied exactly, not computed.",
@@ -546,7 +546,8 @@
       "Packing": "Packing",
       "Referenced standards": "Referenced standards",
       "Amendments": "Amendments"
-    }
+    },
+    "exampleOfficial": "Example: two-wheeler helmets vs industrial safety helmets"
   },
   "about": {
     "title": "About BISense",
