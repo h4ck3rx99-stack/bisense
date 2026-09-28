@@ -36,3 +36,28 @@ Each item: verdict, evidence (what was run or seen), fix applied. Screenshots re
 - Hindi/Kannada strings and the auto-drafted eval questions need human review.
 - Browser voice input was implemented and unit-tested (spoken-number normalisation) but not exercised with a real microphone in this environment.
 - Answer latency p50 ≈ 5.6 s exceeds the 5 s budget (reranker ~0.5–1.5 s on CPU + LLM + translation).
+
+# Judge review, repair pass 2 (2026-09-28)
+
+Reviewed as a first-time SIH judge on the rebuilt UI. Evidence is from this pass (sample-mode index, no LLM,
+network blocked) unless marked "pass 1". Fixes found during the review are listed.
+
+| Question | Verdict | Evidence | Fixed during review |
+|---|---|---|---|
+| Can a complete beginner use it without help? | Yes, with caveat | Home: one sentence, one input, five doors; guided path needs no BIS words (e2e); answers open with a 1–2 sentence short answer | Home rewritten; "Find step by step" in the top bar |
+| Find BIS information without BIS terminology? | Yes (sample data); official data to confirm | Glossary maps everyday words (food containers, tiffin, feeding bottle …) only to wording present in the official manuals; guided categories come from the data | Glossary entries added; J1 eval question added — **run `npm run eval` on official data** |
+| Legitimately sourced, provenance visible and understandable? | Yes | Official-only default; badges "Official BIS document / website / Government notification"; citations "Bureau of Indian Standards · … · Page n"; sample data banner + labels when enabled | Sample banner bug (`demo` vs `sample`) |
+| Citations trustworthy (10 random)? | Automated sample passes; manual 10 pending | e2e chip → evidence → exact clause highlighted; citation ids validated server-side | — |
+| Search retrieves useful evidence? | Yes | Marking question now returns marking clauses first | Topic boost; weak passages dropped from evidence-only answers |
+| RAG uses the evidence; refusals when they should? | Yes | Known-answer / ablation / refusal tests pass offline; injection tests pass | Eval refusal metric was wrong without the reranker |
+| Microphone / STT? | Yes in automated tests; real device pending | Fake-microphone e2e (states, errors, cleanup); live Whisper en/hi/kn in pass 1 | Spoken-number bug |
+| Translation? | Mechanism yes; live translation pass 1 | Identifier protection tests; honest "unavailable"; quoted evidence stays original | Optional machine translation under evidence |
+| TTS? | Yes (browser), server English pass 1 | e2e read-aloud chunks, stop, unavailable language | — |
+| Language selector drives everything? | Yes | html lang, strings, answer language, recorder cancel, "Ask in हिंदी" re-asks | Examples and coverage line follow the language |
+| Still too text-heavy anywhere? | Mostly fixed | Answers: key points capped at 5, exact wording collapsed; standard page summary card. The Overview tab below the card is still dense for beginners (scope + legal notes + sections + terms) | Accepted: expert content, below the fold |
+| Dead buttons, fakes, placeholders, console errors? | None found | e2e fails on console errors; facade grep | Compare example that pointed at absent documents |
+| Failure states in plain language? | Yes | refusal, evidence-only, reranker missing, translation unavailable, mic errors, rate limit | Reranker crash |
+| Approachable, not childish? | Yes | No mascots/emoji; one accent colour; icons + labels | — |
+| Advanced capabilities intact and discoverable? | Yes | Exact search, clauses, compare, CSV, Retrieval details all reachable in ≤ 2 taps | — |
+| Core value clear within 30 seconds? | Yes | Home headline + subtitle + input above the fold at 375 px and 1280 px (screenshots) | — |
+| Demo in 3–5 minutes? | Scripted; rehearsal pending | docs/DEMO_SCRIPT.md rewritten for official data | Demo questions pointed at sample documents |
