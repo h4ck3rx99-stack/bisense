@@ -101,13 +101,22 @@ def extract_json(text: str) -> dict:
     raise ValueError("no JSON object found in model output")
 
 
-def _retry_after(resp: httpx.Response) -> float:
+def _retry_after(resp: httpx.Response, cap: float | None = 120.0) -> float:
     """Seconds until a rate-limited model has capacity ("retry-after", or Groq's "38.7s"/"1m5s" reset headers)."""
     raw = resp.headers.get("retry-after") or resp.headers.get("x-ratelimit-reset-tokens") or ""
     m = re.fullmatch(r"(?:(\d+)m)?([\d.]+)s?", raw.strip())
     if not m:
         return 20.0
-    return min(120.0, float(m.group(1) or 0) * 60 + float(m.group(2)))
+    wait = float(m.group(1) or 0) * 60 + float(m.group(2))
+    return wait if cap is None else min(cap, wait)
+
+
+def _is_daily_quota(resp: httpx.Response) -> bool:
+    """Groq free tier: 200k tokens / 1k requests per model per day ("tokens per day (TPD)")."""
+    try:
+        return "per day" in resp.text.lower()
+    except (UnicodeDecodeError, httpx.ResponseNotRead):
+        return False
 
 
 class LLMClient:
@@ -115,6 +124,13 @@ class LLMClient:
         self.settings = settings or get_settings()
         self.providers = providers_from_settings(self.settings)
         self._down_until: dict[str, float] = {}
+        self._quota_until: dict[str, float] = {}  # daily limit reached, per provider
+
+    def quota_wait(self) -> float | None:
+        """Seconds until an AI answer is possible again when EVERY provider has hit its daily limit, else None."""
+        now = time.monotonic()
+        waits = [self._quota_until.get(p.name, 0) - now for p in self.providers]
+        return min(waits) if self.providers and all(w > 0 for w in waits) else None
 
     @property
     def configured(self) -> bool:
@@ -132,8 +148,12 @@ class LLMClient:
                 return self._call(p, messages, json_mode, max_tokens or self.settings.llm_max_tokens, temperature)
             except httpx.HTTPStatusError as exc:
                 # Rate limited: skip this model until the provider says it has capacity again.
-                wait = _retry_after(exc.response) if exc.response.status_code == 429 else 30.0
+                daily = exc.response.status_code == 429 and _is_daily_quota(exc.response)
+                # A daily limit lasts minutes to hours: honour the provider's full wait instead of retrying.
+                wait = _retry_after(exc.response, cap=None if daily else 120.0) if exc.response.status_code == 429 else 30.0
                 self._down_until[p.name] = time.monotonic() + wait
+                if daily:
+                    self._quota_until[p.name] = time.monotonic() + wait
                 errors.append(f"{p.name}: HTTP {exc.response.status_code}")
             except (httpx.HTTPError, ValueError, KeyError) as exc:
                 # Remember the failure briefly so a dead provider does not add a timeout to every request.

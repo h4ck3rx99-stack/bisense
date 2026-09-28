@@ -152,3 +152,43 @@ def test_list_rows_read_as_rows_not_table_markup():
     out = first_sentences(table)
     assert out == "IS 2347:2017 — Domestic Pressure Cooker — 48. Domestic Pressure Cooker (Quality Control) Order, 2020"
     assert "---" not in out and "Sl No" not in out
+
+
+def test_daily_provider_limit_is_reported_and_not_retried(monkeypatch, built_index):
+    """Groq free tier: 200k tokens/day per model. The fallback says so, with the provider's wait, and the
+    exhausted model is not called again until then."""
+    import httpx
+
+    from bisense.answer import llm_client
+    from bisense.config import get_settings
+
+    calls = []
+
+    def handler(request):
+        calls.append(request)
+        return httpx.Response(429, headers={"retry-after": "569"}, json={"error": {"message": "Rate limit reached ... on tokens per day (TPD): Limit 200000"}})
+
+    real_client = httpx.Client
+    monkeypatch.setattr(llm_client.httpx, "Client", lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw))
+    s = get_settings().model_copy(
+        update={
+            "llm_provider": "openai_compatible",
+            "llm_base_url": "https://llm.test/v1",
+            "llm_model": "m1",
+            "llm_alt_model": "m2",
+            "llm_fallback_base_url": "",
+            "llm_fallback_model": "",
+        }
+    )
+    client = llm_client.LLMClient(s)
+    set_llm(client)
+    try:
+        answer = dict(collect(AskRequest(query="What must be marked on a helmet under DEMO-201?")))["answer"]
+        assert answer.mode == "extractive" and answer.notice == "notice.extractive_llm_quota"
+        assert 500 <= (answer.retry_after_s or 0) <= 569
+        n = len(calls)
+        assert n == 2  # primary and alternate model, once each
+        answer = dict(collect(AskRequest(query="What is the maximum mass of a helmet under DEMO-201?")))["answer"]
+        assert answer.notice == "notice.extractive_llm_quota" and len(calls) == n
+    finally:
+        set_llm(None, override=False)

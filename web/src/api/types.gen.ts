@@ -463,6 +463,8 @@ export interface components {
             original: components["schemas"]["OriginalAnswer"] | null;
             /** Notice */
             notice: string | null;
+            /** Retry After S */
+            retry_after_s: number | null;
             /**
              * Searched Summary
              * @default

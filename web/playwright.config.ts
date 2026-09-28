@@ -43,6 +43,6 @@ export default defineConfig({
     reuseExistingServer: false,
     // STT_PROVIDER is explicit so the fake-microphone test can reach real speech-to-text when a Groq key
     // is in .env, or local Whisper with E2E_STT_PROVIDER=local (model downloaded by `npm run setup`). The voice test skips itself when neither is available.
-    env: { INDEX_DIR: "data/index-e2e", DATASET: "sample", STT_PROVIDER: process.env.E2E_STT_PROVIDER ?? "openai_compatible", LLM_PROVIDER: "fake", RATE_LIMIT_ASK: "1000/minute", DEMO_MODE: "false", APP_ENV: "production", PYTHONIOENCODING: "utf-8" },
+    env: { INDEX_PATH: "data/index-e2e", DATASET: "sample", STT_PROVIDER: process.env.E2E_STT_PROVIDER ?? "openai_compatible", LLM_PROVIDER: "fake", RATE_LIMIT_ASK: "1000/minute", DEMO_MODE: "false", APP_ENV: "production", PYTHONIOENCODING: "utf-8" },
   },
 });

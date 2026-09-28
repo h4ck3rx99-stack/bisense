@@ -11,7 +11,6 @@ REPO = Path(__file__).resolve().parents[2]
 def test_env_example_names_match_settings():
     documented = set(re.findall(r"^([A-Z][A-Z0-9_]*)=", (REPO / ".env.example").read_text(encoding="utf-8"), re.M))
     fields = {name.upper() for name in Settings.model_fields}
-    fields |= {str(f.validation_alias).upper() for f in Settings.model_fields.values() if isinstance(f.validation_alias, str)}
     assert documented - fields == set(), f"unknown variables in .env.example: {sorted(documented - fields)}"
 
 

@@ -239,7 +239,10 @@ def _llm_cells(llm, ordered: list[Candidate], per_aspect: dict, cid_of: dict[int
     )
     res = llm.chat([{"role": "system", "content": COMPARE_SYSTEM}, {"role": "user", "content": user}], json_mode=True, max_tokens=1600)
     data = extract_json(res.text)
-    sources = [SourceView(cid=c.citation_id or "", text=c.text, clause_number=c.clause_number, standard_number=c.number, title=c.title) for c in ordered]
+    sources = [
+        SourceView(cid=c.citation_id or "", text=c.text, clause_number=c.clause_number, standard_number=c.number, title=c.title, synthetic=c.synthetic)
+        for c in ordered
+    ]
     out: dict[str, dict] = {}
     dropped = 0
     for row in data.get("rows") or []:

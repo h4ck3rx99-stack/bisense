@@ -581,8 +581,8 @@ def run_ingest(
             drafted.append(sf.path.name)
         parsed.append((sf, sha, doc))
 
-    # The team-maintained manifest lives in data/; a separate index (INDEX_DIR, e.g. the e2e one) keeps its own copy.
-    save_manifest(settings.index_dir if settings.index_dir_override else data_dir, entries)
+    # The team-maintained manifest lives in data/; a separate index (INDEX_PATH, e.g. the e2e one) keeps its own copy.
+    save_manifest(settings.index_dir if settings.index_path else data_dir, entries)
 
     fingerprint = json.dumps(
         {

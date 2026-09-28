@@ -45,6 +45,7 @@ class SourceView:
     url: str | None = None
     page_start: int = 1
     page_end: int = 1
+    synthetic: bool = False  # sample data (Tier D), never to be merged with official sources
 
 
 @dataclass
@@ -197,6 +198,12 @@ class Validator:
                 return ref
         return None
 
+    def mixes_sample_and_official(self, cites: list[str]) -> bool:
+        """A statement citing both sample data and an official source would let sample content borrow official
+        authority (seen in a live answer: a sample document's figure credited to a BIS product manual)."""
+        kinds = {self.sources[c].synthetic for c in cites if c in self.sources}
+        return len(kinds) > 1
+
     def strip_urls(self, text: str, where: str) -> str:
         def repl(m: re.Match[str]) -> str:
             u = m.group(0).rstrip(".,;")
@@ -271,6 +278,9 @@ class Validator:
                 self.drop("point", text, "point relied on a quote that is not in the source")
                 return None
             quote = None
+        if self.mixes_sample_and_official(cites):
+            self.drop("point", text, "cites both sample data and an official source")
+            return None
         bad_std = self.unknown_standard(text)
         if bad_std:
             self.drop("point", text, f"standard number {bad_std} does not appear in the sources")
@@ -288,6 +298,11 @@ class Validator:
 
     def _validate_summary(self, summary: str) -> str:
         if not summary:
+            return ""
+        if self.mixes_sample_and_official([m for m in CITE_MARKER_RE.findall(summary) if m in self.sources]):
+            # Sentence boundaries do not show which marker a claim rests on, so the whole summary goes; the
+            # key points, each labelled with its own source, remain.
+            self.drop("summary", summary, "cites both sample data and an official source")
             return ""
         sentences = re.split(r"(?<=[.!?\]])\s+(?=[A-Z0-9\"'(])", summary.strip())
         kept = []

@@ -193,7 +193,8 @@ API with auto-reload on :8000 and Vite on :5173. Other tasks: `npm run inspect -
 `npm run search:explain -- "query"`, `npm run gen:types`, `npm run lint`, `npm run typecheck`, `npm run test`,
 `npm run e2e`, `npm run check` (ruff, mypy, eslint, tsc, pytest, vitest, build, eval smoke).
 
-- **Backend (pytest)**: 149 tests + 14 that need official data or a live key. Includes the RAG proofs
+- **Backend (pytest)**: 174 tests with official data and a Groq key (tests that need either skip themselves
+  otherwise). Includes the RAG proofs
   (`test_rag_mechanism.py` always; `test_rag_proof.py` on official data): known-answer, ablation (remove the
   document → the fact disappears, even from a model that "knows" it), refusal before any LLM call, prompt
   injection; the adversarial validator suite; provenance on every record; watermark stripping; voice
@@ -202,8 +203,11 @@ API with auto-reload on :8000 and Vite on :5173. Other tasks: `npm run inspect -
   citation chips, spoken standard numbers ("I S fourteen five four three" → "IS 14543").
 - **End-to-end (Playwright)**: 26 tests on desktop, 390 px mobile and a fake-microphone Chrome; axe
   accessibility checks; any console error fails a test. Use `PW_CHROMIUM_PATH` to point at an installed Chromium.
-- **Evaluation**: `npm run eval` — 63 questions (English, Hindi, Kannada, unanswerable). Latest full run and
-  its date: [docs/EVAL.md](docs/EVAL.md).
+  The suite builds and uses its own index (`data/index-e2e`: official data + the labelled sample pack) on first
+  run, so it passes whatever mode your working index is in and never changes it.
+- **Evaluation**: `npm run eval` — 63 questions (English, Hindi, Kannada, unanswerable). With a free-tier key
+  the run is paced (`EVAL_PACE_S`, default 15 s) so rate limits do not turn answers into fallbacks; a
+  provider failure is retried once and noted per question. Latest full run and its date: [docs/EVAL.md](docs/EVAL.md).
 - What was verified how, and the manual checks left for a person: [docs/VERIFICATION.md](docs/VERIFICATION.md).
 
 ## Build and deployment

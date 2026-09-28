@@ -81,6 +81,7 @@ const answer: Answer = {
   translation_failed: false,
   original: null,
   notice: null,
+  retry_after_s: null,
   searched_summary: "",
   library_note: "",
   coverage: [],

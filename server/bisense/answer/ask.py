@@ -73,6 +73,7 @@ def _now() -> str:
 def _sources(res: SearchResult) -> list[SourceView]:
     return [
         SourceView(
+            synthetic=c.synthetic,
             cid=c.citation_id or "",
             text=c.text,
             clause_number=c.clause_number,
@@ -450,6 +451,8 @@ def _extractive(plan: QueryPlan, res: SearchResult, std_refs: list[StandardRef],
     discover = plan.intent in ("discover", "applicability")
     points = extractive_points(res.context, discover=discover, query=plan.english_query)
     shown = {c.slug for p in points for c in res.context if c.citation_id in p.citations}
+    quota_wait = getattr(get_llm(), "quota_wait", None) if llm_configured else None
+    quota = quota_wait() if callable(quota_wait) else None
     return Answer(
         answer_type="answer",
         summary="",
@@ -460,7 +463,8 @@ def _extractive(plan: QueryPlan, res: SearchResult, std_refs: list[StandardRef],
         strength_basis="Verbatim passages ranked by relevance; no AI summary was generated.",
         mode="extractive",
         lang=plan.lang,  # type: ignore[arg-type]
-        notice="notice.extractive_no_key" if not llm_configured else "notice.extractive_llm_failed",
+        notice="notice.extractive_no_key" if not llm_configured else ("notice.extractive_llm_quota" if quota else "notice.extractive_llm_failed"),
+        retry_after_s=int(quota) if quota else None,
         generated_at=_now(),
     )
 

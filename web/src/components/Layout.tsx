@@ -40,9 +40,21 @@ function LibraryIndicator() {
   if (!data) return <span className="skeleton inline-block h-4 w-28" />;
   if (data.status === "no_index") return <span className="text-xs text-warn-ink">{t("health.noIndex")}</span>;
   const c = data.counts;
+  // Honest counts: product manuals are BIS guidance about a standard, not the standard's text.
+  const full = c.standards_with_full_text ?? 0;
+  const manuals = c.standards_with_manual ?? 0;
   return (
-    <Link to="/standards" className="hidden text-xs text-ink-3 no-underline hover:text-ink lg:inline" title={t("health.libraryTitle", { std: c.standards_full_text, guide: c.guidance, cat: c.catalogue })}>
-      <span className="mono font-semibold text-ink-2">{c.standards_full_text}</span> {t("health.fullText")} ·{" "}
+    <Link to="/standards" className="hidden text-xs text-ink-3 no-underline hover:text-ink lg:inline" title={t("health.libraryTitle", { std: full, pm: manuals, guide: c.guidance, cat: c.catalogue })}>
+      {full > 0 && (
+        <>
+          <span className="mono font-semibold text-ink-2">{full}</span> {t("health.fullText")} ·{" "}
+        </>
+      )}
+      {manuals > 0 && (
+        <>
+          <span className="mono font-semibold text-ink-2">{manuals}</span> {t("health.manuals")} ·{" "}
+        </>
+      )}
       <span className="mono font-semibold text-ink-2">{c.guidance}</span> {t("health.guidance")} ·{" "}
       <span className="mono font-semibold text-ink-2">{c.catalogue}</span> {t("health.catalogue")}
     </Link>

@@ -181,3 +181,38 @@ def test_norm_text_handles_quotes_hyphenation_and_case():
 def test_numbers_ignore_standard_numbers():
     assert numbers_in("IS 14543:2016 limits TDS to 500 mg/l") == {"500"}
     assert numbers_in("5 000 containers") == {"5000"}
+
+
+def test_sample_and_official_sources_are_never_merged_into_one_statement():
+    """Regression (live answer, sample mode): a sample document's "eight helmets" was credited to the official
+    BIS product manual in a summary citing both."""
+    sources = [
+        SourceView(
+            cid="C1",
+            text="For type testing, eight helmets of each size shall be selected at random from a lot.",
+            clause_number="7.1",
+            standard_number="DEMO-201:2026",
+            title="Sample helmet document",
+            synthetic=True,
+        ),
+        SourceView(
+            cid="C2",
+            text="Sample quantity: 9 Helmets + 3m chin strap",
+            clause_number="Table",
+            standard_number="IS 4151:2015",
+            title="Protective Helmet for Two Wheeler Riders",
+        ),
+    ]
+    draft = {
+        "answer_type": "answer",
+        "summary": "Eight helmets of each size are selected. This is the requirement in the BIS product manual for IS 4151:2015. [C1][C2]",
+        "points": [
+            {"kind": "source_fact", "text": "The manual and the sample both require eight helmets of each size.", "citations": ["C1", "C2"]},
+            {"kind": "source_fact", "text": "The BIS product manual gives the sample quantity as 9 helmets and a 3 m chin strap.", "citations": ["C2"]},
+            {"kind": "source_fact", "text": "The sample document selects eight helmets of each size.", "citations": ["C1"]},
+        ],
+    }
+    r = Validator(sources, "How many helmets are sampled?", "requirements").validate(draft)
+    assert r.summary == ""
+    assert [p.citations for p in r.points] == [["C2"], ["C1"]]
+    assert sum(1 for d in r.drops if d.reason == "cites both sample data and an official source") == 2

@@ -235,6 +235,7 @@ class Answer(BaseModel):
     translation_failed: bool = False
     original: OriginalAnswer | None = None
     notice: str | None = None  # message key, e.g. "notice.llm_unavailable"
+    retry_after_s: int | None = None  # with notice.extractive_llm_quota: seconds until AI answers are expected back
     searched_summary: str = ""  # "Searched 34 sources (4 full-text standards ...)"
     library_note: str = ""
     synthetic_used: bool = False

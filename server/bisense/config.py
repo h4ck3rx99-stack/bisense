@@ -12,7 +12,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # server/bisense/config.py -> repository root is two levels above the package directory.
@@ -107,9 +107,9 @@ class Settings(BaseSettings):
     tts_languages: str = "en"  # languages the configured TTS model can speak
     tts_timeout_s: float = 30.0
 
-    # INDEX_DIR: build/serve the index somewhere other than data/index (the e2e suite uses its own
+    # INDEX_PATH: build/serve the index somewhere other than data/index (the e2e suite uses its own
     # sample-mode index so it never touches the working index). Empty = data/index.
-    index_dir_override: str = Field("", validation_alias="INDEX_DIR")
+    index_path: str = ""
 
     rate_limit_ask: str = "20/minute"
     allow_uploads: bool = False
@@ -126,8 +126,8 @@ class Settings(BaseSettings):
     # ---- derived paths -------------------------------------------------
     @property
     def index_dir(self) -> Path:
-        if self.index_dir_override:
-            p = Path(self.index_dir_override)
+        if self.index_path:
+            p = Path(self.index_path)
             return p if p.is_absolute() else (REPO_ROOT / p).resolve()
         return self.data_dir / "index"
 

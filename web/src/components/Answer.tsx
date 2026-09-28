@@ -393,7 +393,11 @@ export function AnswerBlock({
           <Info size={16} className="mt-0.5 shrink-0" aria-hidden />
           <div>
             <div className="font-medium">{t("answer.extractiveTitle")}</div>
-            <div className="text-[13px]">{t(answer.notice === "notice.extractive_no_key" ? "answer.extractiveNoKey" : answer.notice === "notice.extractive_llm_declined" ? "answer.extractiveDeclined" : "answer.extractiveFailed")}</div>
+            <div className="text-[13px]">
+              {answer.notice === "notice.extractive_llm_quota"
+                ? t("answer.extractiveQuota", { min: Math.max(1, Math.ceil((answer.retry_after_s ?? 60) / 60)) })
+                : t(answer.notice === "notice.extractive_no_key" ? "answer.extractiveNoKey" : answer.notice === "notice.extractive_llm_declined" ? "answer.extractiveDeclined" : "answer.extractiveFailed")}
+            </div>
           </div>
         </div>
       )}
@@ -494,7 +498,7 @@ export function InsufficientEvidence({ answer }: { answer: Answer }) {
           ))}
         </ul>
       )}
-      <p className="text-[13px]">{t("insufficient.searched", { std: c.standards_full_text ?? 0, guide: c.guidance ?? 0, cat: c.catalogue ?? 0 })}</p>
+      <p className="text-[13px]">{t("insufficient.searched", { std: c.standards_with_full_text ?? 0, pm: c.standards_with_manual ?? 0, guide: c.guidance ?? 0, cat: c.catalogue ?? 0 })}</p>
       <p className="mt-2 text-[13px] font-medium">{t("insufficient.tryTitle")}</p>
       <ul className="mt-1 list-disc pl-5 text-[13px]">
         <li>{t("insufficient.tip1")}</li>

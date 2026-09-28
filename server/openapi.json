@@ -1291,6 +1291,17 @@
       ],
       "title": "Notice"
      },
+     "retry_after_s": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Retry After S"
+     },
      "searched_summary": {
       "type": "string",
       "title": "Searched Summary",
@@ -1336,6 +1347,7 @@
      "translation_failed",
      "original",
      "notice",
+     "retry_after_s",
      "searched_summary",
      "library_note",
      "synthetic_used",

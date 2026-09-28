@@ -18,12 +18,13 @@
     "guide": "Find step by step"
   },
   "health": {
-    "fullText": "full-text",
+    "fullText": "full-text standards",
     "guidance": "BIS pages",
     "catalogue": "catalogue",
-    "libraryTitle": "{{std}} full-text standards, {{guide}} official BIS pages and orders, {{cat}} catalogue entries from official BIS lists",
+    "libraryTitle": "{{std}} standards with full text, {{pm}} official BIS product manuals, {{guide}} official BIS pages and orders, {{cat}} standards listed by number and title in official BIS lists",
     "backendDown": "Server unreachable",
-    "noIndex": "Library not built yet"
+    "noIndex": "Library not built yet",
+    "manuals": "product manuals"
   },
   "action": {
     "retry": "Try again",
@@ -237,7 +238,8 @@
     "open": "Open",
     "openStandard": "Open {{std}}",
     "sourcesTitle": "Sources",
-    "showSource": "Show source {{n}}"
+    "showSource": "Show source {{n}}",
+    "extractiveQuota": "Today's free AI allowance for this server is used up. AI summaries return in about {{min}} min; until then BISense shows the source passages verbatim."
   },
   "strength": {
     "strong": "Strong evidence",
@@ -249,7 +251,7 @@
   "insufficient": {
     "title": "This isn't stated in the indexed sources.",
     "body": "BISense could not find a passage that answers this, so it will not guess.",
-    "searched": "Searched {{std}} full-text standards, {{guide}} official BIS pages and orders, and {{cat}} catalogue entries.",
+    "searched": "Searched {{std}} full-text standards, {{pm}} BIS product manuals, {{guide}} official BIS pages and orders, and {{cat}} standards listed in official BIS lists.",
     "tip1": "Name the product or the standard number (for example \"IS 4151\").",
     "tip2": "Ask about what a standard or a BIS page covers, rather than penalties or prices set elsewhere.",
     "tip3": "Legal questions (fines, enforcement) need the official order or a BIS office.",

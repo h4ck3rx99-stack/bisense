@@ -152,7 +152,15 @@ def run_answers(questions: list[dict], results: dict[str, QResult], log=print) -
         t0 = time.perf_counter()
         answer, trace = ask_once(req)
         r = results[q["id"]]
-        if live and answer is not None and answer.notice == "notice.extractive_llm_failed":
+        if live and answer is not None and answer.notice == "notice.extractive_llm_quota" and (answer.retry_after_s or 0) <= 1800:
+            # Free-tier daily limit: wait for it rather than scoring a fallback as the model's answer.
+            wait = (answer.retry_after_s or 60) + 5
+            r.notes.append(f"daily provider limit reached; waited {wait} s and retried")
+            log(f"  daily provider limit reached; waiting {wait} s ...")
+            time.sleep(wait)
+            t0 = time.perf_counter()
+            answer, trace = ask_once(req)
+        elif live and answer is not None and answer.notice == "notice.extractive_llm_failed":
             r.notes.append("provider failed once (rate limit?); retried after 45 s")
             time.sleep(45)
             t0 = time.perf_counter()
@@ -374,7 +382,7 @@ def main(no_llm: bool = False, smoke: bool = False, compare: bool = False, log=p
     meta = {
         "generated_at": datetime.now(UTC).isoformat(timespec="seconds"),
         "dataset_mode": idx.dataset_mode,
-        "tiers": "B+C" if idx.dataset_mode == "demo" else "A+B",
+        "tiers": "A+B+C+D (D = sample data)" if idx.dataset_mode == "sample" else "A+B+C",
         "corpus": {k: v for k, v in idx.counts.items()},
         "embedding_model": s.embedding_model,
         "reranker": s.reranker_model,
