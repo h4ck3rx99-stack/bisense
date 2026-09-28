@@ -12,6 +12,8 @@ import type {
   SuggestItem,
   SummaryOut,
   ClauseOut,
+  STTOut,
+  VoiceStatus,
 } from "./types";
 
 export class ApiError extends Error {
@@ -24,11 +26,12 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function send(path: string, init?: RequestInit, json = true): Promise<Response> {
   let res: Response;
   try {
-    res = await fetch(path, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
-  } catch {
+    res = await fetch(path, json ? { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } } : init);
+  } catch (e) {
+    if ((e as { name?: string }).name === "AbortError") throw e;
     throw new ApiError(0, "network", navigator.onLine ? "error.backend_down" : "error.offline");
   }
   if (!res.ok) {
@@ -40,8 +43,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiError(res.status, body.code ?? "http_error", body.message_key ?? (res.status >= 500 ? "error.internal" : "error.not_found"));
   }
-  return (await res.json()) as T;
+  return res;
 }
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  return (await (await send(path, init)).json()) as T;
+}
+
+const extFor = (type: string) => (type.includes("ogg") ? "ogg" : type.includes("mp4") ? "m4a" : type.includes("mpeg") ? "mp3" : type.includes("wav") ? "wav" : "webm");
 
 const enc = encodeURIComponent;
 
@@ -70,6 +79,17 @@ export const api = {
     request<SearchResponse>("/api/search", { method: "POST", body: JSON.stringify({ query, lang, context }) }),
   compare: (a: string, b: string, lang: Lang) => request<CompareResponse>("/api/compare", { method: "POST", body: JSON.stringify({ a, b, lang }) }),
   eval: () => request<EvalSummary>("/api/eval"),
+  voiceStatus: () => request<VoiceStatus>("/api/voice/status"),
+  /** Speech-to-text on the server (multipart upload; the browser never sees a provider key). */
+  stt: async (audio: Blob, lang: Lang, signal?: AbortSignal) => {
+    const form = new FormData();
+    form.append("audio", audio, `speech.${extFor(audio.type)}`);
+    form.append("lang", lang);
+    return (await (await send("/api/voice/stt", { method: "POST", body: form, signal }, false)).json()) as STTOut;
+  },
+  /** Server text-to-speech for one chunk of text; returns audio (WAV). */
+  tts: async (text: string, lang: Lang, signal?: AbortSignal) =>
+    (await send("/api/voice/tts", { method: "POST", body: JSON.stringify({ text, lang }), signal })).blob(),
 };
 
 export const csvUrl = (slug: string) => `/api/standards/${enc(slug)}/requirements.csv`;

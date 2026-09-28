@@ -66,16 +66,32 @@
     "pressSlash": "Press"
   },
   "voice": {
-    "start": "Start voice input",
-    "stop": "Stop voice input",
+    "start": "Speak your question in {{lang}}",
+    "stop": "Stop recording",
     "listening": "Listening ({{lang}}) — tap stop when done",
-    "hint": "Type, or tap the mic to speak in English, Hindi or Kannada.",
-    "unsupported": "Voice input is not supported in this browser. Chrome or Edge support it; typing always works.",
-    "unsupportedShort": "Voice input needs Chrome or Edge; typing always works.",
-    "denied": "Microphone permission was denied. Allow it in the browser's site settings, or type instead.",
-    "noSpeech": "No speech detected. Tap the mic and try again.",
-    "error": "Voice input stopped unexpectedly. Try again or type.",
-    "checkTranscript": "Check the transcript (standard numbers are often misheard), then press Ask."
+    "hint": "Type, or tap the mic and speak in {{lang}}.",
+    "requesting": "Allow microphone access in your browser's prompt…",
+    "recording": "Recording ({{lang}})",
+    "level": "Microphone level",
+    "done": "Done",
+    "cancel": "Cancel",
+    "transcribing": "Turning your speech into text ({{lang}})…",
+    "checkTranscript": "Check the text (standard numbers are often misheard), edit if needed, then press Ask.",
+    "detectedOther": "This sounded like {{lang}}. If so, switch the language at the top and speak again.",
+    "tryBrowser": "Tap the mic again to use your browser's own speech recognition.",
+    "err": {
+      "insecure": "The microphone only works on a secure page (https:// or localhost). Open BISense that way, or type your question.",
+      "unsupported": "This browser can't record audio. Try a recent Chrome, Edge, Firefox or Safari, or type your question.",
+      "denied": "Microphone access is blocked. Allow it in your browser's site settings (the icon next to the address), then try again — or type.",
+      "no_device": "No microphone was found. Connect one and try again, or type your question.",
+      "busy": "The microphone couldn't start — another app may be using it. Close it and try again, or type.",
+      "no_speech": "We didn't hear anything. Check your microphone, speak a little louder, and try again.",
+      "too_short": "That was too short. Hold the mic a moment longer and speak your question.",
+      "server": "Speech recognition failed this time. Try again, or type your question.",
+      "unavailable": "Speech recognition isn't set up on this BISense server. Type your question instead.",
+      "network": "Couldn't reach the BISense server. Check your connection and try again.",
+      "langBrowser": "Your browser can't recognise {{lang}} speech. Type your question instead."
+    }
   },
   "home": {
     "title": "Find the Indian Standard that applies, and see the exact clause that says so.",
@@ -176,10 +192,6 @@
     "partial_one": "{{count}} statement was removed because it could not be verified against the sources.",
     "partial_other": "{{count}} statements were removed because they could not be verified against the sources.",
     "copy": "Copy with citations",
-    "listen": "Listen",
-    "stopListening": "Stop",
-    "listenUnavailable": "No voice is installed for this language in this browser.",
-    "listenUnavailableShort": "Read-aloud unavailable",
     "sourcesOnScreen": "Sources are shown on screen",
     "followUps": "Suggested follow-up questions",
     "relevantStandards": "Relevant standards",
@@ -557,5 +569,13 @@
     "title": "Page not found",
     "body": "This address does not exist in BISense.",
     "back": "Back to search"
+  },
+  "tts": {
+    "listen": "Listen",
+    "stop": "Stop",
+    "loading": "Preparing audio…",
+    "noVoice": "Read-aloud isn't available in {{lang}} on this device (no {{lang}} voice installed).",
+    "unsupported": "This browser can't read text aloud.",
+    "failed": "Read-aloud stopped. The answer text is unaffected."
   }
 }

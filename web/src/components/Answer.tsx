@@ -6,14 +6,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { BookOpenCheck, Check, CircleHelp, Copy, Info, Lightbulb, ListChecks, Quote, Scale, Sparkles, Volume2, VolumeX, X } from "lucide-react";
-import type { Answer, Citation, Point, QueryInfo, StandardRef } from "../api/types";
+import { BookOpenCheck, Check, CircleHelp, Copy, Info, Lightbulb, ListChecks, Quote, Scale, Sparkles, X } from "lucide-react";
+import type { Answer, Citation, Lang, Point, QueryInfo, StandardRef } from "../api/types";
 import { Badge, SectionTitle, SyntheticBadge } from "./ui";
 import { CitationChip, WithCitations } from "./Evidence";
 import { useToast } from "./Toast";
 import { shortTitle } from "../lib/format";
-import { speak, stopSpeaking, ttsSupported, voiceFor } from "../lib/speech";
-import { langInfo } from "../i18n/languages";
+import { ListenButton } from "./ListenButton";
 import { useHealth } from "../lib/hooks";
 
 const STAGES = ["understanding", "searching", "drafting", "verifying", "translating"] as const;
@@ -214,12 +213,9 @@ function speakableText(a: Answer, t: (k: string) => string): string {
 export function AnswerBlock({ answer, citations, onFollowUp, onPickOption }: { answer: Answer; citations: Map<string, Citation>; onFollowUp?: (q: string) => void; onPickOption?: (q: string) => void }) {
   const { t } = useTranslation();
   const toast = useToast();
-  const [speaking, setSpeaking] = useState(false);
   const facts = answer.points.filter((p) => p.kind === "source_fact");
   const interps = answer.points.filter((p) => p.kind === "interpretation");
   const origFacts = answer.original?.points.filter((p) => p.kind === "source_fact");
-  const locale = langInfo(answer.lang).speechLocale;
-  const canSpeak = ttsSupported() && (answer.lang === "en" || voiceFor(locale) !== null);
 
   if (answer.answer_type === "insufficient_evidence") return <InsufficientEvidence answer={answer} />;
   if (answer.answer_type === "out_of_scope") {
@@ -315,24 +311,7 @@ export function AnswerBlock({ answer, citations, onFollowUp, onPickOption }: { a
           <Copy size={14} aria-hidden />
           {t("answer.copy")}
         </button>
-        {canSpeak ? (
-          <button
-            type="button"
-            onClick={() => {
-              if (speaking) {
-                stopSpeaking();
-                setSpeaking(false);
-              } else if (speak(speakableText(answer, t), locale, () => setSpeaking(false))) setSpeaking(true);
-            }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium text-ink-2 hover:bg-surface-2"
-            aria-pressed={speaking}
-          >
-            {speaking ? <VolumeX size={14} aria-hidden /> : <Volume2 size={14} aria-hidden />}
-            {speaking ? t("answer.stopListening") : t("answer.listen")}
-          </button>
-        ) : (
-          <span className="text-xs text-ink-3" title={t("answer.listenUnavailable")}>{t("answer.listenUnavailableShort")}</span>
-        )}
+        <ListenButton id={`${answer.generated_at ?? ""}:${answer.summary.slice(0, 40)}`} text={speakableText(answer, t)} lang={answer.lang as Lang} />
       </div>
 
       {answer.follow_ups.length > 0 && onFollowUp && (

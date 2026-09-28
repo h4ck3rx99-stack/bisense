@@ -113,6 +113,7 @@ def query_info(plan: QueryPlan) -> QueryInfo:
         interpreted_query=plan.english_query,
         intent=plan.intent,
         lang=plan.lang,  # type: ignore[arg-type]
+        query_lang=plan.query_lang if plan.query_lang in ("en", "hi", "kn") else "en",  # type: ignore[arg-type]
         resolved_scope=[ScopeItemOut(slug=s.slug, number=s.number, title=s.title, kind=s.kind) for s in plan.scope],  # type: ignore[arg-type]
         scope_source=plan.scope_source,
         rewritten=plan.rewritten,

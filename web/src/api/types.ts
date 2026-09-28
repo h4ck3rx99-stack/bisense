@@ -32,3 +32,6 @@ export type CompareResponse = S["CompareResponse"];
 export type CompareRow = S["CompareRow"];
 export type NumericRow = S["NumericRow"];
 export type StandardKind = StandardSummary["kind"];
+export type STTOut = S["STTOut"];
+export type VoiceStatus = S["VoiceStatus"];
+export type CoverageNote = S["CoverageNote"];

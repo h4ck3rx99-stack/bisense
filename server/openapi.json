@@ -67,19 +67,63 @@
     }
    }
   },
+  "/api/voice/status": {
+   "get": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Voice Status Endpoint",
+    "operationId": "voice_status_endpoint_api_voice_status_get",
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/VoiceStatus"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/voice/stt": {
    "post": {
     "tags": [
      "misc"
     ],
     "summary": "Voice Stt",
+    "description": "Transcribe one recording. `lang`: en | hi | kn, or empty to let the model detect it.",
     "operationId": "voice_stt_api_voice_stt_post",
+    "requestBody": {
+     "content": {
+      "multipart/form-data": {
+       "schema": {
+        "$ref": "#/components/schemas/Body_voice_stt_api_voice_stt_post"
+       }
+      }
+     },
+     "required": true
+    },
     "responses": {
      "200": {
       "description": "Successful Response",
       "content": {
        "application/json": {
-        "schema": {}
+        "schema": {
+         "$ref": "#/components/schemas/STTOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
        }
       }
      }
@@ -376,7 +420,7 @@
        "anyOf": [
         {
          "type": "string",
-         "pattern": "^[ABC]$"
+         "pattern": "^[ABCD]$"
         },
         {
          "type": "null"
@@ -1219,6 +1263,13 @@
       "type": "boolean",
       "title": "Synthetic Used",
       "default": false
+     },
+     "coverage": {
+      "items": {
+       "$ref": "#/components/schemas/CoverageNote"
+      },
+      "type": "array",
+      "title": "Coverage"
      }
     },
     "type": "object",
@@ -1245,7 +1296,8 @@
      "notice",
      "searched_summary",
      "library_note",
-     "synthetic_used"
+     "synthetic_used",
+     "coverage"
     ],
     "title": "Answer"
    },
@@ -1413,6 +1465,31 @@
     "title": "AskTrace",
     "description": "Everything the Retrieval details drawer shows (also served by /api/debug/trace when DEBUG=true)."
    },
+   "Body_voice_stt_api_voice_stt_post": {
+    "properties": {
+     "audio": {
+      "type": "string",
+      "contentMediaType": "application/octet-stream",
+      "title": "Audio"
+     },
+     "lang": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Lang"
+     }
+    },
+    "type": "object",
+    "required": [
+     "audio"
+    ],
+    "title": "Body_voice_stt_api_voice_stt_post"
+   },
    "CategoryCount": {
     "properties": {
      "category": {
@@ -1538,6 +1615,49 @@
      "has_page_image": {
       "type": "boolean",
       "title": "Has Page Image"
+     },
+     "text_scope": {
+      "type": "string",
+      "title": "Text Scope",
+      "default": "full_text"
+     },
+     "document_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document Title"
+     },
+     "source_org": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Org"
+     },
+     "source_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Type"
+     },
+     "source_label": {
+      "type": "string",
+      "title": "Source Label",
+      "default": ""
      }
     },
     "type": "object",
@@ -1560,7 +1680,12 @@
      "tier",
      "doc_type",
      "url",
-     "has_page_image"
+     "has_page_image",
+     "text_scope",
+     "document_title",
+     "source_org",
+     "source_type",
+     "source_label"
     ],
     "title": "Citation"
    },
@@ -1891,6 +2016,41 @@
     ],
     "title": "CompulsoryEvidence"
    },
+   "CoverageNote": {
+    "properties": {
+     "slug": {
+      "type": "string",
+      "title": "Slug"
+     },
+     "number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Number"
+     },
+     "title": {
+      "type": "string",
+      "title": "Title"
+     },
+     "text_scope": {
+      "type": "string",
+      "title": "Text Scope"
+     }
+    },
+    "type": "object",
+    "required": [
+     "slug",
+     "number",
+     "title",
+     "text_scope"
+    ],
+    "title": "CoverageNote"
+   },
    "Drop": {
     "properties": {
      "field": {
@@ -1995,6 +2155,43 @@
       },
       "type": "object",
       "title": "Features"
+     },
+     "voice": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/VoiceStatus"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "translation": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "boolean"
+        },
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "type": "object",
+      "title": "Translation"
+     },
+     "languages": {
+      "additionalProperties": {
+       "additionalProperties": {
+        "type": "boolean"
+       },
+       "type": "object"
+      },
+      "type": "object",
+      "title": "Languages"
      }
     },
     "type": "object",
@@ -2007,12 +2204,19 @@
      "models_loaded",
      "demo_mode",
      "version",
-     "features"
+     "features",
+     "voice",
+     "translation",
+     "languages"
     ],
     "title": "HealthOut"
    },
    "LibraryOut": {
     "properties": {
+     "coverage": {
+      "type": "string",
+      "title": "Coverage"
+     },
      "dataset_mode": {
       "type": "string",
       "title": "Dataset Mode"
@@ -2071,6 +2275,7 @@
     },
     "type": "object",
     "required": [
+     "coverage",
      "dataset_mode",
      "index_version",
      "built_at",
@@ -2311,6 +2516,60 @@
       },
       "type": "array",
       "title": "Warnings"
+     },
+     "document_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Document Title"
+     },
+     "source_org": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Org"
+     },
+     "source_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Type"
+     },
+     "verification_status": {
+      "type": "string",
+      "title": "Verification Status",
+      "default": "unverified"
+     },
+     "access_note": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Access Note"
+     },
+     "text_scope": {
+      "type": "string",
+      "title": "Text Scope",
+      "default": "full_text"
      }
     },
     "type": "object",
@@ -2322,7 +2581,13 @@
      "obtained_on",
      "pages",
      "language",
-     "warnings"
+     "warnings",
+     "document_title",
+     "source_org",
+     "source_type",
+     "verification_status",
+     "access_note",
+     "text_scope"
     ],
     "title": "Provenance"
    },
@@ -2581,6 +2846,75 @@
      "counts"
     ],
     "title": "RequirementsOut"
+   },
+   "STTOut": {
+    "properties": {
+     "text": {
+      "type": "string",
+      "title": "Text"
+     },
+     "no_speech": {
+      "type": "boolean",
+      "title": "No Speech"
+     },
+     "language": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Language"
+     },
+     "requested_language": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Requested Language"
+     },
+     "duration_s": {
+      "anyOf": [
+       {
+        "type": "number"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Duration S"
+     },
+     "provider": {
+      "type": "string",
+      "title": "Provider"
+     },
+     "model": {
+      "type": "string",
+      "title": "Model"
+     },
+     "ms": {
+      "type": "number",
+      "title": "Ms"
+     }
+    },
+    "type": "object",
+    "required": [
+     "text",
+     "no_speech",
+     "language",
+     "requested_language",
+     "duration_s",
+     "provider",
+     "model",
+     "ms"
+    ],
+    "title": "STTOut"
    },
    "ScopeItemOut": {
     "properties": {
@@ -3221,6 +3555,22 @@
       "type": "string",
       "title": "Tier"
      },
+     "text_scope": {
+      "type": "string",
+      "title": "Text Scope",
+      "default": "full_text"
+     },
+     "source_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Type"
+     },
      "clause_count": {
       "type": "integer",
       "title": "Clause Count",
@@ -3246,6 +3596,8 @@
      "synthetic",
      "needs_review",
      "tier",
+     "text_scope",
+     "source_type",
      "clause_count",
      "requirement_count"
     ],
@@ -3321,7 +3673,7 @@
     "properties": {
      "text": {
       "type": "string",
-      "maxLength": 3000,
+      "maxLength": 400,
       "minLength": 1,
       "title": "Text"
      },
@@ -3402,6 +3754,98 @@
      "type"
     ],
     "title": "ValidationError"
+   },
+   "VoiceStatus": {
+    "properties": {
+     "stt_available": {
+      "type": "boolean",
+      "title": "Stt Available"
+     },
+     "stt_provider": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stt Provider"
+     },
+     "stt_model": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Stt Model"
+     },
+     "stt_languages": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Stt Languages"
+     },
+     "tts_available": {
+      "type": "boolean",
+      "title": "Tts Available"
+     },
+     "tts_provider": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Tts Provider"
+     },
+     "tts_languages": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Tts Languages"
+     },
+     "tts_problem": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Tts Problem"
+     },
+     "max_seconds": {
+      "type": "integer",
+      "title": "Max Seconds"
+     },
+     "max_bytes": {
+      "type": "integer",
+      "title": "Max Bytes"
+     }
+    },
+    "type": "object",
+    "required": [
+     "stt_available",
+     "stt_provider",
+     "stt_model",
+     "stt_languages",
+     "tts_available",
+     "tts_provider",
+     "tts_languages",
+     "tts_problem",
+     "max_seconds",
+     "max_bytes"
+    ],
+    "title": "VoiceStatus"
    },
    "StageEvent": {
     "properties": {

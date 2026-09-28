@@ -106,6 +106,7 @@ class QueryPlan:
     is_follow_up: bool
     rewritten: bool = False
     notes: list[str] = field(default_factory=list)
+    query_lang: str = "en"  # language the question was written/spoken in (lang = the selected answer language)
 
     @property
     def scope_ids(self) -> list[int]:
@@ -192,8 +193,10 @@ def understand(conn: sqlite3.Connection, query: str, ui_lang: str = "en", contex
     lexical = content + expand_lexical(english)
     return QueryPlan(
         raw=query,
-        # Answer language: the query's script if it is Hindi/Kannada, otherwise the UI language.
-        lang=lang if lang != "en" else (ui_lang if ui_lang in ("en", "hi", "kn") else "en"),
+        # One language context: answers are always in the language the user selected. The question may be
+        # in another language (query_lang); the UI then says so and offers to switch.
+        lang=ui_lang if ui_lang in ("en", "hi", "kn") else "en",
+        query_lang=lang,
         intent=intent,
         english_query=english,
         keywords=keywords,

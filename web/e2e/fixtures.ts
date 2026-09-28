@@ -1,13 +1,15 @@
 import { test as base, expect, type Page } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
-// Every test fails if the page logs a console error.
-export const test = base.extend<{ consoleErrors: string[] }>({
+// Every test fails if the page logs a console error. Tests that deliberately provoke an HTTP error
+// response (e.g. a failing speech service) list the expected messages in `allowedConsoleErrors`.
+export const test = base.extend<{ consoleErrors: string[]; allowedConsoleErrors: RegExp[] }>({
+  allowedConsoleErrors: [[], { option: true }],
   consoleErrors: [
-    async ({ page }, use) => {
+    async ({ page, allowedConsoleErrors }, use) => {
       const errors: string[] = [];
       page.on("console", (m) => {
-        if (m.type() === "error") errors.push(m.text());
+        if (m.type() === "error" && !allowedConsoleErrors.some((r) => r.test(m.text()))) errors.push(m.text());
       });
       page.on("pageerror", (e) => errors.push(String(e)));
       await use(errors);

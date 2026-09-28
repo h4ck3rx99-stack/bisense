@@ -38,6 +38,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/voice/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Voice Status Endpoint */
+        get: operations["voice_status_endpoint_api_voice_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/voice/stt": {
         parameters: {
             query?: never;
@@ -47,7 +64,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Voice Stt */
+        /**
+         * Voice Stt
+         * @description Transcribe one recording. `lang`: en | hi | kn, or empty to let the model detect it.
+         */
         post: operations["voice_stt_api_voice_stt_post"];
         delete?: never;
         options?: never;
@@ -437,6 +457,8 @@ export interface components {
              * @default false
              */
             synthetic_used: boolean;
+            /** Coverage */
+            coverage: components["schemas"]["CoverageNote"][];
         };
         /**
          * AskContext
@@ -493,6 +515,13 @@ export interface components {
                 [key: string]: number;
             };
         };
+        /** Body_voice_stt_api_voice_stt_post */
+        Body_voice_stt_api_voice_stt_post: {
+            /** Audio */
+            audio: string;
+            /** Lang */
+            lang?: string | null;
+        };
         /** CategoryCount */
         CategoryCount: {
             /** Category */
@@ -547,6 +576,22 @@ export interface components {
             url: string | null;
             /** Has Page Image */
             has_page_image: boolean;
+            /**
+             * Text Scope
+             * @default full_text
+             */
+            text_scope: string;
+            /** Document Title */
+            document_title: string | null;
+            /** Source Org */
+            source_org: string | null;
+            /** Source Type */
+            source_type: string | null;
+            /**
+             * Source Label
+             * @default
+             */
+            source_label: string;
         };
         /** ClauseNode */
         ClauseNode: {
@@ -657,6 +702,17 @@ export interface components {
             /** Clause Number */
             clause_number: string | null;
         };
+        /** CoverageNote */
+        CoverageNote: {
+            /** Slug */
+            slug: string;
+            /** Number */
+            number: string | null;
+            /** Title */
+            title: string;
+            /** Text Scope */
+            text_scope: string;
+        };
         /** Drop */
         Drop: {
             /** Field */
@@ -700,9 +756,22 @@ export interface components {
             features: {
                 [key: string]: boolean;
             };
+            voice: components["schemas"]["VoiceStatus"] | null;
+            /** Translation */
+            translation: {
+                [key: string]: boolean | string | null;
+            };
+            /** Languages */
+            languages: {
+                [key: string]: {
+                    [key: string]: boolean;
+                };
+            };
         };
         /** LibraryOut */
         LibraryOut: {
+            /** Coverage */
+            coverage: string;
             /** Dataset Mode */
             dataset_mode: string;
             /** Index Version */
@@ -780,6 +849,24 @@ export interface components {
             language: string | null;
             /** Warnings */
             warnings: string[];
+            /** Document Title */
+            document_title: string | null;
+            /** Source Org */
+            source_org: string | null;
+            /** Source Type */
+            source_type: string | null;
+            /**
+             * Verification Status
+             * @default unverified
+             */
+            verification_status: string;
+            /** Access Note */
+            access_note: string | null;
+            /**
+             * Text Scope
+             * @default full_text
+             */
+            text_scope: string;
         };
         /** QueryInfo */
         QueryInfo: {
@@ -866,6 +953,25 @@ export interface components {
             counts: {
                 [key: string]: number;
             };
+        };
+        /** STTOut */
+        STTOut: {
+            /** Text */
+            text: string;
+            /** No Speech */
+            no_speech: boolean;
+            /** Language */
+            language: string | null;
+            /** Requested Language */
+            requested_language: string | null;
+            /** Duration S */
+            duration_s: number | null;
+            /** Provider */
+            provider: string;
+            /** Model */
+            model: string;
+            /** Ms */
+            ms: number;
         };
         /** ScopeItemOut */
         ScopeItemOut: {
@@ -1061,6 +1167,13 @@ export interface components {
             /** Tier */
             tier: string;
             /**
+             * Text Scope
+             * @default full_text
+             */
+            text_scope: string;
+            /** Source Type */
+            source_type: string | null;
+            /**
              * Clause Count
              * @default 0
              */
@@ -1125,6 +1238,29 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /** VoiceStatus */
+        VoiceStatus: {
+            /** Stt Available */
+            stt_available: boolean;
+            /** Stt Provider */
+            stt_provider: string | null;
+            /** Stt Model */
+            stt_model: string | null;
+            /** Stt Languages */
+            stt_languages: string[];
+            /** Tts Available */
+            tts_available: boolean;
+            /** Tts Provider */
+            tts_provider: string | null;
+            /** Tts Languages */
+            tts_languages: string[];
+            /** Tts Problem */
+            tts_problem: string | null;
+            /** Max Seconds */
+            max_seconds: number;
+            /** Max Bytes */
+            max_bytes: number;
         };
         /** StageEvent */
         StageEvent: {
@@ -1220,7 +1356,7 @@ export interface operations {
             };
         };
     };
-    voice_stt_api_voice_stt_post: {
+    voice_status_endpoint_api_voice_status_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1235,7 +1371,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": unknown;
+                    "application/json": components["schemas"]["VoiceStatus"];
+                };
+            };
+        };
+    };
+    voice_stt_api_voice_stt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_voice_stt_api_voice_stt_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["STTOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

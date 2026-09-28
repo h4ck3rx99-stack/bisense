@@ -94,7 +94,19 @@ def test_hindi_offline_keyword_translation(built_index):
     from bisense.retrieval.index import db_conn
 
     conn = db_conn()
-    p = understand(conn, "पैकेज्ड पेयजल की परीक्षण आवश्यकताएँ")
-    assert p.lang == "hi"
+    p = understand(conn, "पैकेज्ड पेयजल की परीक्षण आवश्यकताएँ", ui_lang="hi")
+    assert p.lang == "hi" and p.query_lang == "hi"
     assert "packaged drinking water" in p.english_query and "requirements" in p.english_query
+    conn.close()
+
+
+def test_one_language_context_answer_language_is_the_selected_language(built_index):
+    """Regression: a Hindi question asked with Kannada selected used to be answered in Hindi."""
+    from bisense.retrieval.index import db_conn
+
+    conn = db_conn()
+    p = understand(conn, "हेलमेट के लिए कौन सा मानक है?", ui_lang="kn")
+    assert p.lang == "kn" and p.query_lang == "hi"
+    p = understand(conn, "Which standard applies to helmets?", ui_lang="hi")
+    assert p.lang == "hi" and p.query_lang == "en"
     conn.close()

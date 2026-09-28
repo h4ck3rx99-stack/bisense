@@ -46,10 +46,15 @@ const citation: Citation = {
   snippet: "Coliform bacteria shall be absent in any 250 ml sample of the water.",
   scores: { lexical_rank: 1, vector: 0.8, fused: 0.03, rerank: 5.1, boosts: {} },
   synthetic: true,
-  tier: "C",
+  tier: "D",
   doc_type: "synthetic_demo",
   url: null,
   has_page_image: true,
+  text_scope: "sample",
+  document_title: "Illustrative Packaged Drinking Water Specification",
+  source_org: "BISense sample data (not official)",
+  source_type: "sample",
+  source_label: "Sample data, not official · DEMO-101:2026 · Clause 4.3.1 · Page 2",
 };
 
 const answer: Answer = {
@@ -78,6 +83,7 @@ const answer: Answer = {
   notice: null,
   searched_summary: "",
   library_note: "",
+  coverage: [],
   synthetic_used: true,
 };
 

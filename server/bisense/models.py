@@ -233,7 +233,8 @@ class ScopeItemOut(BaseModel):
 class QueryInfo(BaseModel):
     interpreted_query: str
     intent: str
-    lang: Lang
+    lang: Lang  # answer language (the selected language)
+    query_lang: Lang = "en"  # language the question was asked in
     resolved_scope: list[ScopeItemOut]
     scope_source: str
     rewritten: bool

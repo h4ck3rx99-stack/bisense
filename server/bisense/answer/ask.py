@@ -159,7 +159,7 @@ def prepare_plan(conn, query: str, ui_lang: str, client_ctx: ClientContext, llm)
     """Understand the query; for Hindi/Kannada, one LLM call rewrites it to English (identifiers protected).
     Without an LLM the offline glossary keyword translation from `understand` is used."""
     plan = understand(conn, query, ui_lang=ui_lang, context=client_ctx)
-    if plan.lang != "en" and llm is not None and plan.intent != "out_of_scope":
+    if plan.query_lang != "en" and llm is not None and plan.intent != "out_of_scope":
         try:
             masked, originals = protect(plan.raw)
             rw = rewrite_query(llm, masked, client_ctx.recent_questions)
@@ -337,7 +337,7 @@ def _live_answer(
 ) -> Answer | None:
     messages = build_messages(plan, res.context)
     sources = _sources(res)
-    question = plan.raw if plan.lang == "en" else plan.english_query
+    question = plan.raw if plan.query_lang == "en" else plan.english_query
     vr = None
     for attempt in range(2):
         try:

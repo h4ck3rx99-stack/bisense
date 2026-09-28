@@ -1,5 +1,5 @@
-// Browser speech helpers (Web Speech API). Voice input uses exactly the same /api/ask pipeline as typing.
-// Everything is feature-detected; when unsupported the UI explains why and typing keeps working.
+// Browser speech recognition (the fallback when server speech-to-text is unavailable) and spoken-number
+// normalisation. Read-aloud lives in tts.ts; microphone recording for server STT in recorder.ts.
 
 // Minimal typings: SpeechRecognition is not in TypeScript's DOM lib.
 interface SRAlternative { transcript: string }
@@ -73,34 +73,4 @@ export function normalizeSpokenNumbers(text: string): string {
     out.push(t);
   }
   return out.join(" ");
-}
-
-// ---- text to speech ------------------------------------------------------------------------------
-
-export const ttsSupported = (): boolean => typeof window !== "undefined" && "speechSynthesis" in window;
-
-export function voiceFor(locale: string): SpeechSynthesisVoice | null {
-  if (!ttsSupported()) return null;
-  const voices = window.speechSynthesis.getVoices();
-  const base = locale.split("-")[0];
-  return voices.find((v) => v.lang === locale) ?? voices.find((v) => v.lang.startsWith(base)) ?? null;
-}
-
-export function speak(text: string, locale: string, onEnd?: () => void): boolean {
-  if (!ttsSupported()) return false;
-  const voice = voiceFor(locale);
-  if (!voice && !locale.startsWith("en")) return false;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = locale;
-  if (voice) u.voice = voice;
-  u.rate = 0.98;
-  u.onend = () => onEnd?.();
-  u.onerror = () => onEnd?.();
-  window.speechSynthesis.speak(u);
-  return true;
-}
-
-export function stopSpeaking(): void {
-  if (ttsSupported()) window.speechSynthesis.cancel();
 }

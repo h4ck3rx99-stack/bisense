@@ -34,14 +34,16 @@ def resolve_key(settings: Settings, base_url: str, explicit_key: str) -> str:
 
 def stt_config(settings: Settings) -> tuple[str, str] | None:
     """(base_url, key) when server STT is usable, else None."""
-    if settings.stt_provider == "none" or settings.llm_provider == "fake" and not settings.stt_api_key:
+    # With the fake test LLM, "auto" never reaches a real provider; an explicit provider still does
+    # (the fake-microphone e2e test sets STT_PROVIDER=openai_compatible).
+    if settings.stt_provider == "none" or (settings.stt_provider == "auto" and settings.llm_provider == "fake" and not settings.stt_api_key):
         return None
     key = resolve_key(settings, settings.stt_base_url, settings.stt_api_key)
     return (settings.stt_base_url.rstrip("/"), key) if key and settings.stt_base_url else None
 
 
 def tts_config(settings: Settings) -> tuple[str, str] | None:
-    if settings.tts_provider == "none" or settings.llm_provider == "fake" and not settings.tts_api_key:
+    if settings.tts_provider == "none" or (settings.tts_provider == "auto" and settings.llm_provider == "fake" and not settings.tts_api_key):
         return None
     key = resolve_key(settings, settings.tts_base_url, settings.tts_api_key)
     return (settings.tts_base_url.rstrip("/"), key) if key and settings.tts_base_url else None

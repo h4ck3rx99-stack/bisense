@@ -5,7 +5,7 @@ import { Link, NavLink, useNavigate } from "react-router-dom";
 import * as Popover from "@radix-ui/react-popover";
 import { Clock, Menu, WifiOff, X } from "lucide-react";
 import { LANGUAGES } from "../i18n/languages";
-import { useHealth, useOnline } from "../lib/hooks";
+import { useHealth, useOnline, useSpeechLifecycle } from "../lib/hooks";
 import { clearRecentQuestions, recentQuestions } from "../lib/storage";
 import { SyntheticBadge } from "./ui";
 
@@ -161,6 +161,7 @@ export function Footer() {
 export function Layout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
   const online = useOnline();
+  useSpeechLifecycle();
   return (
     <>
       <a href="#main" className="skip-link">
