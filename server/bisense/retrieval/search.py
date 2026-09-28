@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 
 from bisense import stdnum
 from bisense.config import get_settings
-from bisense.retrieval.fuse import apply_boosts, rrf
+from bisense.retrieval.fuse import apply_boosts, rrf, topic_kinds
 from bisense.retrieval.index import LoadedIndex, get_index
 from bisense.retrieval.lexical import lexical_search
 from bisense.retrieval.query import STOPWORDS, QueryPlan
@@ -208,7 +208,7 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
     vec_rank = {cid: (i + 1, s) for i, (cid, s) in enumerate(vec)}
     cands = load_candidates(conn, list(fused))
     meta = {cid: {"kind": c.clause_kind, "standard_id": c.standard_id} for cid, c in cands.items()}
-    breakdown = apply_boosts(fused, meta, plan.intent, plan.explicit_ids)
+    breakdown = apply_boosts(fused, meta, plan.intent, plan.explicit_ids, topic_kinds(plan.english_query))
     for cid, c in cands.items():
         c.lexical_rank, c.lexical_score = lex_rank.get(cid, (None, None))
         c.vector_rank, c.vector_score = vec_rank.get(cid, (None, None))

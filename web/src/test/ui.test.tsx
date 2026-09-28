@@ -110,11 +110,26 @@ describe("Markdown", () => {
 });
 
 describe("Answer rendering", () => {
-  it("separates source facts from AI interpretation with visible labels", () => {
-    wrap(<AnswerBlock answer={answer} citations={new Map([["C1", citation]])} />);
-    expect(screen.getByText("From the sources")).toBeInTheDocument();
-    expect(screen.getByText(/AI interpretation — check the cited clause/)).toBeInTheDocument();
-    expect(screen.getByText("Synthetic demo data")).toBeInTheDocument();
+  it("renders the beginner structure in order, keeping source facts apart from the AI explanation", () => {
+    const { container } = wrap(<AnswerBlock answer={answer} citations={new Map([["C1", citation]])} onFollowUp={() => {}} onAskIn={() => {}} />);
+    const headings = [...container.querySelectorAll("h2, h3")].map((h) => h.textContent);
+    const order = ["Short answer", "Key points, from the source", "What this means for you", "Sources", "Next step"];
+    const idx = order.map((h) => headings.indexOf(h));
+    expect(idx.every((i) => i >= 0)).toBe(true);
+    expect([...idx].sort((a, b) => a - b)).toEqual(idx);
+    expect(screen.getByText(/Explanation written by BISense \(AI interpretation\)/)).toBeInTheDocument();
+    expect(screen.getAllByText("Sample data, not official").length).toBeGreaterThan(0);
+    // human citation, no internal ids or scores
+    expect(screen.getByText("Sample data, not official · DEMO-101:2026 · Clause 4.3.1 · Page 2")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/\bC1\b|rerank|fused/);
+  });
+
+  it("keeps the exact source wording collapsed until asked for", async () => {
+    const quoted: Answer = { ...answer, points: [{ kind: "source_fact", text: "Coliform must be absent.", citations: ["C1"], quote: "shall be absent in any 250 ml sample" }] };
+    wrap(<AnswerBlock answer={quoted} citations={new Map([["C1", citation]])} />);
+    expect(screen.queryByText(/shall be absent in any 250 ml sample/)).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Exact wording and source" }));
+    expect(screen.getByText(/shall be absent in any 250 ml sample/)).toBeInTheDocument();
   });
 
   it("citation chips name their source for screen readers and open a popover on focus", async () => {

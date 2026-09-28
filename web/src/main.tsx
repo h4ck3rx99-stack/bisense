@@ -25,6 +25,7 @@ const Library = lazy(() => import("./routes/Library"));
 const Explorer = lazy(() => import("./routes/Explorer"));
 const Checklist = lazy(() => import("./routes/Checklist"));
 const Compare = lazy(() => import("./routes/Compare"));
+const Guide = lazy(() => import("./routes/Guide"));
 const About = lazy(() => import("./routes/About"));
 const NotFound = lazy(() => import("./routes/NotFound"));
 
@@ -56,6 +57,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/standards/:slug" element={<Explorer />} />
                 <Route path="/standards/:slug/checklist" element={<Checklist />} />
                 <Route path="/compare" element={<Compare />} />
+                <Route path="/guide" element={<Guide />} />
                 <Route path="/about" element={<About />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

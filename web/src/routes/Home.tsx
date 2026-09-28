@@ -1,176 +1,136 @@
-// Search-first home. Compact header (not a hero), verified example queries, real library counts.
-import { useMemo } from "react";
+// Home: one message, one input, a few doors. In seconds a first-time visitor should understand:
+// "Find the BIS standards related to what you make, sell, buy or study, explained simply, with official sources."
+// No hero, no feature list. Example chips are questions verified against the data mode that is loaded.
+import { useEffect, useMemo, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
-import { ArrowRight, BookMarked, Columns2, FileSearch, FlaskConical, ListChecks, Quote, ShieldCheck, Split } from "lucide-react";
-import { SearchBar } from "../components/SearchBar";
-import { SectionTitle, Skeleton } from "../components/ui";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ArrowRight, BookOpen, Columns2, ExternalLink, FlaskConical, MessageSquareText, Package, ShieldCheck, type LucideIcon } from "lucide-react";
+import { SearchBar, type SearchBarHandle } from "../components/SearchBar";
+import { Skeleton } from "../components/ui";
 import { useHealth, useLibrary } from "../lib/hooks";
 import { recentStandards } from "../lib/storage";
 import { shortTitle } from "../lib/format";
 
-// Example queries: each one is part of docs/demo_questions.yaml and verified by `npm run warm`/eval.
-const EXAMPLES: { q: string; lang: string; wide?: boolean }[] = [
-  { q: "What BIS standards apply to packaged drinking water?", lang: "en" },
+// Official data: each example is in docs/demo_questions.yaml and checked by `npm run eval` / `npm run warm`.
+const OFFICIAL_EXAMPLES: { q: string; lang: string }[] = [
   { q: "Is BIS certification compulsory for two-wheeler helmets?", lang: "en" },
-  { q: "How can I check that gold jewellery is hallmarked?", lang: "en", wide: true },
-  { q: "Where can I get my product tested for BIS certification?", lang: "en", wide: true },
+  { q: "How can I check that gold jewellery is hallmarked?", lang: "en" },
+  { q: "Where can I get my product tested for BIS certification?", lang: "en" },
   { q: "पैकेज्ड पेयजल के लिए कौन-से BIS मानक लागू होते हैं?", lang: "hi" },
   { q: "ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?", lang: "kn" },
+];
+// Sample mode (DATASET=sample): questions the sample pack can answer (tests/test_rag_mechanism.py, e2e).
+const SAMPLE_EXAMPLES: { q: string; lang: string }[] = [
+  { q: "What must be marked on a two-wheeler helmet?", lang: "en" },
+  { q: "What are the requirements for packaged drinking water?", lang: "en" },
+  { q: "How are bundles of steel bars tied?", lang: "en" },
+];
+
+const DOORS: { k: string; to: string; icon: LucideIcon }[] = [
+  { k: "product", to: "/guide?goal=product", icon: Package },
+  { k: "ask", to: "#ask", icon: MessageSquareText },
+  { k: "understand", to: "/standards", icon: BookOpen },
+  { k: "check", to: "/guide?goal=certification", icon: ShieldCheck },
+  { k: "compare", to: "/compare", icon: Columns2 },
 ];
 
 export default function Home() {
   const { t, i18n } = useTranslation();
   const nav = useNavigate();
+  const location = useLocation();
   const health = useHealth();
   const library = useLibrary();
+  const search = useRef<SearchBarHandle>(null);
   const recent = useMemo(() => recentStandards(), []);
   const go = (q: string) => nav(`/ask?q=${encodeURIComponent(q)}&lang=${i18n.language}`);
-  const counts = health.data?.counts;
-  const guidanceCats = (library.data?.categories ?? []).filter((c) => c.kind === "guidance" || c.kind === "order");
-  const stdCats = (library.data?.categories ?? []).filter((c) => c.kind === "standard");
-  const demo = health.data?.dataset_mode === "demo";
+  const sample = health.data?.dataset_mode === "sample";
+  const examples = sample ? SAMPLE_EXAMPLES : OFFICIAL_EXAMPLES;
 
-  const libraryPanel = (
-    <section aria-labelledby="lib-title">
-      <SectionTitle id="lib-title" right={<Link to="/standards" className="text-[13px]">{t("home.browseAll")}</Link>}>
-        {t("home.library")}
-      </SectionTitle>
-      <div className="card divide-y divide-line">
-        {!counts ? (
-          <div className="space-y-2 p-4">
-            <Skeleton className="h-5 w-2/3" />
-            <Skeleton className="h-5 w-1/2" />
-            <Skeleton className="h-5 w-3/4" />
-          </div>
-        ) : (
-          <>
-            <Link to="/standards?kind=standard" className="flex items-center justify-between gap-3 p-3 text-ink no-underline hover:bg-surface-2">
-              <span className="min-w-0">
-                <span className="block text-[14px] font-medium">{t("home.fullText")}</span>
-                <span className="block truncate text-xs text-ink-3">{stdCats.map((c) => c.category).join(" · ") || t("home.none")}</span>
-              </span>
-              <span className="mono text-xl font-semibold">{counts.standards_full_text}</span>
-            </Link>
-            <Link to="/standards?kind=guidance,order" className="flex items-center justify-between gap-3 p-3 text-ink no-underline hover:bg-surface-2">
-              <span className="min-w-0">
-                <span className="block text-[14px] font-medium">{t("home.guidance")}</span>
-                <span className="block text-xs text-ink-3">{guidanceCats.slice(0, 5).map((c) => c.category).join(" · ")}</span>
-              </span>
-              <span className="mono text-xl font-semibold">{counts.guidance}</span>
-            </Link>
-            <Link to="/standards?kind=catalogue" className="flex items-center justify-between gap-3 p-3 text-ink no-underline hover:bg-surface-2">
-              <span className="min-w-0">
-                <span className="block text-[14px] font-medium">{t("home.catalogue")}</span>
-                <span className="block text-xs text-ink-3">{t("home.catalogueNote")}</span>
-              </span>
-              <span className="mono text-xl font-semibold">{counts.catalogue}</span>
-            </Link>
-          </>
-        )}
-      </div>
-    </section>
-  );
-
-  const workflows = (
-    <section aria-labelledby="flow-title">
-      <SectionTitle id="flow-title">{t("home.workflows")}</SectionTitle>
-      <div className="card divide-y divide-line">
-        {[
-          { to: "/ask?q=" + encodeURIComponent(t("home.flowAskQuery")), icon: FileSearch, k: "ask" },
-          { to: "/standards/demo-101-2026?tab=requirements", icon: ListChecks, k: "requirements" },
-          { to: "/compare?a=demo-101-2026&b=demo-102-2026", icon: Columns2, k: "compare" },
-        ].map(({ to, icon: Icon, k }) => (
-          <Link key={k} to={to} className="group flex items-start gap-3 p-3 text-ink no-underline hover:bg-surface-2">
-            <Icon size={17} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-            <span className="flex-1">
-              <span className="block text-[14px] font-medium">{t(`home.flow.${k}.title`)}</span>
-              <span className="block text-[13px] text-ink-2">{t(`home.flow.${k}.body`)}</span>
-            </span>
-            <ArrowRight size={16} className="mt-1 text-ink-3 group-hover:text-accent" aria-hidden />
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
+  // "Something else" in the guided path lands here with the input focused.
+  useEffect(() => {
+    if ((location.state as { focusSearch?: boolean } | null)?.focusSearch) search.current?.focus();
+  }, [location.state]);
 
   return (
-    <div className="space-y-8">
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <section aria-labelledby="home-title" className="min-w-0">
-          <h1 id="home-title" className="text-[26px] font-semibold leading-tight sm:text-3xl">
-            {t("home.title")}
-          </h1>
-          <p className="mt-2 max-w-2xl text-[16px] text-ink-2">{t("home.subtitle")}</p>
-          <div className="mt-5">
-            <SearchBar onSubmit={go} autoFocus />
-          </div>
-          <div className="mt-2 flex flex-wrap gap-2" aria-label={t("home.examples")}>
-            {EXAMPLES.map((e) => (
-              <button
-                key={e.q}
-                type="button"
-                lang={e.lang}
-                onClick={() => nav(`/ask?q=${encodeURIComponent(e.q)}&lang=${e.lang}`)}
-                className={`min-h-9 rounded-md border border-line bg-surface px-3 py-1 text-left text-[13px] text-ink-2 hover:border-accent hover:text-accent-strong ${e.wide ? "hidden sm:block" : ""}`}
-              >
-                {e.q}
-              </button>
-            ))}
-          </div>
-          {demo && (
-            <div className="mt-5 flex items-start gap-3 rounded-lg border border-dashed border-synth-line bg-synth-bg p-3.5 text-[14px] text-synth-ink">
-              <FlaskConical size={18} className="mt-0.5 shrink-0" aria-hidden />
-              <p>
-                {t("home.demoBanner", { std: counts?.standards_full_text ?? 0, guide: counts?.guidance ?? 0 })}{" "}
-                <Link to="/about#data" className="font-medium underline">{t("home.demoBannerLink")}</Link>
-              </p>
-            </div>
-          )}
-        </section>
-        <div className="space-y-5 lg:pt-1">
-          {libraryPanel}
-          {workflows}
+    <div className="mx-auto max-w-3xl space-y-8">
+      <section aria-labelledby="home-title" className="space-y-4 pt-2 sm:pt-6">
+        <h1 id="home-title" className="text-[26px] font-semibold leading-tight sm:text-[32px]">
+          {t("home.title")}
+        </h1>
+        <p className="text-[16px] text-ink-2">{t("home.subtitle")}</p>
+        <SearchBar ref={search} onSubmit={go} autoFocus placeholder={t("home.placeholder")} />
+        <div className="flex flex-wrap gap-2" aria-label={t("home.examples")}>
+          {examples.map((e) => (
+            <button
+              key={e.q}
+              type="button"
+              lang={e.lang}
+              onClick={() => nav(`/ask?q=${encodeURIComponent(e.q)}&lang=${e.lang}`)}
+              className="min-h-10 rounded-md border border-line bg-surface px-3 py-1 text-left text-[13px] text-ink-2 hover:border-accent hover:text-accent-strong"
+            >
+              {e.q}
+            </button>
+          ))}
         </div>
-      </div>
-
-      <section aria-labelledby="why-title" className="grid gap-3 border-y border-line py-4 sm:grid-cols-3">
-        <h2 id="why-title" className="sr-only">{t("why.title")}</h2>
-        {[
-          { icon: Quote, k: "why.cite" },
-          { icon: ShieldCheck, k: "why.refuse" },
-          { icon: Split, k: "why.separate" },
-        ].map(({ icon: Icon, k }) => (
-          <div key={k} className="flex gap-3">
-            <Icon size={18} className="mt-0.5 shrink-0 text-accent" aria-hidden />
-            <div>
-              <div className="text-[14px] font-semibold">{t(`${k}.title`)}</div>
-              <div className="text-[13px] text-ink-2">{t(`${k}.body`)}</div>
-            </div>
+        {sample && (
+          <div className="flex items-start gap-3 rounded-lg border border-dashed border-synth-line bg-synth-bg p-3 text-[14px] text-synth-ink" role="note">
+            <FlaskConical size={18} className="mt-0.5 shrink-0" aria-hidden />
+            <p>
+              {t("home.sampleBanner")} <Link to="/about#data" className="font-medium underline">{t("home.demoBannerLink")}</Link>
+            </p>
           </div>
-        ))}
+        )}
       </section>
 
-      <section aria-labelledby="recent-title">
-        <SectionTitle id="recent-title">{t("home.recent")}</SectionTitle>
-        {recent.length === 0 ? (
-          <p className="flex items-start gap-2 text-[13px] text-ink-3">
-            <BookMarked size={16} className="mt-0.5 shrink-0" aria-hidden />
-            {t("home.recentEmpty")}
-          </p>
-        ) : (
+      <nav aria-label={t("home.doorsLabel")}>
+        <ul className="grid grid-cols-2 gap-2 sm:grid-cols-5">
+          {DOORS.map(({ k, to, icon: Icon }) => (
+            <li key={k} className={k === "compare" ? "col-span-2 sm:col-span-1" : ""}>
+              {to === "#ask" ? (
+                <button type="button" onClick={() => search.current?.focus()} className="card flex h-full min-h-[84px] w-full flex-col items-start gap-2 p-3 text-left hover:border-accent">
+                  <Icon size={20} className="text-accent" aria-hidden />
+                  <span className="text-[14px] font-medium leading-snug">{t(`home.door.${k}`)}</span>
+                </button>
+              ) : (
+                <Link to={to} className="card flex h-full min-h-[84px] flex-col items-start gap-2 p-3 text-ink no-underline hover:border-accent">
+                  <Icon size={20} className="text-accent" aria-hidden />
+                  <span className="text-[14px] font-medium leading-snug">{t(`home.door.${k}`)}</span>
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <section aria-label={t("home.aboutLabel")} className="space-y-2 border-t border-line pt-4 text-[14px] text-ink-2">
+        <p>
+          <span className="font-semibold text-ink">{t("home.whatIsBis")}</span> {t("home.whatIsBisBody")}{" "}
+          <a href="https://www.bis.gov.in/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-0.5">
+            {t("home.learnMore")}
+            <ExternalLink size={12} aria-hidden />
+          </a>
+        </p>
+        {!library.data ? <Skeleton className="h-4 w-2/3" /> : <p className="text-[13px] text-ink-3">{t("home.coverage", { line: library.data.coverage })}</p>}
+      </section>
+
+      {recent.length > 0 && (
+        <section aria-labelledby="recent-title">
+          <h2 id="recent-title" className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-3">{t("home.recent")}</h2>
           <ul className="flex flex-wrap gap-2">
-            {recent.slice(0, 6).map((r) => (
+            {recent.slice(0, 4).map((r) => (
               <li key={r.slug}>
-                <Link to={`/standards/${r.slug}`} className="card block max-w-[18rem] px-3 py-2 no-underline hover:border-accent">
-                  <span className="mono block text-[13px] font-semibold text-ink">{r.number ?? t(`kind.${r.kind}`)}</span>
-                  <span className="block truncate text-[13px] text-ink-2">{shortTitle(r.title, 60)}</span>
+                <Link to={`/standards/${r.slug}`} className="card flex max-w-[18rem] items-center gap-2 px-3 py-2 text-ink no-underline hover:border-accent">
+                  <span className="min-w-0">
+                    <span className="block truncate text-[13px] font-medium">{shortTitle(r.title, 60)}</span>
+                    {r.number && <span className="mono block text-xs text-ink-3">{r.number}</span>}
+                  </span>
+                  <ArrowRight size={14} className="shrink-0 text-ink-3" aria-hidden />
                 </Link>
               </li>
             ))}
           </ul>
-        )}
-      </section>
+        </section>
+      )}
     </div>
   );
 }

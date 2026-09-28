@@ -1,7 +1,7 @@
 // Small UI primitives shared by every screen. Styling comes only from the design tokens in styles/index.css.
 import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { AlertTriangle, FlaskConical, RefreshCw, SearchX } from "lucide-react";
+import { AlertTriangle, FileCheck2, FlaskConical, Globe, Landmark, RefreshCw, SearchX } from "lucide-react";
 
 type Variant = "primary" | "secondary" | "ghost";
 
@@ -48,6 +48,21 @@ export function SyntheticBadge({ compact = false }: { compact?: boolean }) {
     <Badge tone="synth" title={t("synthetic.tooltip")}>
       <FlaskConical size={12} aria-hidden />
       {compact ? t("synthetic.short") : t("synthetic.badge")}
+    </Badge>
+  );
+}
+
+/** Plain-language source badge: "Official BIS document", "Official BIS website", "Government notification"
+ *  or "Sample data, not official". Icon + label, never colour alone. */
+export function SourceBadge({ type }: { type?: string | null }) {
+  const { t } = useTranslation();
+  if (!type) return null;
+  if (type === "sample") return <SyntheticBadge compact />;
+  const Icon = type === "government_notification" ? Landmark : type === "official_website" ? Globe : FileCheck2;
+  return (
+    <Badge tone="ok">
+      <Icon size={12} aria-hidden />
+      {t(`sourceType.${type}Badge`)}
     </Badge>
   );
 }

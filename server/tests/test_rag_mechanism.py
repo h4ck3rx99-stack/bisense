@@ -107,7 +107,9 @@ def test_ablation_with_a_model_that_knows_the_answer(indexes):
             {
                 "answer_type": "answer",
                 "summary": "Bundles are tied at three places [C1].",
-                "points": [{"kind": "source_fact", "text": "Tie bundles at not less than three places.", "citations": ["C1"], "quote": "not less than three places"}],
+                "points": [
+                    {"kind": "source_fact", "text": "Tie bundles at not less than three places.", "citations": ["C1"], "quote": "not less than three places"}
+                ],
                 "standards": [{"number": "DEMO-301:2026", "why": "steel bars", "citations": ["C1"]}],
                 "gaps": [],
                 "follow_ups": [],

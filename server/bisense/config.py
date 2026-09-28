@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     gate_rerank_min_no_llm: float = 1.0
     # Used only when the reranker cannot be loaded: minimum cosine similarity of the best passage.
     gate_vector_min: float = 0.62
+    # ...and, when there is also no LLM, the share of the question's content words found in the top passages.
+    gate_term_coverage_no_llm: float = 0.6
     strength_strong_min: float = 3.0
     strength_moderate_min: float = 0.0
     # If the LLM declines but the best passage scores at least this, show verbatim passages instead.

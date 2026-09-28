@@ -93,6 +93,7 @@ function RecentMenu() {
 
 const NAV = [
   { to: "/", key: "nav.search", end: true },
+  { to: "/guide", key: "nav.guide", end: false },
   { to: "/standards", key: "nav.standards", end: false },
   { to: "/compare", key: "nav.compare", end: false },
   { to: "/about", key: "nav.about", end: false },
@@ -120,7 +121,7 @@ export function TopBar() {
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2">
-          {data?.dataset_mode === "demo" && (
+          {data?.dataset_mode === "sample" && (
             <span className="hidden sm:inline-flex">
               <SyntheticBadge compact />
             </span>

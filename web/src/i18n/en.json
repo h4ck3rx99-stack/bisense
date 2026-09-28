@@ -14,7 +14,8 @@
     "recentEmpty": "Questions you ask appear here.",
     "recentPrivacy": "Stored only in this browser.",
     "menu": "Open menu",
-    "skip": "Skip to content"
+    "skip": "Skip to content",
+    "guide": "Find step by step"
   },
   "health": {
     "fullText": "full-text",
@@ -54,8 +55,8 @@
     "notExhaustive": "Answers are based only on the indexed library, which is not an exhaustive list of all Indian Standards."
   },
   "synthetic": {
-    "badge": "Synthetic demo data",
-    "short": "Synthetic",
+    "badge": "Sample data, not official",
+    "short": "Sample, not official",
     "tooltip": "Illustrative document created for this prototype. It is not an Indian Standard and its values are not real requirements.",
     "inline": "This is a synthetic demo document, not an Indian Standard. Its values are illustrative."
   },
@@ -94,8 +95,8 @@
     }
   },
   "home": {
-    "title": "Find the Indian Standard that applies, and see the exact clause that says so.",
-    "subtitle": "BISense answers only from an indexed library of standards and official BIS pages. Every statement links to its source clause, and it says so when the library does not contain the answer.",
+    "title": "Find the BIS standards for what you make, sell, buy or study.",
+    "subtitle": "Explained simply, with the official source for every fact.",
     "examples": "Example questions",
     "demoBanner": "Demo library: {{std}} synthetic demo standards (labelled DEMO-, not Indian Standards) plus {{guide}} real, official BIS pages and orders. Real standards drop in through ingestion.",
     "demoBannerLink": "Data sources",
@@ -123,7 +124,22 @@
       }
     },
     "recent": "Recently viewed",
-    "recentEmpty": "Standards you open will appear here (stored only in this browser)."
+    "recentEmpty": "Standards you open will appear here (stored only in this browser).",
+    "placeholder": "Describe your product or ask a question",
+    "sampleBanner": "Sample mode: this copy of BISense is showing sample data, not official BIS content. Every sample item is labelled.",
+    "doorsLabel": "Ways to start",
+    "door": {
+      "product": "Find standards for my product",
+      "ask": "Ask a question",
+      "understand": "Understand a standard",
+      "check": "Check a product's certification",
+      "compare": "Compare standards"
+    },
+    "aboutLabel": "About BIS and this library",
+    "whatIsBis": "What is BIS?",
+    "whatIsBisBody": "The Bureau of Indian Standards is India's national standards body. It publishes Indian Standards (IS) and runs product certification such as the ISI mark.",
+    "learnMore": "Learn more on bis.gov.in",
+    "coverage": "{{line}} BISense is not an official BIS service."
   },
   "why": {
     "title": "Why not just ask an LLM?",
@@ -196,7 +212,7 @@
     "followUps": "Suggested follow-up questions",
     "relevantStandards": "Relevant standards",
     "fromOfficialList": "Official BIS list",
-    "extractiveTitle": "AI summary unavailable. Here are the most relevant clauses.",
+    "extractiveTitle": "AI summary unavailable right now; here is what the sources say.",
     "extractiveNoKey": "No AI model is configured, so BISense shows verbatim passages ranked by relevance.",
     "extractiveFailed": "The AI model did not respond in time or its answer failed verification, so BISense shows verbatim passages.",
     "cachedNote": "Answer generated earlier by the same pipeline ({{date}}).",
@@ -204,7 +220,20 @@
     "showOriginal": "Show original English",
     "hideOriginal": "Hide original English",
     "outOfScope": "BISense answers questions about Indian Standards and BIS services. Try asking about a product, a standard, certification, hallmarking or testing.",
-    "extractiveDeclined": "The AI model did not use the retrieved passages, although they look highly relevant. Here they are verbatim — read the cited clauses."
+    "extractiveDeclined": "The AI model did not use the retrieved passages, although they look highly relevant. Here they are verbatim — read the cited clauses.",
+    "shortAnswer": "Short answer",
+    "keyPoints": "Key points, from the source",
+    "showWording": "Exact wording and source",
+    "hideWording": "Hide exact wording",
+    "morePoints_one": "Show {{count}} more point",
+    "morePoints_other": "Show {{count}} more points",
+    "fewerPoints": "Show fewer",
+    "meaningTitle": "What this means for you",
+    "meaningLabel": "Explanation written by BISense (AI interpretation). Check the cited source before relying on it.",
+    "open": "Open",
+    "openStandard": "Open {{std}}",
+    "sourcesTitle": "Sources",
+    "showSource": "Show source {{n}}"
   },
   "strength": {
     "strong": "Strong evidence",
@@ -219,7 +248,10 @@
     "searched": "Searched {{std}} full-text standards, {{guide}} official BIS pages and orders, and {{cat}} catalogue entries.",
     "tip1": "Name the product or the standard number (for example \"IS 4151\").",
     "tip2": "Ask about what a standard or a BIS page covers, rather than penalties or prices set elsewhere.",
-    "tip3": "Legal questions (fines, enforcement) need the official order or a BIS office."
+    "tip3": "Legal questions (fines, enforcement) need the official order or a BIS office.",
+    "tryTitle": "What you can try",
+    "tryGuide": "Find standards step by step",
+    "browse": "Browse by category"
   },
   "clarify": {
     "product": "Which product do you make or sell?",
@@ -241,7 +273,8 @@
     "cardLabel": "Evidence {{n}}: {{source}}",
     "previewNote": "Original page with the quoted text highlighted.",
     "previewUnavailable": "The page image could not be loaded.",
-    "pageAlt": "Page {{n}} of {{source}}"
+    "pageAlt": "Page {{n}} of {{source}}",
+    "noLink": "Stored copy (no public link)"
   },
   "trace": {
     "open": "Retrieval details",
@@ -577,5 +610,73 @@
     "noVoice": "Read-aloud isn't available in {{lang}} on this device (no {{lang}} voice installed).",
     "unsupported": "This browser can't read text aloud.",
     "failed": "Read-aloud stopped. The answer text is unaffected."
+  },
+  "next": {
+    "title": "Next step",
+    "requirements": "See the important requirements",
+    "requirementsQuery": "What are the important requirements of {{std}}?",
+    "explain": "Explain simply",
+    "explainQuery": "Explain {{std}} in simple language",
+    "compare": "Compare with another standard",
+    "askInEn": "Ask in English",
+    "askInHi": "Ask in हिंदी",
+    "askInKn": "Ask in ಕನ್ನಡ"
+  },
+  "sourceType": {
+    "official_document": "Bureau of Indian Standards",
+    "official_website": "Official BIS website",
+    "government_notification": "Government of India notification",
+    "sample": "Sample data, not official",
+    "official_documentBadge": "Official BIS document",
+    "official_websiteBadge": "Official BIS website",
+    "government_notificationBadge": "Government notification",
+    "sampleBadge": "Sample data, not official"
+  },
+  "cite": {
+    "clause": "Clause {{n}}",
+    "section": "Section {{n}}",
+    "page": "Page {{n}}",
+    "pages": "Pages {{a}}–{{b}}"
+  },
+  "guide": {
+    "title": "What are you looking for?",
+    "subtitle": "Pick one. You can type or speak a question at any time instead.",
+    "goal": {
+      "product": "Standards for a product",
+      "industry": "Standards for my industry",
+      "testing": "Testing a product",
+      "safety": "Safety requirements",
+      "quality": "Quality requirements",
+      "certification": "Certification (ISI mark)",
+      "other": "Something else"
+    },
+    "step2": {
+      "product": "Which product?",
+      "industry": "Which industry?",
+      "testing": "Which product do you want to test?",
+      "safety": "Safety requirements for which product?",
+      "quality": "Quality requirements for which product?",
+      "certification": "Certification for which product?"
+    },
+    "query": {
+      "product": "Which BIS standards apply to {{product}}?",
+      "testing": "What tests are required for {{product}}?",
+      "safety": "What are the safety requirements for {{product}}?",
+      "quality": "What quality requirements apply to {{product}}?",
+      "certification": "Is BIS certification compulsory for {{product}}?"
+    },
+    "back": "Back",
+    "productLabel": "Describe the product in a few words",
+    "productPlaceholder": "e.g. plastic food containers",
+    "find": "Find",
+    "orPickCategory": "Or pick a category",
+    "pickIndustry": "Pick a category",
+    "categories": "Categories in the library",
+    "moreCategories": "{{count}} more categories",
+    "noCategories": "No categories are loaded yet. Type the product above instead.",
+    "resultsTitle": "{{category}}: {{count}} in the library",
+    "seeAll": "See all {{count}}",
+    "switch": "Prefer to ask directly?",
+    "switchLink": "Type or speak your question"
   }
 }
