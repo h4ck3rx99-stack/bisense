@@ -511,3 +511,5 @@ class HealthOut(BaseModel):
     voice: VoiceStatus | None = None
     translation: dict[str, bool | str | None] = Field(default_factory=dict)
     languages: dict[str, dict[str, bool]] = Field(default_factory=dict)
+    # Reranker state: "ready" | "not_loaded" (loads on first question) | "unavailable" | "disabled", plus a plain fix.
+    retrieval: dict[str, str | None] = Field(default_factory=dict)

@@ -90,3 +90,16 @@ def test_rate_limit(client):
 
 def test_debug_trace_disabled_by_default(client):
     assert client.get("/api/debug/trace/abc").status_code == 404
+
+
+def test_health_reports_unavailable_reranker_with_a_fix(client, monkeypatch):
+    from bisense.retrieval import rerank
+
+    monkeypatch.setattr(rerank, "_model", None)
+    monkeypatch.setattr(rerank, "_load_error", "ValueError: download blocked")
+    h = client.get("/api/health").json()
+    assert h["status"] == "degraded"
+    assert h["retrieval"]["reranker"] == "unavailable" and "npm run setup" in h["retrieval"]["fix"]
+    # search still works without it
+    r = client.post("/api/search", json={"query": "helmet mass", "lang": "en"})
+    assert r.status_code == 200 and r.json()["citations"]

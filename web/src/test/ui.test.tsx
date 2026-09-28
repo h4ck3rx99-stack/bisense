@@ -161,5 +161,8 @@ describe("helpers", () => {
     expect(normalizeSpokenNumbers("I S fourteen five four three for water")).toBe("IS 14543 for water");
     expect(normalizeSpokenNumbers("is one seven eight six")).toBe("IS 1786");
     expect(normalizeSpokenNumbers("the pH is 7")).toBe("the pH is 7");
+    expect(normalizeSpokenNumbers("the limit is 10 mg")).toBe("the limit is 10 mg");
+    expect(normalizeSpokenNumbers("IS fourteen five forty three")).toBe("IS 14543");
+    expect(normalizeSpokenNumbers("I S three zero two")).toBe("IS 302");
   });
 });

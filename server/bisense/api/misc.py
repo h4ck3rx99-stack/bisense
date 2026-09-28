@@ -67,6 +67,15 @@ def health() -> HealthOut:
 
     models_loaded = bool(embed._models) and (rerank._model is not None or not s.rerank_enabled)
     status = "ok" if (llm_info["reachable"] or not llm_info["configured"]) else "degraded"
+    if not s.rerank_enabled:
+        rr = {"reranker": "disabled", "fix": None}
+    elif rerank._model is not None:
+        rr = {"reranker": "ready", "fix": None}
+    elif rerank.load_error():
+        status = "degraded"
+        rr = {"reranker": "unavailable", "fix": "Run `npm run setup` once with internet access to download the reranker model. Until then answers use keyword + meaning search only."}
+    else:
+        rr = {"reranker": "not_loaded", "fix": None}
     return HealthOut(
         status=status,
         dataset_mode=idx.dataset_mode,
@@ -77,6 +86,7 @@ def health() -> HealthOut:
         demo_mode=s.demo_mode,
         version=VERSION,
         features=_features(),
+        retrieval=rr,
         **_capabilities(),
     )
 

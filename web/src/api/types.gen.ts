@@ -767,6 +767,10 @@ export interface components {
                     [key: string]: boolean;
                 };
             };
+            /** Retrieval */
+            retrieval: {
+                [key: string]: string | null;
+            };
         };
         /** LibraryOut */
         LibraryOut: {
@@ -879,6 +883,12 @@ export interface components {
              * @enum {string}
              */
             lang: "en" | "hi" | "kn";
+            /**
+             * Query Lang
+             * @default en
+             * @enum {string}
+             */
+            query_lang: "en" | "hi" | "kn";
             /** Resolved Scope */
             resolved_scope: components["schemas"]["ScopeItemOut"][];
             /** Scope Source */
