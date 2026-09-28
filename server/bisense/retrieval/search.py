@@ -22,7 +22,7 @@ from dataclasses import dataclass, field
 
 from bisense import stdnum
 from bisense.config import get_settings
-from bisense.retrieval.fuse import apply_boosts, rrf
+from bisense.retrieval.fuse import apply_boosts, rrf, topic_kinds
 from bisense.retrieval.index import LoadedIndex, get_index
 from bisense.retrieval.lexical import lexical_search
 from bisense.retrieval.query import STOPWORDS, QueryPlan
@@ -208,7 +208,7 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
     vec_rank = {cid: (i + 1, s) for i, (cid, s) in enumerate(vec)}
     cands = load_candidates(conn, list(fused))
     meta = {cid: {"kind": c.clause_kind, "standard_id": c.standard_id} for cid, c in cands.items()}
-    breakdown = apply_boosts(fused, meta, plan.intent, plan.explicit_ids)
+    breakdown = apply_boosts(fused, meta, plan.intent, plan.explicit_ids, topic_kinds(plan.english_query))
     for cid, c in cands.items():
         c.lexical_rank, c.lexical_score = lex_rank.get(cid, (None, None))
         c.vector_rank, c.vector_score = vec_rank.get(cid, (None, None))
@@ -226,16 +226,20 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
     top_rerank = None
     if rerank_enabled and ordered:
         t = time.perf_counter()
-        from bisense.retrieval.rerank import rerank
+        from bisense.retrieval.rerank import RerankerUnavailable, rerank
 
         head = ordered[:RERANK_TOP]
-        scores = rerank(plan.english_query, [_rerank_text(c) for c in head])
-        for c, s in zip(head, scores, strict=True):
-            c.rerank_score = s
-        head.sort(key=lambda c: (c.rerank_score or -99) + 20 * (c.boosts.get("number_boost", 0) + c.boosts.get("mention_boost", 0)), reverse=True)
-        ordered = head + ordered[RERANK_TOP:]
-        top_rerank = max(scores) if scores else None
-        reranked = True
+        try:
+            scores = rerank(plan.english_query, [_rerank_text(c) for c in head])
+        except RerankerUnavailable:
+            scores = None  # keep the fused (keyword + meaning) order; the gate then uses the stricter no-rerank rule
+        if scores is not None:
+            for c, s in zip(head, scores, strict=True):
+                c.rerank_score = s
+            head.sort(key=lambda c: (c.rerank_score or -99) + 20 * (c.boosts.get("number_boost", 0) + c.boosts.get("mention_boost", 0)), reverse=True)
+            ordered = head + ordered[RERANK_TOP:]
+            top_rerank = max(scores) if scores else None
+            reranked = True
         timings["rerank"] = _ms(t)
 
     # Official product lists: for discovery questions, put matching list rows first (they are the

@@ -12,7 +12,7 @@ from __future__ import annotations
 from typing import Literal
 
 from pydantic import BaseModel as _PydanticBase
-from pydantic import ConfigDict, Field
+from pydantic import ConfigDict, Field, field_validator
 
 
 class BaseModel(_PydanticBase):
@@ -81,6 +81,25 @@ class CompareRequest(BaseModel):
     a: str = Field(pattern=SLUG_PATTERN)
     b: str = Field(pattern=SLUG_PATTERN)
     lang: Lang = "en"
+
+
+class TranslateRequest(BaseModel):
+    """Machine translation of quoted source passages for display under the original (never replacing it)."""
+
+    texts: list[str] = Field(min_length=1, max_length=8)
+    lang: Lang
+
+    @field_validator("texts")
+    @classmethod
+    def _limit_each(cls, v: list[str]) -> list[str]:
+        if any(not t.strip() or len(t) > 1500 for t in v):
+            raise ValueError("each text must be 1-1500 characters")
+        return v
+
+
+class TranslateOut(BaseModel):
+    available: bool  # False: no translation model configured, or the translation failed verification
+    translations: list[str] = Field(default_factory=list)
 
 
 class TTSRequest(BaseModel):
@@ -511,3 +530,5 @@ class HealthOut(BaseModel):
     voice: VoiceStatus | None = None
     translation: dict[str, bool | str | None] = Field(default_factory=dict)
     languages: dict[str, dict[str, bool]] = Field(default_factory=dict)
+    # Reranker state: "ready" | "not_loaded" (loads on first question) | "unavailable" | "disabled", plus a plain fix.
+    retrieval: dict[str, str | None] = Field(default_factory=dict)

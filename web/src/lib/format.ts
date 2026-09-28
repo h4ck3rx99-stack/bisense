@@ -29,3 +29,20 @@ export function clauseTitle(number: string, heading: string): { num: string | nu
   }
   return { num: number, text: heading };
 }
+
+/** Human citation, e.g. "Bureau of Indian Standards · IS 14543:2016 · Clause 5.2 · Page 4", with the
+ *  organisation and the words Clause/Section/Page shown in the selected language (identifiers stay exact). */
+export function humanSource(c: Pick<Citation, "source_label" | "source_type" | "standard_number" | "standard_title">, t: (k: string, o?: Record<string, unknown>) => string): string {
+  if (!c.source_label) return sourceLabel(c);
+  const parts = c.source_label.split(" · ");
+  if (c.source_type) parts[0] = t(`sourceType.${c.source_type}`);
+  return parts
+    .map((p) =>
+      p
+        .replace(/^Clause (.+)$/, (_, n) => t("cite.clause", { n }))
+        .replace(/^Section (.+)$/, (_, n) => t("cite.section", { n }))
+        .replace(/^Pages (\d+)–(\d+)$/, (_, a, b) => t("cite.pages", { a, b }))
+        .replace(/^Page (\d+)$/, (_, n) => t("cite.page", { n })),
+    )
+    .join(" · ");
+}

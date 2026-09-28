@@ -1,31 +1,53 @@
 # Progress
 
 ## Current step
-11 — Complete. Final judge review done (docs/JUDGE_REVIEW.md).
+Repair, verify and redesign pass — complete for everything that can be verified without network access.
+Remaining items need the team (official data fetch, keys, real devices, native speakers).
 
 ## Done
-- Inspection (empty repo); official SIH26107 text; plan, decisions, architecture, data docs.
-- Ingestion: PDF/HTML/catalogue parsers, cleaning (watermarks, garbled Hindi), clause trees, tables, requirements, terms, refs, amendments, 924 official product mappings, embeddings; idempotent; fresh-clone verified.
-- Data: 32 official bis.gov.in files (Tier B) + 4-document synthetic demo pack (Tier C).
-- Retrieval: hybrid FTS5 + embeddings + RRF + reranker, product probe, clause lookup, list-row trimming, context follow-ups.
-- Answering: gate, prompts, validator (15 adversarial tests), retry, extractive fallback, LLM-declined fallback, cache, warm, translation with placeholders (separate translation model), compare, plain-language requirements.
-- API + SSE; security headers; rate limit; debug trace.
-- Frontend: home, ask (evidence-first, thread, drawer), library, explorer (5 tabs), checklist, compare, about, 404; en/hi/kn; voice; responsive; axe-clean.
-- Tests: 125 pytest, 9 vitest, 13 Playwright (desktop + mobile, axe, no console errors). `npm run check` green.
-- Evaluation: 62 questions; final live run recall@5 1.00, exact 1.00, refusal 1.00, false refusals 0.06.
-- Docs: README, ARCHITECTURE, DATA, EVAL, DEMO_SCRIPT, TEAM_GUIDE, DECISIONS, JUDGE_REVIEW; screenshots.
+- First build (2026-09-27): ingestion, hybrid retrieval, grounded answering + validator, translation, compare,
+  explorer, requirements, en/hi/kn UI, eval harness, tests, docs.
+- Repair pass 1 (2026-09-28, with network): reality audit; official-only default data with tiers A–D and
+  provenance; 12 official BIS product manuals; coverage line; RAG proof tests on official data; server STT
+  (Groq Whisper) and TTS (Groq Orpheus, English); MediaRecorder microphone with level meter, limits, cancel
+  and error mapping; robust read-aloud; one language context; LLM alternate model on rate limit.
+- Repair pass 2 (2026-09-28, network blocked):
+  - Reliability: reranker failure degrades instead of crashing search; fallback evidence gate; health reports
+    reranker state with a fix; `.env.example` matches the code (tested); `npm run check` recall gate applies
+    only with official data; `PW_CHROMIUM_PATH` for Playwright.
+  - RAG: always-on proof tests on the sample pack (known-answer, ablation incl. a model that "knows",
+    refusal); topic-aware ranking ("marked" → marking clauses); evidence-only answers drop weak passages
+    and list only the standards they show; eval records the real gate decision.
+  - UX: structured answer (short answer, key points with collapsed exact wording, "What this means for you",
+    standard cards, human sources, next steps incl. "Ask in हिंदी/ಕನ್ನಡ"); human citations and source badges;
+    guided path; new home (one message, one input, five doors, What is BIS?, localized coverage); standard
+    page "At a glance" + beginner tab names; compare example that exists in the loaded data.
+  - Language: examples per language; optional labelled machine translation under quoted evidence
+    (`/api/translate`); spoken-number normalisation no longer corrupts "is 10".
+  - Data: glossary maps everyday product words to official wording; demo questions and J1 eval question use
+    official data; DATA.md rewritten for tiers A–D.
+  - Docs: VERIFICATION (new), README, DATA, DEMO_SCRIPT, DECISIONS, REALITY_AUDIT, JUDGE_REVIEW; screenshots.
 
 ## In progress
 - (none)
 
-## Next (team)
-- Add real IS PDFs to data/raw + manifest; native review of hi/kn strings; spot-check eval questions; rehearse the demo; `npm run warm` on demo day.
+## Next (team — cannot be done from a network-blocked environment)
+1. `npm run fetch-public` → `npm run ingest` → `npm run test` (runs `test_rag_proof.py` on official data)
+   → `npm run eval` (updates docs/EVAL.md; confirm J1 "plastic food containers" and the ranking change).
+2. Add a Groq key to `.env`, run `npm run test` and `npm run e2e` again (live STT/TTS/LLM tests), then
+   `npm run warm`.
+3. Manual checks in docs/VERIFICATION.md (microphone on desktop Chrome and a phone over HTTPS, read-aloud,
+   10 citations).
+4. Native-speaker review of Hindi/Kannada strings and glossary keywords.
+5. Rehearse docs/DEMO_SCRIPT.md twice.
 
 ## Known issues
-- Answer p50 ≈ 5.6 s (budget 5 s). Docker build not executed here. Voice not tested with a real microphone.
+- Not verified in this pass: anything needing bis.gov.in, Groq or HuggingFace (see VERIFICATION.md).
+- Without both the reranker model and an LLM, refusal accuracy is lower (11/12 in the eval).
+- Answer p50 ≈ 5.6 s with Groq (pass 1 measurement), above the 5 s budget.
+- Docker image not built in either pass.
 
 ## Cut features
-- Session-scoped PDF upload (COULD) — not built; ALLOW_UPLOADS has no effect.
-- Server STT/TTS providers (COULD) — endpoints return 501; browser speech only.
-- Reference-graph visualisation, dark mode (COULD) — not built.
-- Multilingual embedding model comparison — not run; the English pivot met the recall target (Hindi/Kannada questions retrieved at recall@5 1.0).
+- Session-scoped PDF upload — not built (ALLOW_UPLOADS has no effect).
+- Hindi/Kannada server voice — no free provider verified; device voices are used and the UI is honest.
+- Reference-graph visualisation, dark mode — not built.

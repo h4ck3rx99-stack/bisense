@@ -43,6 +43,8 @@ class QResult:
     top_rerank: float | None = None
     retrieval_ms: float = 0.0
     scope_explicit: bool = False
+    gate_refused: bool = False  # the real no-LLM evidence gate decision (works with or without the reranker)
+    reranked: bool = False
     answer_type: str | None = None
     mode: str | None = None
     points: int = 0
@@ -74,7 +76,7 @@ def _ctx(q: dict):
 
 
 def run_retrieval(questions: list[dict], use_llm_rewrite: bool = True, rerank: bool | None = None, log=print) -> list[QResult]:
-    from bisense.answer.ask import prepare_plan, retrieve
+    from bisense.answer.ask import _gate_fails, prepare_plan, retrieve
     from bisense.answer.llm_client import get_llm
     from bisense.retrieval import search as search_mod
     from bisense.retrieval.index import db_conn
@@ -96,6 +98,8 @@ def run_retrieval(questions: list[dict], use_llm_rewrite: bool = True, rerank: b
             r.retrieval_ms = round((time.perf_counter() - t0) * 1000, 1)
             r.top_rerank = res.top_rerank
             r.scope_explicit = plan.scope_source in ("explicit", "context")  # these bypass the gate
+            r.gate_refused = _gate_fails(res, plan, llm_available=False)
+            r.reranked = res.reranked
             ordered = list(res.context) + [c for c in res.candidates if c not in res.context]
             exp = q.get("expect") or []
             for i, c in enumerate(ordered[:10], start=1):
@@ -215,7 +219,7 @@ def summarize(results: list[QResult], gate: float, with_answers: bool) -> dict:
         m["tokens_per_answer_median"] = statistics.median(toks) if toks else None
     else:
         # Without an LLM, refusal is decided by the evidence gate alone.
-        gate_refused = lambda r: r.top_rerank is not None and r.top_rerank < gate and not r.scope_explicit  # noqa: E731
+        gate_refused = lambda r: r.gate_refused  # noqa: E731
         m["refusal_accuracy"] = round(sum(1 for r in una if gate_refused(r)) / len(una), 3) if una else None
         m["false_refusal_rate"] = round(sum(1 for r in ans if gate_refused(r)) / len(ans), 3) if ans else None
     return m

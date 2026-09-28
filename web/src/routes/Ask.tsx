@@ -9,7 +9,7 @@ import { Layers } from "lucide-react";
 import { ask } from "../api/sse";
 import { ApiError } from "../api/client";
 import type { Answer, AskContext, AskTrace, Citation, EvidenceEvent, Lang, QueryInfo } from "../api/types";
-import { AnswerBlock, RelevantStandards, ScopeChip, StageProgress } from "../components/Answer";
+import { AnswerBlock, ScopeChip, StageProgress } from "../components/Answer";
 import { CitationActivateContext, EvidenceCard, focusEvidence } from "../components/Evidence";
 import { SearchBar, type SearchBarHandle } from "../components/SearchBar";
 import { ErrorState, SectionTitle, Skeleton } from "../components/ui";
@@ -137,6 +137,16 @@ export default function Ask() {
     window.setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 50);
   };
 
+  // "Ask in हिंदी / ಕನ್ನಡ": switch the one language setting (UI, answer, voice) and ask the same question again.
+  const askIn = (turn: Turn, l: Lang) => {
+    void i18n.changeLanguage(l);
+    run(turn.query, { context: turn.context, lang: l });
+    setParams((p) => {
+      p.set("lang", l);
+      return p;
+    }, { replace: true });
+  };
+
   const clearScope = (turn: Turn) => {
     setParams((p) => {
       p.delete("scope");
@@ -231,8 +241,8 @@ export default function Ask() {
                       citations={cmap}
                       onFollowUp={i === turns.length - 1 ? followUp : undefined}
                       onPickOption={(o) => followUp(t("clarify.productQuery", { product: o }))}
+                      onAskIn={i === turns.length - 1 ? (l) => askIn(turn, l) : undefined}
                     />
-                    <RelevantStandards standards={turn.answer.standards} citations={cmap} />
                     <p className="text-xs text-ink-3">
                       {t("ask.scopeNote")}
                       {turn.answer.synthetic_used ? ` ${t("ask.syntheticNote")}` : ""}

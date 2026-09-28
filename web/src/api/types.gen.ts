@@ -38,6 +38,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/translate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Translate
+         * @description Labelled machine translation shown UNDER a quoted source passage (the original is always shown).
+         *     Identifiers (standard numbers, clauses, units, numbers) are protected; results are cached per language.
+         */
+        post: operations["translate_api_translate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/voice/status": {
         parameters: {
             query?: never;
@@ -767,6 +788,10 @@ export interface components {
                     [key: string]: boolean;
                 };
             };
+            /** Retrieval */
+            retrieval: {
+                [key: string]: string | null;
+            };
         };
         /** LibraryOut */
         LibraryOut: {
@@ -879,6 +904,12 @@ export interface components {
              * @enum {string}
              */
             lang: "en" | "hi" | "kn";
+            /**
+             * Query Lang
+             * @default en
+             * @enum {string}
+             */
+            query_lang: "en" | "hi" | "kn";
             /** Resolved Scope */
             resolved_scope: components["schemas"]["ScopeItemOut"][];
             /** Scope Source */
@@ -1226,6 +1257,26 @@ export interface components {
             /** Total Ms */
             total_ms: number;
         };
+        /** TranslateOut */
+        TranslateOut: {
+            /** Available */
+            available: boolean;
+            /** Translations */
+            translations: string[];
+        };
+        /**
+         * TranslateRequest
+         * @description Machine translation of quoted source passages for display under the original (never replacing it).
+         */
+        TranslateRequest: {
+            /** Texts */
+            texts: string[];
+            /**
+             * Lang
+             * @enum {string}
+             */
+            lang: "en" | "hi" | "kn";
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -1343,6 +1394,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CompareResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    translate_api_translate_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TranslateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TranslateOut"];
                 };
             };
             /** @description Validation Error */

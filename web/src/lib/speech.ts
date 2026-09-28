@@ -57,14 +57,23 @@ export function normalizeSpokenNumbers(text: string): string {
     if (isPrefix) {
       let j = /^i$/i.test(t) ? i + 2 : i + 1;
       let digits = "";
+      let tens = false; // previous word was twenty..ninety: "twenty five" -> 25, not 205
       while (j < tokens.length) {
         const w = tokens[j].toLowerCase();
-        if (/^\d+$/.test(w)) digits += w;
-        else if (w in NUMBER_WORDS) digits += NUMBER_WORDS[w];
-        else break;
+        if (/^\d+$/.test(w)) {
+          digits += w;
+          tens = false;
+        } else if (w in NUMBER_WORDS) {
+          const n = NUMBER_WORDS[w];
+          if (tens && n.length === 1 && n !== "0") digits = digits.slice(0, -1) + n;
+          else digits += n;
+          tens = n.length === 2 && n.endsWith("0") && Number(n) >= 20;
+        } else break;
         j++;
       }
-      if (digits.length >= 2) {
+      // A lowercase "is" is usually the verb ("the limit is 10 mg"), so it needs a standard-sized number.
+      const minDigits = t === "is" ? 3 : 2;
+      if (digits.length >= minDigits) {
         out.push(`IS ${digits}`);
         i = j - 1;
         continue;

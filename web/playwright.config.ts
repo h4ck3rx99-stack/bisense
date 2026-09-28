@@ -1,6 +1,9 @@
 import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
+// Optional: a Chromium already on the machine (e.g. PW_CHROMIUM_PATH=/opt/pw-browsers/chromium) instead of `npx playwright install`.
+const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
+
 const FAKE_MIC = fileURLToPath(new URL("../server/tests/fixtures/audio/en_helmet.wav", import.meta.url));
 
 // End-to-end tests run against the built app served by FastAPI with a deterministic FakeLLM
@@ -22,12 +25,13 @@ export default defineConfig({
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
         launchOptions: {
+          executablePath,
           args: ["--use-fake-ui-for-media-stream", "--use-fake-device-for-media-stream", `--use-file-for-fake-audio-capture=${FAKE_MIC}`],
         },
       },
     },
-    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } }, testIgnore: /(mobile|voice)\.spec\.ts/ },
-    { name: "mobile", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: false, hasTouch: true }, testMatch: /mobile\.spec\.ts/ },
+    { name: "desktop", use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 }, launchOptions: { executablePath } }, testIgnore: /(mobile|voice)\.spec\.ts/ },
+    { name: "mobile", use: { ...devices["Desktop Chrome"], viewport: { width: 390, height: 844 }, isMobile: false, hasTouch: true, launchOptions: { executablePath } }, testMatch: /mobile\.spec\.ts/ },
   ],
   webServer: {
     command: "uv run uvicorn bisense.main:app --port 8010",

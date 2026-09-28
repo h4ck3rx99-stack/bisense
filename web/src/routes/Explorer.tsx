@@ -1,16 +1,16 @@
 // /standards/:slug — the standard explorer.
-// Tabs: Overview · Clauses · Requirements · References · Ask. Deep links: ?tab=clauses&clause=4.3.1
+// "At a glance" card, then tabs: Overview · Important requirements · Full text & clauses · Related & compare · Ask. Deep links: ?tab=clauses&clause=4.3.1
 // scroll to and highlight the clause (citation clicks land here).
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as Tabs from "@radix-ui/react-tabs";
-import { AlertCircle, ArrowRight, ExternalLink, FileText, Image as ImageIcon, Scale, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowRight, Columns2, ExternalLink, FileText, Image as ImageIcon, Scale, Sparkles } from "lucide-react";
 import { api } from "../api/client";
 import type { ClauseNode, ClauseOut, StandardDetail } from "../api/types";
 import { Markdown } from "../components/Markdown";
-import { Badge, Button, EmptyState, ErrorState, SectionTitle, Skeleton, SyntheticBadge } from "../components/ui";
+import { Badge, Button, EmptyState, ErrorState, SectionTitle, Skeleton, SourceBadge, SyntheticBadge } from "../components/ui";
 import { AnswerBlock, CompulsoryBadge } from "../components/Answer";
 import { EvidenceCard } from "../components/Evidence";
 import { SearchBar } from "../components/SearchBar";
@@ -20,7 +20,7 @@ import { clauseAnchor, clauseTitle, shortTitle } from "../lib/format";
 import { pushRecentStandard } from "../lib/storage";
 import { RequirementsPanel } from "./Requirements";
 
-const TABS = ["overview", "clauses", "requirements", "references", "ask"] as const;
+const TABS = ["overview", "requirements", "clauses", "references", "ask"] as const;
 type Tab = (typeof TABS)[number];
 
 export default function Explorer() {
@@ -112,15 +112,31 @@ export default function Explorer() {
   );
 }
 
+/** First sentence of the scope text, for the "What it covers" line. */
+function firstSentence(text: string | null | undefined, max = 240): string | null {
+  if (!text) return null;
+  const flat = text.replace(/\s+/g, " ").trim();
+  const m = flat.match(/^.+?[.;](?=\s|$)/);
+  const out = m ? m[0] : flat;
+  return out.length > max ? `${out.slice(0, max - 1)}…` : out;
+}
+
 function Header({ d }: { d: StandardDetail }) {
   const { t } = useTranslation();
   const s = d.summary;
   const p = d.provenance;
+  const covers = firstSentence(d.scope_text);
+  const who = d.products.length ? d.products.slice(0, 5).join(", ") : d.industries.join(", ");
   return (
-    <header className={`rounded-lg border border-line bg-surface p-4 sm:p-5 ${s.synthetic ? "synthetic-stripes" : ""}`}>
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <Badge>{t(`kind.${s.kind}`)}</Badge>
-        {s.synthetic && <SyntheticBadge />}
+    <header className={`rounded-lg border border-line bg-surface p-4 sm:p-5 ${s.synthetic ? "synthetic-stripes" : ""}`} aria-labelledby="std-title">
+      <p className="text-xs font-semibold uppercase tracking-wide text-ink-3">{t("glance.title")}</p>
+      <h1 id="std-title" className="mt-1 max-w-4xl text-[22px] font-semibold leading-snug sm:text-[26px]">
+        {shortTitle(s.title, 160)}
+      </h1>
+      <div className="mt-1.5 flex flex-wrap items-center gap-2 text-xs">
+        {s.number && <span className="mono text-[15px] font-semibold text-ink-2">{s.number}</span>}
+        {s.synthetic ? <SyntheticBadge /> : <SourceBadge type={s.source_type} />}
+        {s.kind !== "standard" && <Badge>{t(`kind.${s.kind}`)}</Badge>}
         {s.catalogue_only && <Badge tone="calm">{t("standard.catalogueOnly")}</Badge>}
         <CompulsoryBadge status={s.compulsory} source={d.compulsory.source} />
         {s.needs_review && (
@@ -129,49 +145,64 @@ function Header({ d }: { d: StandardDetail }) {
             {t("standard.needsReview")}
           </Badge>
         )}
-        <Badge tone="neutral" title={t("standard.statusTooltip")}>
-          {t(`status.${s.status}`, { defaultValue: s.status })}
-          {d.status_verified_on ? ` · ${t("standard.verifiedOn", { date: d.status_verified_on })}` : ` · ${t("standard.statusUnverified")}`}
-        </Badge>
       </div>
-      {s.number && <h1 className="mono mt-3 break-words text-[26px] font-semibold leading-tight sm:text-3xl">{s.number}</h1>}
-      <p className={`${s.number ? "mt-1 text-[17px] text-ink-2" : "mt-3 text-2xl font-semibold"} max-w-4xl`}>{s.title}</p>
-      <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-ink-3">
-        {d.revision_label && (
-          <div>
-            <dt className="inline">{t("standard.revision")}: </dt>
-            <dd className="inline text-ink-2">{d.revision_label}</dd>
+      <dl className="mt-4 grid gap-x-6 gap-y-3 text-[14px] sm:grid-cols-2">
+        {covers && (
+          <div className="sm:col-span-2">
+            <dt className="text-xs font-semibold text-ink-3">{t("glance.covers")}</dt>
+            <dd className="mt-0.5 text-ink">{covers}</dd>
           </div>
         )}
-        {s.category && (
+        {who && (
           <div>
-            <dt className="inline">{t("standard.category")}: </dt>
-            <dd className="inline text-ink-2">{s.category}</dd>
-          </div>
-        )}
-        {d.committee && (
-          <div>
-            <dt className="inline">{t("standard.committee")}: </dt>
-            <dd className="inline text-ink-2">{d.committee}</dd>
+            <dt className="text-xs font-semibold text-ink-3">{t("glance.who")}</dt>
+            <dd className="mt-0.5 text-ink">{who}</dd>
           </div>
         )}
         <div>
-          <dt className="inline">{t("standard.provenance")}: </dt>
-          <dd className="inline text-ink-2">
-            {t(`tier.${p.tier}`)}
-            {p.obtained_on ? ` · ${t("standard.obtainedOn", { date: p.obtained_on })}` : ""}
-            {p.pages ? ` · ${t("standard.pagesCount", { count: p.pages })}` : ""}
+          <dt className="text-xs font-semibold text-ink-3">{t("glance.status")}</dt>
+          <dd className="mt-0.5 text-ink">
+            {t(`status.${s.status}`, { defaultValue: s.status })}
+            {d.revision_label ? ` · ${d.revision_label}` : ""}
+            <span className="text-ink-3">{d.status_verified_on ? ` · ${t("standard.verifiedOn", { date: d.status_verified_on })}` : ` · ${t("standard.statusUnverified")}`}</span>
           </dd>
         </div>
-        {p.source_url && (
-          <div>
-            <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1">
-              <ExternalLink size={13} aria-hidden />
-              {t("standard.officialSource")}
-            </a>
-          </div>
-        )}
       </dl>
+      <details className="mt-3 text-[13px] text-ink-3">
+        <summary className="inline-flex min-h-9 cursor-pointer items-center font-medium text-ink-2">{t("glance.sourceDetails")}</summary>
+        <dl className="mt-1 flex flex-wrap gap-x-5 gap-y-1">
+          {s.category && (
+            <div>
+              <dt className="inline">{t("standard.category")}: </dt>
+              <dd className="inline text-ink-2">{s.category}</dd>
+            </div>
+          )}
+          {d.committee && (
+            <div>
+              <dt className="inline">{t("standard.committee")}: </dt>
+              <dd className="inline text-ink-2">{d.committee}</dd>
+            </div>
+          )}
+          <div>
+            <dt className="inline">{t("standard.provenance")}: </dt>
+            <dd className="inline text-ink-2">
+              {t(`tier.${p.tier}`)}
+              {p.obtained_on ? ` · ${t("standard.obtainedOn", { date: p.obtained_on })}` : ""}
+              {p.pages ? ` · ${t("standard.pagesCount", { count: p.pages })}` : ""}
+            </dd>
+          </div>
+          {p.source_url ? (
+            <div>
+              <a href={p.source_url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1">
+                <ExternalLink size={13} aria-hidden />
+                {t("standard.officialSource")}
+              </a>
+            </div>
+          ) : (
+            !s.synthetic && <div>{t("evidence.noLink")}</div>
+          )}
+        </dl>
+      </details>
     </header>
   );
 }
@@ -453,60 +484,66 @@ function ClauseViewer({ d, target }: { d: StandardDetail; target: string | null 
 function References({ d }: { d: StandardDetail }) {
   const { t } = useTranslation();
   return (
-    <div className="grid gap-6 lg:grid-cols-3">
-      <section aria-labelledby="ref-out">
-        <SectionTitle id="ref-out">{t("refs.referencedByThis")}</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">{t("refs.referencedByThisNote")}</p>
-        {d.references.length === 0 ? (
-          <p className="text-ink-3">{t("refs.none")}</p>
-        ) : (
-          <ul className="card divide-y divide-line">
-            {d.references.map((r) => (
-              <li key={r.number} className="flex items-baseline justify-between gap-2 p-3 text-[14px]">
-                <span>
-                  {r.slug ? <Link to={`/standards/${r.slug}`} className="mono font-semibold">{r.number}</Link> : <span className="mono font-semibold">{r.number}</span>}
-                  <span className="block text-[13px] text-ink-3">{r.title ? shortTitle(r.title, 70) : t("refs.notInLibrary")}</span>
-                </span>
-                {r.clause_number && <span className="mono text-xs text-ink-3">{t("refs.inClause", { n: r.clause_number })}</span>}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section aria-labelledby="ref-in">
-        <SectionTitle id="ref-in">{t("refs.referencedBy")}</SectionTitle>
-        {d.referenced_by.length === 0 ? (
-          <p className="text-ink-3">{t("refs.none")}</p>
-        ) : (
-          <ul className="card divide-y divide-line">
-            {d.referenced_by.map((r) => (
-              <li key={r.number} className="p-3 text-[14px]">
-                {r.slug ? <Link to={`/standards/${r.slug}`} className="mono font-semibold">{r.number}</Link> : r.number}
-                {r.clause_number && <span className="mono ml-2 text-xs text-ink-3">{t("refs.inClause", { n: r.clause_number })}</span>}
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-      <section aria-labelledby="ref-sim">
-        <SectionTitle id="ref-sim">{t("refs.similar")}</SectionTitle>
-        <p className="mb-2 text-[13px] text-ink-3">{t("refs.similarNote")}</p>
-        {d.related.length === 0 ? (
-          <p className="text-ink-3">{t("refs.none")}</p>
-        ) : (
-          <ul className="card divide-y divide-line">
-            {d.related.map((r) => (
-              <li key={r.slug} className="flex items-center justify-between gap-2 p-3 text-[14px]">
-                <span className="min-w-0">
-                  <Link to={`/standards/${r.slug}`} className="mono font-semibold">{r.number ?? shortTitle(r.title, 40)}</Link>
-                  <span className="block truncate text-[13px] text-ink-3">{shortTitle(r.title, 70)}</span>
-                </span>
-                <span className="mono text-xs text-ink-3" title={t("refs.similarityScore")}>{r.similarity.toFixed(2)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+    <div className="space-y-5">
+      <Link to={`/compare?a=${d.summary.slug}`} className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-[14px] font-medium text-ink no-underline hover:border-accent">
+        <Columns2 size={15} aria-hidden />
+        {t("next.compare")}
+      </Link>
+      <div className="grid gap-6 lg:grid-cols-3">
+        <section aria-labelledby="ref-out">
+          <SectionTitle id="ref-out">{t("refs.referencedByThis")}</SectionTitle>
+          <p className="mb-2 text-[13px] text-ink-3">{t("refs.referencedByThisNote")}</p>
+          {d.references.length === 0 ? (
+            <p className="text-ink-3">{t("refs.none")}</p>
+          ) : (
+            <ul className="card divide-y divide-line">
+              {d.references.map((r) => (
+                <li key={r.number} className="flex items-baseline justify-between gap-2 p-3 text-[14px]">
+                  <span>
+                    {r.slug ? <Link to={`/standards/${r.slug}`} className="mono font-semibold">{r.number}</Link> : <span className="mono font-semibold">{r.number}</span>}
+                    <span className="block text-[13px] text-ink-3">{r.title ? shortTitle(r.title, 70) : t("refs.notInLibrary")}</span>
+                  </span>
+                  {r.clause_number && <span className="mono text-xs text-ink-3">{t("refs.inClause", { n: r.clause_number })}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section aria-labelledby="ref-in">
+          <SectionTitle id="ref-in">{t("refs.referencedBy")}</SectionTitle>
+          {d.referenced_by.length === 0 ? (
+            <p className="text-ink-3">{t("refs.none")}</p>
+          ) : (
+            <ul className="card divide-y divide-line">
+              {d.referenced_by.map((r) => (
+                <li key={r.number} className="p-3 text-[14px]">
+                  {r.slug ? <Link to={`/standards/${r.slug}`} className="mono font-semibold">{r.number}</Link> : r.number}
+                  {r.clause_number && <span className="mono ml-2 text-xs text-ink-3">{t("refs.inClause", { n: r.clause_number })}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section aria-labelledby="ref-sim">
+          <SectionTitle id="ref-sim">{t("refs.similar")}</SectionTitle>
+          <p className="mb-2 text-[13px] text-ink-3">{t("refs.similarNote")}</p>
+          {d.related.length === 0 ? (
+            <p className="text-ink-3">{t("refs.none")}</p>
+          ) : (
+            <ul className="card divide-y divide-line">
+              {d.related.map((r) => (
+                <li key={r.slug} className="flex items-center justify-between gap-2 p-3 text-[14px]">
+                  <span className="min-w-0">
+                    <Link to={`/standards/${r.slug}`} className="mono font-semibold">{r.number ?? shortTitle(r.title, 40)}</Link>
+                    <span className="block truncate text-[13px] text-ink-3">{shortTitle(r.title, 70)}</span>
+                  </span>
+                  <span className="mono text-xs text-ink-3" title={t("refs.similarityScore")}>{r.similarity.toFixed(2)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }

@@ -2,9 +2,11 @@ import { expect, expectNoSeriousA11yIssues, test, waitForAnswer } from "./fixtur
 
 test("home loads with real library counts and is accessible", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toContainText("Find the Indian Standard that applies");
-  await expect(page.getByText("Full-text standards").first()).toBeVisible();
-  await expect(page.getByText("Synthetic").first()).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toContainText("Find the BIS standards for what you make");
+  await expect(page.getByRole("link", { name: "Find standards for my product" })).toBeVisible();
+  await expect(page.getByText(/BISense currently covers/)).toBeVisible();
+  // sample mode (the e2e index) is announced, never passed off as official
+  await expect(page.getByText("Sample, not official").first()).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 });
 
@@ -16,7 +18,8 @@ test("search from home: evidence renders, then a cited answer", async ({ page })
   const firstCard = page.locator("article[id^=evidence-]").first();
   await expect(firstCard).toBeVisible();
   await waitForAnswer(page);
-  await expect(page.getByText("From the sources")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Key points, from the source" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Next step" })).toBeVisible();
   await expect(page.locator("button[aria-label^='Source 1']").first()).toBeVisible();
   await expectNoSeriousA11yIssues(page);
 });
@@ -64,21 +67,24 @@ test("language switch changes the interface language", async ({ page }) => {
 
 test("explorer tabs, requirements CSV and checklist", async ({ page }) => {
   await page.goto("/standards/demo-101-2026");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("DEMO-101:2026");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Illustrative Packaged Drinking Water Specification");
+  await expect(page.getByText("At a glance")).toBeVisible();
+  await expect(page.getByText("DEMO-101:2026").first()).toBeVisible();
   await expectNoSeriousA11yIssues(page);
-  await page.getByRole("tab", { name: /Clauses/ }).click();
+  await page.getByRole("tab", { name: /Full text & clauses/ }).click();
   await expect(page.getByText("Coliform bacteria shall be absent in any 250 ml sample of the water.")).toBeVisible();
-  await page.getByRole("tab", { name: /Requirements/ }).click();
+  await page.getByRole("tab", { name: /Important requirements/ }).click();
   await expect(page.getByText(/study aid, not a certification/)).toBeVisible();
   const [download] = await Promise.all([page.waitForEvent("download"), page.getByRole("link", { name: "Export CSV" }).click()]);
   expect(download.suggestedFilename()).toBe("demo-101-2026-requirements.csv");
-  await page.getByRole("tab", { name: "References" }).click();
+  await page.getByRole("tab", { name: "Related & compare" }).click();
   await expect(page.getByText("Similar scope (computed)")).toBeVisible();
   await page.goto("/standards/demo-101-2026/checklist");
   await expect(page.getByRole("heading", { name: /Requirements checklist/ })).toBeVisible();
 });
 
-test("catalogue-only entry shows official compulsory-certification evidence", async ({ page }) => {
+test("catalogue-only entry shows official compulsory-certification evidence", async ({ page, request }) => {
+  test.skip((await request.get("/api/standards/is-4151-2015")).status() === 404, "official data not loaded (npm run fetch-public && npm run ingest)");
   await page.goto("/standards/is-4151-2015");
   await expect(page.getByText("Metadata only. Full text not indexed.").first()).toBeVisible();
   await expect(page.getByText(/Listed as under compulsory BIS certification/)).toBeVisible();
@@ -101,4 +107,47 @@ test("about page shows provenance and disclaimer; 404 page", async ({ page }) =>
   await expectNoSeriousA11yIssues(page);
   await page.goto("/no/such/page");
   await expect(page.getByText("Page not found")).toBeVisible();
+});
+
+test("guided path: goal -> category from the data -> real standards -> open one", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: "Find standards for my product" }).click();
+  await expect(page.getByRole("heading", { name: "Which product?" })).toBeVisible();
+  await page.getByRole("button", { name: /Automotive and road safety/ }).click();
+  await expect(page.getByText(/Automotive and road safety: 1 in the library/)).toBeVisible();
+  await page.getByRole("link", { name: "Open" }).first().click();
+  await expect(page).toHaveURL(/\/standards\/demo-201-2026/);
+  await expectNoSeriousA11yIssues(page);
+});
+
+test("guided path: describing a product asks through the normal pipeline", async ({ page }) => {
+  await page.goto("/guide");
+  await page.getByRole("button", { name: "Safety requirements" }).click();
+  await page.getByLabel("Describe the product in a few words").fill("two-wheeler helmet");
+  await page.getByRole("button", { name: /Find/ }).click();
+  await expect(page).toHaveURL(/\/ask\?q=What\+are\+the\+safety|\/ask\?q=What%20are%20the%20safety/);
+  await waitForAnswer(page);
+});
+
+test("next-step chip 'Ask in हिंदी' switches the whole interface and re-asks", async ({ page }) => {
+  await page.goto("/ask?q=" + encodeURIComponent("What is the maximum mass of a two-wheeler helmet?") + "&lang=en");
+  await waitForAnswer(page);
+  await page.getByRole("button", { name: "Ask in हिंदी" }).click();
+  await expect(page.locator("html")).toHaveAttribute("lang", "hi");
+  await expect(page).toHaveURL(/lang=hi/);
+  await expect(page.getByRole("heading", { name: "मुख्य बातें, स्रोत से" }).or(page.getByText("सबसे प्रासंगिक खंड")).first()).toBeVisible({ timeout: 60_000 });
+  await page.getByRole("button", { name: "English", exact: true }).click();
+});
+
+test("Hindi UI: quoted evidence stays original; machine translation is optional and honest when unavailable", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "हिन्दी" }).click();
+  await page.goto("/ask?q=" + encodeURIComponent("What is the maximum mass of a two-wheeler helmet?") + "&lang=hi");
+  const card = page.locator("article[id^=evidence-]").first();
+  await expect(card).toBeVisible({ timeout: 60_000 });
+  await expect(card.locator("p[lang=en]").first()).toBeVisible();
+  await card.getByRole("button", { name: "अनुवाद दिखाएँ" }).click();
+  // the e2e server's fake model cannot translate, so the UI must say so and keep the original
+  await expect(card.getByText("अभी अनुवाद उपलब्ध नहीं है। मूल शब्द ऊपर दिए गए हैं।")).toBeVisible();
+  await page.getByRole("button", { name: "English", exact: true }).click();
 });

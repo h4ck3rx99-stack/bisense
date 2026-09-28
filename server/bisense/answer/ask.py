@@ -12,6 +12,7 @@ Runtime order when the LLM is unavailable (no key, timeout, quota, validation fa
 
 from __future__ import annotations
 
+import re
 import time
 import uuid
 from collections.abc import Generator, Iterator
@@ -22,7 +23,7 @@ from pydantic import BaseModel
 
 from bisense.answer import cache
 from bisense.answer.confidence import evidence_strength
-from bisense.answer.extractive import extractive_points
+from bisense.answer.extractive import extractive_points, strong_context
 from bisense.answer.generate import build_messages, correction_message, generate, rewrite_query
 from bisense.answer.llm_client import LLMUnavailable, get_llm, get_translation_llm
 from bisense.answer.present import (
@@ -221,7 +222,41 @@ def _gate_fails(res: SearchResult, plan: QueryPlan, llm_available: bool = True) 
         return False
     if res.reranked and res.top_rerank is not None and res.top_rerank < threshold:
         return True
+    if not res.reranked and _weak_without_reranker(res, llm_available):
+        return True
     return False
+
+
+def _weak_without_reranker(res: SearchResult, llm_available: bool) -> bool:
+    """Evidence gate used when the reranker model could not be loaded (e.g. first run offline).
+
+    Uses the embedding similarity of the best passage instead of the cross-encoder score. Without an
+    LLM (nothing else can decline) a keyword match in the top passages is also required.
+    """
+    s = get_settings()
+    best = max((c.vector_score or 0.0) for c in res.context)
+    if best < s.gate_vector_min:
+        return True
+    if not llm_available and _term_coverage(res.plan.english_query, res.context[:3]) < s.gate_term_coverage_no_llm:
+        return True
+    return False
+
+
+# Question words that say what kind of fact is wanted, not what it is about.
+_GENERIC_WORDS = set("requirement requirements maximum minimum allowed required much many often done long old get need needs used use".split())
+
+
+def _term_coverage(query: str, passages: list) -> float:
+    """Share of the question's content words (compared by their first 5 letters, so "marked" ~ "marking")
+    that appear in the given passages. "Fine for selling uncertified helmets" against helmet clauses -> low."""
+    from bisense.retrieval.query import STOPWORDS
+
+    words = {w[:5] for w in re.findall(r"[a-z0-9]+", query.lower()) if w not in STOPWORDS and w not in _GENERIC_WORDS and len(w) > 2}
+    if not words:
+        return 1.0
+    text = " ".join(f"{c.title} {c.clause_heading} {c.text}".lower() for c in passages)
+    have = {w[:5] for w in re.findall(r"[a-z0-9]+", text)}
+    return len(words & have) / len(words)
 
 
 def _needs_product(plan: QueryPlan) -> bool:
@@ -413,11 +448,13 @@ def _merge_standards(conn, validated: list[dict], retrieved: list[StandardRef]) 
 
 def _extractive(plan: QueryPlan, res: SearchResult, std_refs: list[StandardRef], llm_configured: bool) -> Answer:
     points = extractive_points(res.context)
+    shown = {c.slug for c in strong_context(res.context)}
     return Answer(
         answer_type="answer",
         summary="",
         points=points,
-        standards=[r for r in std_refs if r.kind in ("standard", "catalogue")][:8],
+        # standards whose passages are shown, plus matches from official product lists
+        standards=[r for r in std_refs if r.kind in ("standard", "catalogue") and (r.slug in shown or r.via == "official_list")][:8],
         evidence_strength="limited",
         strength_basis="Verbatim passages ranked by relevance; no AI summary was generated.",
         mode="extractive",

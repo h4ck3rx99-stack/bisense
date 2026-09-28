@@ -67,6 +67,48 @@
     }
    }
   },
+  "/api/translate": {
+   "post": {
+    "tags": [
+     "misc"
+    ],
+    "summary": "Translate",
+    "description": "Labelled machine translation shown UNDER a quoted source passage (the original is always shown).\nIdentifiers (standard numbers, clauses, units, numbers) are protected; results are cached per language.",
+    "operationId": "translate_api_translate_post",
+    "requestBody": {
+     "content": {
+      "application/json": {
+       "schema": {
+        "$ref": "#/components/schemas/TranslateRequest"
+       }
+      }
+     },
+     "required": true
+    },
+    "responses": {
+     "200": {
+      "description": "Successful Response",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/TranslateOut"
+        }
+       }
+      }
+     },
+     "422": {
+      "description": "Validation Error",
+      "content": {
+       "application/json": {
+        "schema": {
+         "$ref": "#/components/schemas/HTTPValidationError"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
   "/api/voice/status": {
    "get": {
     "tags": [
@@ -2192,6 +2234,20 @@
       },
       "type": "object",
       "title": "Languages"
+     },
+     "retrieval": {
+      "additionalProperties": {
+       "anyOf": [
+        {
+         "type": "string"
+        },
+        {
+         "type": "null"
+        }
+       ]
+      },
+      "type": "object",
+      "title": "Retrieval"
      }
     },
     "type": "object",
@@ -2207,7 +2263,8 @@
      "features",
      "voice",
      "translation",
-     "languages"
+     "languages",
+     "retrieval"
     ],
     "title": "HealthOut"
    },
@@ -2610,6 +2667,16 @@
       ],
       "title": "Lang"
      },
+     "query_lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Query Lang",
+      "default": "en"
+     },
      "resolved_scope": {
       "items": {
        "$ref": "#/components/schemas/ScopeItemOut"
@@ -2638,6 +2705,7 @@
      "interpreted_query",
      "intent",
      "lang",
+     "query_lang",
      "resolved_scope",
      "scope_source",
      "rewritten",
@@ -3714,6 +3782,56 @@
      "total_ms"
     ],
     "title": "Timings"
+   },
+   "TranslateOut": {
+    "properties": {
+     "available": {
+      "type": "boolean",
+      "title": "Available"
+     },
+     "translations": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Translations"
+     }
+    },
+    "type": "object",
+    "required": [
+     "available",
+     "translations"
+    ],
+    "title": "TranslateOut"
+   },
+   "TranslateRequest": {
+    "properties": {
+     "texts": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "maxItems": 8,
+      "minItems": 1,
+      "title": "Texts"
+     },
+     "lang": {
+      "type": "string",
+      "enum": [
+       "en",
+       "hi",
+       "kn"
+      ],
+      "title": "Lang"
+     }
+    },
+    "type": "object",
+    "required": [
+     "texts",
+     "lang"
+    ],
+    "title": "TranslateRequest",
+    "description": "Machine translation of quoted source passages for display under the original (never replacing it)."
    },
    "ValidationError": {
     "properties": {

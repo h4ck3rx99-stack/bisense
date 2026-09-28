@@ -28,5 +28,5 @@ export async function expectNoSeriousA11yIssues(page: Page) {
 }
 
 export async function waitForAnswer(page: Page) {
-  await expect(page.getByText(/From the sources|Most relevant clauses|isn't stated in the indexed sources|Which product do you make/).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/Key points, from the source|Most relevant clauses|isn't stated in the indexed sources|Which product do you make/).first()).toBeVisible({ timeout: 60_000 });
 }

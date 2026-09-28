@@ -10,7 +10,7 @@ Plain-language map of BISense so each of the six of us can explain our part to t
 | 2 | Retrieval | `server/bisense/retrieval/` | BM25 + embeddings + RRF + reranker; exact standard numbers; the official-list product probe; `npm run search:explain` |
 | 3 | Answering & validation | `server/bisense/answer/` | Evidence gate; prompt channels; the validator's checks; extractive fallback; why answers are not streamed token by token |
 | 4 | Frontend | `web/src/` | Evidence-first `/ask`; citation → clause; explorer; compare; accessibility; mobile |
-| 5 | Multilingual & voice | `server/bisense/i18n/`, `web/src/i18n/`, `web/src/lib/speech.ts` | English pivot; placeholder protection ⟦0⟧; Hindi/Kannada UI; browser voice input and read-aloud |
+| 5 | Multilingual & voice | `server/bisense/i18n/`, `server/bisense/voice/`, `web/src/i18n/`, `web/src/lib/recorder.ts`, `speech.ts`, `tts.ts` | English pivot; placeholder protection ⟦0⟧; Hindi/Kannada UI; microphone → server Whisper (browser recognition fallback); read-aloud; `/api/translate` for evidence |
 | 6 | Demo & evaluation | `server/eval/`, `server/bisense/evaluation.py`, `docs/EVAL.md`, `docs/DEMO_SCRIPT.md` | Real metrics and what they mean; gate calibration; `npm run warm`; offline backup plan |
 
 ## Code map (one line per module)
@@ -24,7 +24,8 @@ Plain-language map of BISense so each of the six of us can explain our part to t
 - `api/`: `ask.py` (search, ask) · `standards.py` (library, explorer, requirements, CSV, page images, summary) · `misc.py` (health, compare, voice, eval, debug) · `common.py` (errors, rate limit).
 
 **Web** (`web/src/`)
-- `routes/`: `Home`, `Ask`, `Library`, `Explorer`, `Requirements`, `Checklist`, `Compare`, `About`, `NotFound`.
+- `routes/`: `Home`, `Guide` (step-by-step path), `Ask`, `Library`, `Explorer` (At a glance + tabs), `Requirements`, `Checklist`, `Compare`, `About`, `NotFound`.
+- `components/Answer.tsx`: the answer layout (short answer, key points, what this means for you, standards, sources, next step); `Evidence.tsx`: citation chips, evidence cards, optional translation.
 - `components/`: `Answer` (answer block, strength, scope chip, refusal), `Evidence` (citation chips, evidence cards), `SearchBar` (mic), `RetrievalDrawer`, `PagePreview`, `Layout` (top bar, footer), `StandardPicker`, `Markdown`, `Toast`, `ui`.
 - `api/`: `types.gen.ts` (generated — never edit), `client.ts`, `sse.ts`. `i18n/`: `en.json`, `hi.json`, `kn.json`, `languages.ts`. `styles/index.css`: all design tokens.
 
@@ -65,4 +66,4 @@ All strings in `web/src/i18n/hi.json` and `web/src/i18n/kn.json` were drafted by
 - honesty messages: `insufficient.*`, `answer.extractive*`, `answer.interpretationTitle`;
 - technical terms: `clauseKind.*` (e.g. "अंकन" for marking, "ಮಾದರಿ ಸಂಗ್ರಹ" for sampling), `modality.*Help`;
 - the Hindi/Kannada keyword lists in `server/bisense/i18n/glossary.yaml` (used for offline search).
-Also review the two example questions on the home page (`web/src/routes/Home.tsx`).
+Also review the example questions per language on the home page (`web/src/routes/Home.tsx`) and the new strings listed in docs/VERIFICATION.md.
