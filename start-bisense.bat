@@ -3,6 +3,13 @@ rem BISense one-click start for Windows. Double-click this file.
 rem First run: installs everything (incl. the offline speech model, ~460 MB), downloads the official BIS
 rem data and builds the index (15-30 minutes, needs internet).
 rem Later runs: starts straight away. Close this window (or press Ctrl+C) to stop BISense.
+rem
+rem Online or local is chosen automatically at every start (scripts\choose-mode.ps1):
+rem   ONLINE  Groq reachable with the key in .env -> Groq answers and speech; Ollama (if installed) is the backup,
+rem           used by itself when Groq fails or its free daily allowance runs out.
+rem   LOCAL   no internet / no key -> Ollama answers (if installed), Whisper on this computer for speech;
+rem           without Ollama, answers show the official sources verbatim.
+rem Force a mode:  start-bisense.bat online   or   start-bisense.bat local
 setlocal
 cd /d "%~dp0"
 title BISense
@@ -96,6 +103,17 @@ if errorlevel 1 (
 
 rem --- 5. Start BISense and open the browser ------------------------------------------------------
 :run
+echo.
+echo  Choosing online or local mode...
+set "BISENSE_MODE=%~1"
+if not defined BISENSE_MODE set "BISENSE_MODE=auto"
+if /i not "%BISENSE_MODE%"=="online" if /i not "%BISENSE_MODE%"=="local" set "BISENSE_MODE=auto"
+set "MODE_FILE=%TEMP%\bisense-mode-%RANDOM%.cmd"
+powershell -NoProfile -ExecutionPolicy Bypass -File "scripts\choose-mode.ps1" -Out "%MODE_FILE%" -Mode %BISENSE_MODE%
+if exist "%MODE_FILE%" (
+  call "%MODE_FILE%"
+  del /q "%MODE_FILE%" >nul 2>nul
+)
 echo.
 echo  BISense will open in your browser at http://127.0.0.1:8000
 echo  Keep this window open while you use it. Close it to stop BISense.

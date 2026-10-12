@@ -87,6 +87,17 @@ runs start in seconds. The browser opens by itself at http://127.0.0.1:8000. If 
 connection, the download retries and resumes on the next run; without internet on the first run it starts in
 labelled sample mode and switches to the official data the next time it runs online. Close the window to stop BISense.
 
+**Online or local, chosen at every start** (`scripts/choose-mode.ps1`; your `.env` is never changed):
+
+| Situation | AI answers | Speech to text |
+|---|---|---|
+| Internet and a working Groq key in `.env` (**online**) | Groq; if Groq fails or its free daily allowance runs out, [Ollama](https://ollama.com) on this computer takes over by itself (when installed) | Groq Whisper; Whisper on this computer if Groq speech fails (English, Hindi) |
+| No internet, no key, or key rejected (**local**) | Ollama on this computer (`ollama pull llama3.2` once; `qwen3:8b` is better but needs a strong GPU) | Whisper on this computer |
+| Local, and Ollama not installed | none: answers show the official passages verbatim | Whisper on this computer |
+
+The launcher starts Ollama itself and prefers `LLM_FALLBACK_MODEL` from `.env`, then `llama3.2`, then `qwen3:8b`.
+To force a mode: `start-bisense.bat online` or `start-bisense.bat local`.
+
 **Step by step (Windows, macOS, Linux):**
 
 Prerequisites: **Python 3.11 or 3.12**, **Node.js 20+**, [uv](https://docs.astral.sh/uv/) (recommended; without

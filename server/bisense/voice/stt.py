@@ -20,7 +20,7 @@ from dataclasses import dataclass
 import httpx
 
 from bisense.config import Settings
-from bisense.voice import VoiceError, stt_config, stt_languages, stt_mode
+from bisense.voice import VoiceError, local_stt_installed, stt_config, stt_languages, stt_mode
 
 # MIME types browsers produce with MediaRecorder, plus common upload types. Parameters (";codecs=opus")
 # are stripped before the check.
@@ -146,6 +146,12 @@ def transcribe(data: bytes, ext: str, lang: str | None, settings: Settings) -> T
             if exc.code in ("audio_unreadable", "stt_auth", "audio_too_large"):
                 raise
     assert last is not None
+    # Groq unreachable, busy, out of daily allowance or rejecting the key: switch to Whisper on this computer
+    # when it is installed and speaks the language (the user's audio itself was fine).
+    if settings.stt_provider == "auto" and last.code in ("stt_timeout", "stt_failed", "stt_busy", "stt_auth") and local_stt_installed():
+        local_langs = [x.strip() for x in settings.stt_local_languages.split(",") if x.strip()]
+        if not language or language in local_langs:
+            return _local(data, language, settings)
     raise last
 
 

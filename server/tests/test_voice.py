@@ -22,6 +22,8 @@ def provider(monkeypatch, built_index):
     """Server STT/TTS 'configured' with a dummy key; every provider call goes to `handler`."""
     monkeypatch.setenv("STT_API_KEY", "test-key-not-real")
     monkeypatch.setenv("TTS_API_KEY", "test-key-not-real")
+    # these tests check the remote error mapping: no switch to a Whisper installed on this computer
+    monkeypatch.setattr(stt_mod, "local_stt_installed", lambda: False)
     get_settings.cache_clear()
     calls: list[httpx.Request] = []
     state: dict = {"handler": None}
@@ -150,6 +152,31 @@ def test_stt_timeout(client, provider):
     state["handler"] = handler
     r = _post(client, "en_helmet.webm", "audio/webm")
     assert r.status_code == 504 and r.json()["code"] == "stt_timeout"
+
+
+def test_stt_switches_to_local_whisper_when_groq_fails(client, provider, monkeypatch):
+    """Groq unreachable / busy / out of allowance mid-session -> the same recording is transcribed locally."""
+    state, _ = provider
+
+    def handler(request):
+        raise httpx.ConnectError("offline", request=request)
+
+    state["handler"] = handler
+    monkeypatch.setattr(stt_mod, "local_stt_installed", lambda: True)
+    used = []
+
+    def fake_local(data, language, settings):
+        used.append(language)
+        return stt_mod.Transcript(
+            text="which standard applies to helmets", language="en", duration_s=4.2, model="small", provider="local", no_speech=False, ms=900.0
+        )
+
+    monkeypatch.setattr(stt_mod, "_local", fake_local)
+    body = _post(client, "en_helmet.webm", "audio/webm", lang="en").json()
+    assert body["provider"] == "local" and body["text"].startswith("which standard") and used == ["en"]
+    # a language the local model does not cover still reports the remote failure
+    r = _post(client, "kn_fleurs.wav", "audio/wav", lang="kn")
+    assert r.status_code == 502 and r.json()["code"] == "stt_failed"
 
 
 def test_tts_english_audio_and_unsupported_languages(client, provider):
