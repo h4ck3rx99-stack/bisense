@@ -50,3 +50,51 @@ def keyword_translate(text: str, lang: str) -> list[str]:
 
 def do_not_translate() -> list[str]:
     return list(_glossary().get("do_not_translate") or [])
+
+
+def product_phrases(text: str) -> list[tuple[str, str]]:
+    """(everyday key, official product wording) for each product key in the text, longest keys first and
+    without overlaps ("water heater" wins over "heater"; "mobile charger" over "charger")."""
+    low = text.lower()
+    table = _glossary().get("products") or {}
+    taken: list[tuple[int, int]] = []
+    out: list[tuple[str, str]] = []
+    for key in sorted(table, key=len, reverse=True):
+        for m in re.finditer(r"(?<![\w-])" + re.escape(key) + r"(?:e?s)?(?![\w-])", low):
+            if any(m.start() < e and s < m.end() for s, e in taken):
+                continue
+            taken.append((m.start(), m.end()))
+            out.extend((key, v) for v in table[key])
+            break
+    return out
+
+
+# Romanised Hindi function words: two or more in a Latin-script question => Hinglish.
+_HINGLISH = set(
+    "main mai mein hoon hun hu hai hain ka ki ke ko kya kaunsa konsa kaun kaise kahan chahiye banata banate banati "
+    "bechta bechte bechti mera meri mere apna liye zaroori zaruri jaruri lagega lagta karna karta karte se par aur "
+    "bhi nahi nahin kyun kab".split()
+)
+
+
+def is_hinglish(text: str) -> bool:
+    if re.search(r"[^\x00-\x7F]", text):
+        return False
+    words = re.findall(r"[a-z]+", text.lower())
+    hits = sum(1 for w in words if w in _HINGLISH)
+    return hits >= 2 and hits >= len(words) * 0.25
+
+
+def hinglish_translate(text: str) -> list[str]:
+    """Offline Hinglish -> English keywords: mapped function words plus every other word kept as is
+    (product names like "kettle" are usually English already)."""
+    table = _glossary().get("keywords_hinglish") or {}
+    out: list[str] = []
+    for w in re.findall(r"[A-Za-z0-9][A-Za-z0-9\-]*", text):
+        lw = w.lower()
+        if lw in table:
+            out.extend(table[lw])
+        elif lw not in _HINGLISH:
+            out.append(w)
+    seen: set[str] = set()
+    return [w for w in out if not (w.lower() in seen or seen.add(w.lower()))]  # type: ignore[func-returns-value]

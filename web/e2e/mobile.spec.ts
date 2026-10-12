@@ -1,12 +1,19 @@
-import { expect, expectNoSeriousA11yIssues, test, waitForAnswer } from "./fixtures";
+import { expect, expectNoSeriousA11yIssues, openProof, test, waitForAnswer } from "./fixtures";
 
 test.describe("mobile 390x844", () => {
-  test("J1 discover: answer and evidence tabs, no horizontal scroll", async ({ page }) => {
+  test("J1 discover: verdict first, at most 2 screens, evidence inside the details, no horizontal scroll", async ({ page }) => {
     await page.goto("/ask?q=" + encodeURIComponent("What BIS standards apply to packaged drinking water?") + "&lang=en");
     await waitForAnswer(page);
-    const evidenceTab = page.getByRole("tab", { name: /Evidence \(\d+\)/ });
-    await expect(evidenceTab).toBeVisible();
-    await evidenceTab.click();
+    await expect(page.getByTestId("verdict-card")).toBeVisible();
+    const tall = await page.evaluate(() => document.documentElement.scrollHeight / window.innerHeight);
+    expect(tall).toBeLessThanOrEqual(2);
+    // the follow-up box sits after the answer, not over it
+    const [cardBottom, followTop] = await page.evaluate(() => [
+      document.querySelector("[data-testid=verdict-card]")!.getBoundingClientRect().bottom,
+      document.querySelector("main form[role=search]")!.getBoundingClientRect().top,
+    ]);
+    expect(followTop).toBeGreaterThanOrEqual(cardBottom);
+    await openProof(page);
     await expect(page.locator("article[id^=evidence-]").first()).toBeVisible();
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     expect(overflow).toBe(false);
@@ -28,7 +35,8 @@ test.describe("mobile 390x844", () => {
     await expect(page.locator("html")).toHaveAttribute("lang", "kn");
     await page.getByRole("textbox").first().fill("ಚಿನ್ನದ ಆಭರಣಕ್ಕೆ ಹಾಲ್‌ಮಾರ್ಕ್ ಹೇಗೆ ಪರಿಶೀಲಿಸುವುದು?");
     await page.keyboard.press("Enter");
-    await expect(page.getByRole("tab", { name: /ಸಾಕ್ಷ್ಯ/ })).toBeVisible({ timeout: 60_000 });
+    await waitForAnswer(page);
+    await expect(page.getByRole("button", { name: "ಪುರಾವೆ ಮತ್ತು ವಿವರ ತೋರಿಸಿ" }).or(page.getByTestId("not-found")).first()).toBeVisible();
     await page.getByRole("button", { name: "English" }).click();
   });
 });

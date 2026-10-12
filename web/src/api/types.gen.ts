@@ -480,6 +480,9 @@ export interface components {
              * @default false
              */
             synthetic_used: boolean;
+            verdict: components["schemas"]["Verdict"] | null;
+            /** Suggestions */
+            suggestions: string[];
             /** Coverage */
             coverage: components["schemas"]["CoverageNote"][];
         };
@@ -724,6 +727,8 @@ export interface components {
             slug: string | null;
             /** Clause Number */
             clause_number: string | null;
+            /** Order Short */
+            order_short: string | null;
         };
         /** CoverageNote */
         CoverageNote: {
@@ -1088,6 +1093,8 @@ export interface components {
             compulsory: components["schemas"]["CompulsoryEvidence"];
             /** Scope Text */
             scope_text: string | null;
+            /** About */
+            about: string | null;
             /** Scope Clause */
             scope_clause: string | null;
             /** Clauses */
@@ -1291,6 +1298,54 @@ export interface components {
             input?: unknown;
             /** Context */
             ctx?: Record<string, never>;
+        };
+        /**
+         * Verdict
+         * @description The one-line answer shown first. Built deterministically from official evidence (list rows, manuals,
+         *     pages), never from model text, so it is the same with or without an AI model.
+         */
+        Verdict: {
+            /**
+             * Kind
+             * @enum {string}
+             */
+            kind: "compulsory" | "not_compulsory" | "standard_only" | "info" | "not_found";
+            /**
+             * Possible
+             * @default false
+             */
+            possible: boolean;
+            /** Product */
+            product: string | null;
+            /** Standard Slug */
+            standard_slug: string | null;
+            /** Standard Number */
+            standard_number: string | null;
+            /** Standard Title */
+            standard_title: string | null;
+            /** Scheme */
+            scheme: ("ISI" | "CRS") | null;
+            /** Order Short */
+            order_short: string | null;
+            /**
+             * Denotified
+             * @default false
+             */
+            denotified: boolean;
+            source: components["schemas"]["VerdictSource"] | null;
+        };
+        /** VerdictSource */
+        VerdictSource: {
+            /** Label */
+            label: string;
+            /** Url */
+            url: string | null;
+            /** Citation Id */
+            citation_id: string | null;
+            /** Page */
+            page: number | null;
+            /** Source Type */
+            source_type: string | null;
         };
         /** VoiceStatus */
         VoiceStatus: {

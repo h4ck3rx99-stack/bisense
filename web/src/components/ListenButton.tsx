@@ -11,6 +11,7 @@ export function ListenButton({ id, text, lang }: { id: string; text: string; lan
   const { t } = useTranslation();
   const tts = useTts();
   const [engine, setEngine] = useState<TtsEngine | null>(null);
+  const [noVoiceShown, setNoVoiceShown] = useState(false);
 
   useEffect(() => {
     let live = true;
@@ -27,10 +28,25 @@ export function ListenButton({ id, text, lang }: { id: string; text: string; lan
 
   if (engine === null) return null;
   if (engine === "none") {
+    // No voice for this language here: keep the page quiet until the user actually asks to listen.
     const msg = browserTtsSupported() ? t("tts.noVoice", { lang: langInfo(lang).name }) : t("tts.unsupported");
     return (
-      <span className="text-xs text-ink-3" data-testid="tts-unavailable">
-        {msg}
+      <span className="inline-flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setNoVoiceShown(true)}
+          className="inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium text-ink-2 hover:bg-surface-2"
+          data-testid="listen"
+          data-tts-state="unavailable"
+        >
+          <Volume2 size={14} aria-hidden />
+          {t("tts.listen")}
+        </button>
+        {noVoiceShown && (
+          <span className="text-xs text-ink-3" role="status" data-testid="tts-unavailable">
+            {msg}
+          </span>
+        )}
       </span>
     );
   }

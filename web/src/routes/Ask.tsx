@@ -1,5 +1,7 @@
-// /ask — evidence-first question answering with a follow-up thread.
-// Order on screen: stage progress -> evidence (as soon as retrieval returns) -> validated answer.
+// /ask — question answering with a follow-up thread.
+// Order on screen: stage progress -> verdict card (answer) -> "Show proof and details" (evidence, key points,
+// how it was found). One column until the proof is opened; on wide screens the evidence then opens beside
+// the answer, on phones inside the details.
 // Context sent to the server: the last 2 questions + the standards cited/focused in the last turn
 // (+ the standard opened from the explorer). Previous AI answers are never sent back.
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -16,6 +18,7 @@ import { ErrorState, SectionTitle, Skeleton } from "../components/ui";
 import { RetrievalDrawer } from "../components/RetrievalDrawer";
 import { useToast } from "../components/Toast";
 import { pushRecentQuestion } from "../lib/storage";
+import { useMediaQuery } from "../lib/hooks";
 import { detectScript } from "../i18n/languages";
 
 interface Turn {
@@ -42,7 +45,8 @@ export default function Ask() {
   const toast = useToast();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [focusId, setFocusId] = useState<number | null>(null);
-  const [mobileTab, setMobileTab] = useState<"answer" | "evidence">("answer");
+  const [proofOpen, setProofOpen] = useState<Record<number, boolean>>({});
+  const wide = useMediaQuery("(min-width: 1024px)");
   const started = useRef<string | null>(null);
   const aborters = useRef<AbortController[]>([]);
   const followRef = useRef<SearchBarHandle>(null);
@@ -57,7 +61,6 @@ export default function Ask() {
       const turn: Turn = { id: turnSeq++, query, lang, context: opts.context, stage: "understanding", stageDetail: {}, info: null, evidence: null, answer: null, trace: null, error: null, done: false };
       setTurns((ts) => (opts.replace ? [turn] : [...ts, turn]));
       setFocusId(turn.id);
-      setMobileTab("answer");
       pushRecentQuestion(query, lang);
       const ac = new AbortController();
       aborters.current.push(ac);
@@ -173,32 +176,40 @@ export default function Ask() {
 
   const activate = (turnId: number, cid: string) => {
     setFocusId(turnId);
-    setMobileTab("evidence");
-    window.setTimeout(() => focusEvidence(cid), 60);
+    setProofOpen((o) => ({ ...o, [turnId]: true }));
+    window.setTimeout(() => focusEvidence(cid), 80);
   };
 
-  const evidenceCount = focused?.evidence?.citations.length ?? 0;
+
+  const refused = (a: Answer | null) => !!a && (a.answer_type === "insufficient_evidence" || a.answer_type === "out_of_scope");
+  // The evidence column appears only once the user opens the proof for the focused answer.
+  // One evidence list in the page: beside the answer on wide screens, inside the details on phones.
+  const showAside = wide && !!focused && !!proofOpen[focused.id] && !!focused.answer && !refused(focused.answer);
+
+  const evidenceList = (turn: Turn, headingId: string) => (
+    <div>
+      <SectionTitle id={headingId} right={<RetrievalDrawer trace={turn.trace} />}>
+        <span className="inline-flex items-center gap-1.5">
+          <Layers size={13} aria-hidden />
+          {t("ask.evidenceTitle", { count: turn.evidence?.citations.length ?? 0 })}
+        </span>
+      </SectionTitle>
+      {!turn.evidence || turn.evidence.citations.length === 0 ? (
+        <p className="rounded-lg border border-calm-line bg-calm-bg p-3 text-[14px] text-calm-ink">{t("ask.noEvidence")}</p>
+      ) : (
+        <div className="space-y-3">
+          {turn.evidence.citations.map((c) => (
+            <EvidenceCard key={c.id} c={c} quote={turn.id === focused?.id ? quotes.get(c.id) : undefined} cited={turn.id === focused?.id && focused.answer ? citedIds.has(c.id) : undefined} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
 
   return (
     <div>
-      {/* Mobile / tablet tabs */}
-      <div role="tablist" aria-label={t("ask.viewTabs")} className="sticky top-14 z-20 -mx-4 mb-4 flex border-b border-line bg-page px-4 lg:hidden">
-        {(["answer", "evidence"] as const).map((tab) => (
-          <button
-            key={tab}
-            role="tab"
-            type="button"
-            aria-selected={mobileTab === tab}
-            onClick={() => setMobileTab(tab)}
-            className={`h-11 flex-1 border-b-2 text-[14px] font-medium ${mobileTab === tab ? "border-accent text-ink" : "border-transparent text-ink-3"}`}
-          >
-            {tab === "answer" ? t("ask.tabAnswer") : t("ask.tabEvidence", { count: evidenceCount })}
-          </button>
-        ))}
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-8">
-        <div className={`${mobileTab === "answer" ? "" : "hidden"} min-w-0 space-y-8 lg:block`}>
+      <div className={showAside ? "grid gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:gap-8" : "mx-auto max-w-3xl"}>
+        <div className="min-w-0 space-y-8">
           {turns.map((turn, i) => {
             const cmap = new Map<string, Citation>((turn.evidence?.citations ?? []).map((c) => [c.id, c]));
             return (
@@ -242,11 +253,19 @@ export default function Ask() {
                       onFollowUp={i === turns.length - 1 ? followUp : undefined}
                       onPickOption={(o) => followUp(t("clarify.productQuery", { product: o }))}
                       onAskIn={i === turns.length - 1 ? (l) => askIn(turn, l) : undefined}
+                      proofOpen={!!proofOpen[turn.id]}
+                      onToggleProof={() => {
+                        setFocusId(turn.id);
+                        setProofOpen((o) => ({ ...o, [turn.id]: !o[turn.id] }));
+                      }}
+                      evidence={wide ? undefined : evidenceList(turn, `evidence-inline-${turn.id}`)}
                     />
-                    <p className="text-xs text-ink-3">
-                      {t("ask.scopeNote")}
-                      {turn.answer.synthetic_used ? ` ${t("ask.syntheticNote")}` : ""}
-                    </p>
+                    {(proofOpen[turn.id] || refused(turn.answer)) && (
+                      <p className="text-xs text-ink-3">
+                        {t("ask.scopeNote")}
+                        {turn.answer.synthetic_used ? ` ${t("ask.syntheticNote")}` : ""}
+                      </p>
+                    )}
                   </>
                 )}
               </article>
@@ -255,48 +274,24 @@ export default function Ask() {
           })}
 
           {last?.done && (
-            <div className="sticky bottom-0 z-10 -mx-4 border-t border-line bg-page px-4 pb-3 pt-3 lg:static lg:mx-0 lg:border-0 lg:bg-transparent lg:px-0 lg:pb-0">
+            <div className="border-t border-line pt-4 lg:border-0 lg:pt-0">
               <SearchBar ref={followRef} size="md" initial="" onSubmit={followUp} label={t("ask.followUpLabel")} placeholder={t("ask.followUpPlaceholder")} slashShortcut={false} />
             </div>
           )}
         </div>
 
-        <aside className={`${mobileTab === "evidence" ? "" : "hidden"} min-w-0 lg:block`} aria-labelledby="evidence-title">
-          <div className="lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1">
-            <SectionTitle id="evidence-title" right={<RetrievalDrawer trace={focused?.trace ?? null} />}>
-              <span className="inline-flex items-center gap-1.5">
-                <Layers size={13} aria-hidden />
-                {t("ask.evidenceTitle", { count: evidenceCount })}
-              </span>
-            </SectionTitle>
-            {turns.length > 1 && focused && (
-              <p className="mb-2 truncate text-xs text-ink-3" lang={focused.lang}>
-                {t("ask.evidenceFor")} “{focused.query}”
-              </p>
-            )}
-            {!focused?.evidence ? (
-              focused?.error ? null : (
-                <div className="space-y-3" aria-busy="true">
-                  {[0, 1, 2].map((k) => (
-                    <div key={k} className="card space-y-2 p-3.5">
-                      <Skeleton className="h-4 w-1/2" />
-                      <Skeleton className="h-3 w-3/4" />
-                      <Skeleton className="h-12 w-full" />
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : focused.evidence.citations.length === 0 ? (
-              <p className="rounded-lg border border-calm-line bg-calm-bg p-3 text-[14px] text-calm-ink">{t("ask.noEvidence")}</p>
-            ) : (
-              <div className="space-y-3">
-                {focused.evidence.citations.map((c) => (
-                  <EvidenceCard key={c.id} c={c} quote={quotes.get(c.id)} cited={focused.answer ? citedIds.has(c.id) : undefined} />
-                ))}
-              </div>
-            )}
-          </div>
-        </aside>
+        {showAside && focused && (
+          <aside className="min-w-0" aria-labelledby="evidence-title">
+            <div className="lg:sticky lg:top-20 lg:max-h-[calc(100dvh-6rem)] lg:overflow-y-auto lg:pr-1">
+              {turns.length > 1 && (
+                <p className="mb-2 truncate text-xs text-ink-3" lang={focused.lang}>
+                  {t("ask.evidenceFor")} “{focused.query}”
+                </p>
+              )}
+              {evidenceList(focused, "evidence-title")}
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

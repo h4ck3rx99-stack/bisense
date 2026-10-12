@@ -228,8 +228,8 @@
     "extractiveDeclined": "The AI model did not use the retrieved passages, although they look highly relevant. Here they are verbatim — read the cited clauses.",
     "shortAnswer": "Short answer",
     "keyPoints": "Key points, from the source",
-    "showWording": "Exact wording and source",
-    "hideWording": "Hide exact wording",
+    "showWording": "See the original text",
+    "hideWording": "Hide the original text",
     "morePoints_one": "Show {{count}} more point",
     "morePoints_other": "Show {{count}} more points",
     "fewerPoints": "Show fewer",
@@ -246,7 +246,9 @@
     "moderate": "Moderate evidence",
     "limited": "Limited evidence",
     "none": "No evidence",
-    "tooltipTitle": "How this is judged"
+    "tooltipTitle": "How this is judged",
+    "basedOn_one": "Based on {{count}} official source",
+    "basedOn_other": "Based on {{count}} official sources"
   },
   "insufficient": {
     "title": "This isn't stated in the indexed sources.",
@@ -257,7 +259,8 @@
     "tip3": "Legal questions (fines, enforcement) need the official order or a BIS office.",
     "tryTitle": "What you can try",
     "tryGuide": "Find standards step by step",
-    "browse": "Browse by category"
+    "browse": "Browse by category",
+    "suggestTitle": "Try asking"
   },
   "clarify": {
     "product": "Which product do you make or sell?",
@@ -271,7 +274,7 @@
     "page": "p. {{n}}",
     "pages": "pp. {{a}}–{{b}}",
     "webPage": "web page",
-    "openClause": "Open clause",
+    "openClause": "Read this part",
     "viewPage": "View page",
     "viewPageOf": "View the page of clause {{n}}",
     "officialSource": "Official source",
@@ -287,8 +290,8 @@
     "translationUnavailable": "Translation isn't available right now. The original wording is shown above."
   },
   "trace": {
-    "open": "Retrieval details",
-    "title": "Retrieval details",
+    "open": "How we found this",
+    "title": "How we found this",
     "description": "How this answer was produced: interpretation, candidates, scores, validation and timings.",
     "interpreted": "Interpreted query",
     "intent": "Intent",
@@ -456,7 +459,7 @@
     "packing": "Packing",
     "sampling": "Sampling",
     "conformity": "Conformity",
-    "annex": "Annex",
+    "annex": "Extra tables",
     "table": "Table",
     "faq": "FAQ",
     "other": "Other",
@@ -464,7 +467,7 @@
     "foreword": "Foreword",
     "terminology": "Terminology",
     "references": "References",
-    "front": "Front matter",
+    "front": "About this document",
     "list": "List",
     "amendment": "Amendment"
   },
@@ -692,9 +695,39 @@
   },
   "glance": {
     "title": "At a glance",
-    "covers": "What it covers (from the source)",
+    "covers": "What it covers",
     "who": "Who it's for",
     "status": "Status and revision",
-    "sourceDetails": "Source details"
+    "sourceDetails": "Source details",
+    "compulsoryLine": "Compulsory:",
+    "compYes": "Yes",
+    "compDenotified": "No — de-notified",
+    "compNotListed": "Not on the official compulsory list"
+  },
+  "verdict": {
+    "compulsory": "Yes — BIS certification is compulsory for {{product}}",
+    "notCompulsory": "Not compulsory, but a standard exists",
+    "notFound": "We couldn't find this in official BIS sources",
+    "possible": "Possible match — check the source",
+    "requiredBy": "Required by: {{order}}",
+    "denotifiedNote": "{{product}} was removed from compulsory BIS certification (de-notified) in the official list.",
+    "notListedNote": "{{product}} is not on the official BIS list of products that need compulsory certification.",
+    "todo": "What you need to do",
+    "isi1": "Apply for a BIS licence on Manak Online, BIS's online portal.",
+    "isi2": "BIS inspects your factory and tests samples against {{std}}.",
+    "isi3": "Once licensed, put the ISI mark on every product.",
+    "crs1": "Get the product tested in a BIS-recognised lab against {{std}}.",
+    "crs2": "Register it on the BIS CRS portal with the test report.",
+    "crs3": "After registration, print the Standard Mark with your registration number.",
+    "manakOnline": "Open Manak Online",
+    "crsPortal": "Open the CRS portal",
+    "source": "Source:",
+    "srcList": "Official BIS list of products under compulsory certification",
+    "srcManual": "BIS product manual, page {{page}}",
+    "srcManualNoPage": "BIS product manual",
+    "officialPage": "Official page",
+    "showProof": "Show proof and details",
+    "hideProof": "Hide proof and details",
+    "standardChip": "Open the standard page for {{std}}"
   }
 }

@@ -27,6 +27,15 @@ export async function expectNoSeriousA11yIssues(page: Page) {
   expect(serious.map((v) => `${v.id}: ${v.help} (${v.nodes.map((n) => n.target.join(" ")).slice(0, 3).join(", ")})`)).toEqual([]);
 }
 
+/** An answer has arrived: the verdict card, the "not found" card, the details (answers without a verdict) or
+ *  the product clarification. */
 export async function waitForAnswer(page: Page) {
-  await expect(page.getByText(/Key points, from the source|Most relevant clauses|isn't stated in the indexed sources|Which product do you make/).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.locator("[data-testid=verdict-card], [data-testid=not-found], [data-testid=proof]").or(page.getByText(/Which product do you make/)).first()).toBeVisible({ timeout: 60_000 });
+}
+
+/** Open "Show proof and details" on the latest answer (evidence, key points, next steps live behind it). */
+export async function openProof(page: Page) {
+  const toggle = page.getByTestId("toggle-proof").last();
+  if ((await toggle.count()) && (await toggle.getAttribute("aria-expanded")) !== "true") await toggle.click();
+  await expect(page.getByTestId("proof").last()).toBeVisible();
 }

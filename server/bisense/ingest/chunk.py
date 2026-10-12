@@ -22,7 +22,7 @@ from bisense.ingest.tables import rows_to_markdown, split_table
 MAX_TOKENS = 450
 TARGET_TOKENS = 350
 OVERLAP_FRACTION = 0.15
-CHUNKER_VERSION = "chunk-1.2"
+CHUNKER_VERSION = "chunk-1.3"  # 1.3: one chunk per official product-list row
 
 
 def count_tokens(text: str) -> int:

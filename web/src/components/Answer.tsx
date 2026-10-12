@@ -1,20 +1,20 @@
-// Answer rendering, in the order a beginner needs it:
-//   1 Short answer  2 Key points (source facts; exact wording collapsed)  3 What this means for you (AI
-//   interpretation, amber, own icon + label)  4 Relevant standards (plain title first)  5 Sources (human
-//   citations; full evidence in the side panel)  6 Next steps (chips).
-// Honest states (insufficient evidence, clarification, extractive fallback, cached, partial) are distinct.
-import { useContext, useState } from "react";
+// Answer rendering for first-time users:
+//   1 Verdict card (components/Verdict.tsx): verdict line, one standard chip, what to do, one source line,
+//     "Show proof and details".
+//   2 Behind that button: short answer (AI), key points (original text collapsed), what this means for you
+//     (AI interpretation), other standards, gaps, evidence, next steps.
+// Honest states (not found, clarification, evidence-only, cached, partial) are distinct.
+import { useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { ArrowRight, BookOpen, BookOpenCheck, Check, ChevronDown, CircleHelp, Columns2, Compass, Copy, FileText, Info, Languages, Lightbulb, ListChecks, Quote, Scale, SearchX, Sparkles, X } from "lucide-react";
+import { ArrowRight, BookOpenCheck, Check, ChevronDown, CircleHelp, Columns2, Compass, Copy, FileText, Info, Languages, Lightbulb, ListChecks, Quote, Scale, SearchX, Sparkles, X } from "lucide-react";
 import type { Answer, Citation, Lang, Point, QueryInfo, StandardRef } from "../api/types";
-import { Badge, SectionTitle, SourceBadge, SyntheticBadge } from "./ui";
-import { CitationActivateContext, CitationChip, WithCitations, focusEvidence } from "./Evidence";
+import { Badge, SectionTitle, SyntheticBadge } from "./ui";
+import { CitationChip, WithCitations } from "./Evidence";
 import { useToast } from "./Toast";
 import { humanSource, shortTitle } from "../lib/format";
-import { ListenButton } from "./ListenButton";
-import { useHealth } from "../lib/hooks";
+import { VerdictCard } from "./Verdict";
 
 const STAGES = ["understanding", "searching", "drafting", "verifying", "translating"] as const;
 
@@ -40,18 +40,18 @@ export function StageProgress({ stage, counts }: { stage: string | null; counts?
   );
 }
 
-export function StrengthBadge({ answer }: { answer: Answer }) {
+export function StrengthBadge({ answer, sources }: { answer: Answer; sources: number }) {
   const { t } = useTranslation();
-  if (answer.evidence_strength === "none") return null;
+  if (answer.evidence_strength === "none" || sources === 0) return null;
   const tone = answer.evidence_strength === "strong" ? "ok" : answer.evidence_strength === "moderate" ? "accent" : "warn";
   return (
     <Tooltip.Provider delayDuration={200}>
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
-          <button type="button" className="rounded-sm" aria-label={`${t(`strength.${answer.evidence_strength}`)}. ${answer.strength_basis}`}>
+          <button type="button" className="rounded-sm" aria-label={`${t("strength.basedOn", { count: sources })}. ${answer.strength_basis}`}>
             <Badge tone={tone}>
               <BookOpenCheck size={12} aria-hidden />
-              {t(`strength.${answer.evidence_strength}`)}
+              {t("strength.basedOn", { count: sources })}
             </Badge>
           </button>
         </Tooltip.Trigger>
@@ -243,37 +243,6 @@ export function RelevantStandards({ standards, citations }: { standards: Standar
   );
 }
 
-/** Human-readable list of the sources the answer actually cites. Tap -> the evidence card. */
-function SourcesUsed({ answer, citations }: { answer: Answer; citations: Map<string, Citation> }) {
-  const { t } = useTranslation();
-  const ctxActivate = useContext(CitationActivateContext);
-  const ids = [...new Set(answer.points.flatMap((p) => p.citations).concat(answer.standards.flatMap((s) => s.citations)))];
-  const used = ids.map((id) => citations.get(id)).filter((c): c is Citation => !!c).sort((a, b) => a.n - b.n);
-  if (!used.length) return null;
-  return (
-    <section aria-labelledby="ans-sources">
-      <SectionTitle id="ans-sources">{t("answer.sourcesTitle")}</SectionTitle>
-      <ul className="space-y-1.5">
-        {used.map((c) => (
-          <li key={c.id} className="flex flex-wrap items-center gap-2 text-[13px]">
-            <button
-              type="button"
-              onClick={() => (ctxActivate ?? focusEvidence)(c.id)}
-              className="mono inline-flex h-6 min-w-[24px] items-center justify-center rounded-sm border border-[#d6d3f3] bg-accent-soft px-1 text-[11px] font-semibold text-accent-strong hover:bg-accent hover:text-white"
-              aria-label={t("answer.showSource", { n: c.n })}
-            >
-              {c.n}
-            </button>
-            <span className="min-w-0 flex-1 text-ink-2">{humanSource(c, t)}</span>
-            {/* sample sources already say "Sample data, not official" in the label itself */}
-            {c.source_type !== "sample" && !c.synthetic && <SourceBadge type={c.source_type} />}
-          </li>
-        ))}
-      </ul>
-    </section>
-  );
-}
-
 export function CompulsoryBadge({ status, source }: { status: string; source?: string | null }) {
   const { t } = useTranslation();
   if (status === "yes") return <Badge tone="warn" title={source ?? undefined}><Scale size={12} aria-hidden />{t("compulsory.yes")}</Badge>;
@@ -332,12 +301,18 @@ export function AnswerBlock({
   onFollowUp,
   onPickOption,
   onAskIn,
+  proofOpen = false,
+  onToggleProof,
+  evidence,
 }: {
   answer: Answer;
   citations: Map<string, Citation>;
   onFollowUp?: (q: string) => void;
   onPickOption?: (q: string) => void;
   onAskIn?: (lang: Lang) => void;
+  proofOpen?: boolean;
+  onToggleProof?: () => void;
+  evidence?: ReactNode; // the evidence list, shown inside the details on small screens
 }) {
   const { t } = useTranslation();
   const toast = useToast();
@@ -345,7 +320,7 @@ export function AnswerBlock({
   const interps = answer.points.filter((p) => p.kind === "interpretation");
   const origFacts = answer.original?.points.filter((p) => p.kind === "source_fact");
 
-  if (answer.answer_type === "insufficient_evidence") return <InsufficientEvidence answer={answer} />;
+  if (answer.answer_type === "insufficient_evidence") return <InsufficientEvidence answer={answer} onAsk={onFollowUp} />;
   if (answer.answer_type === "out_of_scope") {
     return (
       <div className="rounded-lg border border-calm-line bg-calm-bg p-4 text-calm-ink">
@@ -386,80 +361,130 @@ export function AnswerBlock({
     }
   };
 
+  const hasVerdict = !!answer.verdict && answer.verdict.kind !== "not_found";
+  const open = proofOpen || !hasVerdict;
+  const citedSources = new Set(answer.points.flatMap((p) => p.citations).map((id) => citations.get(id)?.slug).filter(Boolean)).size;
+
   return (
-    <div className="space-y-5">
-      {answer.mode === "extractive" && (
-        <div className="flex items-start gap-2 rounded-lg border border-calm-line bg-calm-bg px-3 py-2.5 text-[14px] text-calm-ink">
-          <Info size={16} className="mt-0.5 shrink-0" aria-hidden />
-          <div>
-            <div className="font-medium">{t("answer.extractiveTitle")}</div>
-            <div className="text-[13px]">
-              {answer.notice === "notice.extractive_llm_quota"
-                ? t("answer.extractiveQuota", { min: Math.max(1, Math.ceil((answer.retry_after_s ?? 60) / 60)) })
-                : t(answer.notice === "notice.extractive_no_key" ? "answer.extractiveNoKey" : answer.notice === "notice.extractive_llm_declined" ? "answer.extractiveDeclined" : "answer.extractiveFailed")}
+    <div className="space-y-4">
+      {hasVerdict && <VerdictCard answer={answer} citations={citations} proofOpen={proofOpen} onToggleProof={() => onToggleProof?.()} speakText={speakableText(answer, t)} />}
+
+      {open && (
+        <div className="space-y-5" data-testid="proof">
+          {answer.mode === "extractive" && (
+            <div className="flex items-start gap-2 rounded-lg border border-calm-line bg-calm-bg px-3 py-2.5 text-[14px] text-calm-ink">
+              <Info size={16} className="mt-0.5 shrink-0" aria-hidden />
+              <div>
+                <div className="font-medium">{t("answer.extractiveTitle")}</div>
+                {answer.notice !== "notice.possible_match" && (
+                  <div className="text-[13px]">
+                    {answer.notice === "notice.extractive_llm_quota"
+                      ? t("answer.extractiveQuota", { min: Math.max(1, Math.ceil((answer.retry_after_s ?? 60) / 60)) })
+                      : t(answer.notice === "notice.extractive_no_key" ? "answer.extractiveNoKey" : answer.notice === "notice.extractive_llm_declined" ? "answer.extractiveDeclined" : "answer.extractiveFailed")}
+                  </div>
+                )}
+              </div>
             </div>
+          )}
+          {answer.mode === "cached" && (
+            <p className="text-xs text-ink-3">{t("answer.cachedNote", { date: answer.generated_at ? new Date(answer.generated_at).toLocaleString() : "" })}</p>
+          )}
+          {answer.translation_failed && <p className="rounded-md bg-warn-bg px-3 py-2 text-[13px] text-warn-ink">{t("answer.translationFailed")}</p>}
+
+          {answer.summary && (
+            <section aria-labelledby="ans-summary">
+              <SectionTitle id="ans-summary" right={<Badge tone="neutral"><Sparkles size={11} aria-hidden />{t("answer.aiWritten")}</Badge>}>
+                {t("answer.shortAnswer")}
+              </SectionTitle>
+              <p className="text-[16px] leading-relaxed">
+                <WithCitations text={answer.summary} citations={citations} />
+              </p>
+            </section>
+          )}
+
+          {facts.length > 0 && (
+            <section aria-labelledby="ans-facts">
+              <SectionTitle id="ans-facts">
+                <span className="inline-flex items-center gap-1.5">
+                  <FileText size={13} aria-hidden />
+                  {answer.mode === "extractive" ? t("answer.relevantClauses") : t("answer.keyPoints")}
+                </span>
+              </SectionTitle>
+              <KeyPoints points={facts} citations={citations} original={origFacts} />
+            </section>
+          )}
+
+          {interps.length > 0 && <InterpretationList points={interps} citations={citations} />}
+
+          <RelevantStandards standards={answer.standards} citations={citations} />
+
+          {answer.gaps.length > 0 && (
+            <section aria-labelledby="ans-gaps" className="rounded-lg border border-calm-line bg-calm-bg p-3 text-[14px] text-calm-ink">
+              <h3 id="ans-gaps" className="mb-1 font-semibold">{t("answer.gapsTitle")}</h3>
+              <ul className="list-disc space-y-1 pl-5">
+                {answer.gaps.map((g, i) => (
+                  <li key={i}>{g}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {answer.dropped_count > 0 && <p className="text-xs text-ink-3">{t("answer.partial", { count: answer.dropped_count })}</p>}
+
+          <div className="flex flex-wrap items-center gap-2">
+            <StrengthBadge answer={answer} sources={citedSources} />
+            {answer.synthetic_used && <SyntheticBadge />}
+            <span className="flex-1" />
+            <button type="button" onClick={copy} className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium text-ink-2 hover:bg-surface-2">
+              <Copy size={14} aria-hidden />
+              {t("answer.copy")}
+            </button>
           </div>
+
+          {evidence}
+
+          <NextSteps answer={answer} onFollowUp={onFollowUp} onAskIn={onAskIn} />
         </div>
       )}
-      {answer.mode === "cached" && (
-        <p className="text-xs text-ink-3">{t("answer.cachedNote", { date: answer.generated_at ? new Date(answer.generated_at).toLocaleString() : "" })}</p>
-      )}
-      {answer.translation_failed && <p className="rounded-md bg-warn-bg px-3 py-2 text-[13px] text-warn-ink">{t("answer.translationFailed")}</p>}
+    </div>
+  );
+}
 
-      {answer.summary && (
-        <section aria-labelledby="ans-summary">
-          <SectionTitle id="ans-summary" right={<Badge tone="neutral"><Sparkles size={11} aria-hidden />{t("answer.aiWritten")}</Badge>}>
-            {t("answer.shortAnswer")}
-          </SectionTitle>
-          <p className="text-[17px] leading-relaxed">
-            <WithCitations text={answer.summary} citations={citations} />
-          </p>
-        </section>
-      )}
-
-      {facts.length > 0 && (
-        <section aria-labelledby="ans-facts">
-          <SectionTitle id="ans-facts">
-            <span className="inline-flex items-center gap-1.5">
-              <FileText size={13} aria-hidden />
-              {answer.mode === "extractive" ? t("answer.relevantClauses") : t("answer.keyPoints")}
-            </span>
-          </SectionTitle>
-          <KeyPoints points={facts} citations={citations} original={origFacts} />
-        </section>
-      )}
-
-      {interps.length > 0 && <InterpretationList points={interps} citations={citations} />}
-
-      <RelevantStandards standards={answer.standards} citations={citations} />
-
+/** "We couldn't find this in official BIS sources": two rephrasings that work, and the step-by-step finder. */
+export function InsufficientEvidence({ answer, onAsk }: { answer: Answer; onAsk?: (q: string) => void }) {
+  const { t } = useTranslation();
+  return (
+    <div className="rounded-xl border border-calm-line bg-calm-bg p-4 text-calm-ink sm:p-5" role="status" data-testid="not-found">
+      <h2 className="mb-1 flex items-center gap-2 text-[19px] font-semibold">
+        <SearchX size={20} aria-hidden />
+        {t("verdict.notFound")}
+      </h2>
+      <p className="mb-2 text-[14px]">{t("insufficient.body")}</p>
       {answer.gaps.length > 0 && (
-        <section aria-labelledby="ans-gaps" className="rounded-lg border border-calm-line bg-calm-bg p-3 text-[14px] text-calm-ink">
-          <h3 id="ans-gaps" className="mb-1 font-semibold">{t("answer.gapsTitle")}</h3>
-          <ul className="list-disc space-y-1 pl-5">
-            {answer.gaps.map((g, i) => (
-              <li key={i}>{g}</li>
-            ))}
-          </ul>
-        </section>
+        <ul className="mb-2 list-disc pl-5 text-[14px]">
+          {answer.gaps.map((g, i) => (
+            <li key={i}>{g}</li>
+          ))}
+        </ul>
       )}
-
-      <SourcesUsed answer={answer} citations={citations} />
-
-      {answer.dropped_count > 0 && <p className="text-xs text-ink-3">{t("answer.partial", { count: answer.dropped_count })}</p>}
-
-      <div className="flex flex-wrap items-center gap-2">
-        <StrengthBadge answer={answer} />
-        {answer.synthetic_used && <SyntheticBadge />}
-        <span className="flex-1" />
-        <button type="button" onClick={copy} className="inline-flex h-10 items-center gap-1.5 rounded-md px-2.5 text-[13px] font-medium text-ink-2 hover:bg-surface-2">
-          <Copy size={14} aria-hidden />
-          {t("answer.copy")}
-        </button>
-        <ListenButton id={`${answer.generated_at ?? ""}:${answer.summary.slice(0, 40)}`} text={speakableText(answer, t)} lang={answer.lang as Lang} />
+      {answer.suggestions.length > 0 && onAsk && (
+        <>
+          <p className="mt-3 text-[13px] font-semibold">{t("insufficient.suggestTitle")}</p>
+          <div className="mt-1.5 flex flex-wrap gap-2">
+            {answer.suggestions.map((q) => (
+              <button key={q} type="button" onClick={() => onAsk(q)} className="min-h-10 rounded-md border border-line-strong bg-surface px-3 text-left text-[14px] text-ink hover:border-accent" lang="en">
+                {q}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+      <div className="mt-3">
+        <Link to="/guide" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-[14px] font-medium text-ink no-underline hover:border-accent">
+          <Compass size={15} aria-hidden />
+          {t("insufficient.tryGuide")}
+        </Link>
       </div>
-
-      <NextSteps answer={answer} onFollowUp={onFollowUp} onAskIn={onAskIn} />
     </div>
   );
 }
@@ -472,40 +497,6 @@ function InsufficientActions() {
         <Compass size={14} aria-hidden />
         {t("insufficient.tryGuide")}
       </Link>
-      <Link to="/standards" className="inline-flex min-h-10 items-center gap-1.5 rounded-md border border-line-strong bg-surface px-3 text-[13px] font-medium text-ink no-underline hover:border-accent">
-        <BookOpen size={14} aria-hidden />
-        {t("insufficient.browse")}
-      </Link>
-    </div>
-  );
-}
-
-export function InsufficientEvidence({ answer }: { answer: Answer }) {
-  const { t } = useTranslation();
-  const health = useHealth();
-  const c = health.data?.counts ?? {};
-  return (
-    <div className="rounded-lg border border-calm-line bg-calm-bg p-4 text-calm-ink" role="status">
-      <h3 className="mb-1 flex items-center gap-2 text-[16px] font-semibold">
-        <SearchX size={17} aria-hidden />
-        {t("insufficient.title")}
-      </h3>
-      <p className="mb-2 text-[14px]">{t("insufficient.body")}</p>
-      {answer.gaps.length > 0 && (
-        <ul className="mb-2 list-disc pl-5 text-[14px]">
-          {answer.gaps.map((g, i) => (
-            <li key={i}>{g}</li>
-          ))}
-        </ul>
-      )}
-      <p className="text-[13px]">{t("insufficient.searched", { std: c.standards_with_full_text ?? 0, pm: c.standards_with_manual ?? 0, guide: c.guidance ?? 0, cat: c.catalogue ?? 0 })}</p>
-      <p className="mt-2 text-[13px] font-medium">{t("insufficient.tryTitle")}</p>
-      <ul className="mt-1 list-disc pl-5 text-[13px]">
-        <li>{t("insufficient.tip1")}</li>
-        <li>{t("insufficient.tip2")}</li>
-        <li>{t("insufficient.tip3")}</li>
-      </ul>
-      <InsufficientActions />
     </div>
   );
 }

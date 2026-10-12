@@ -156,7 +156,10 @@ test("read-aloud is honestly unavailable when the device has no voice for the la
     Object.defineProperty(window.speechSynthesis, "getVoices", { value: () => [{ lang: "en-US", name: "English only" }] });
   });
   await page.goto("/ask?q=" + encodeURIComponent("हेलमेट के लिए कौन सा मानक है?") + "&lang=kn");
-  await waitForAnswer(page).catch(() => undefined);
-  await expect(page.getByTestId("tts-unavailable").first()).toBeVisible({ timeout: 60_000 });
+  await waitForAnswer(page);
+  // the note stays hidden until the user asks to listen
+  await expect(page.getByTestId("tts-unavailable")).toHaveCount(0);
+  await page.getByTestId("listen").first().click();
+  await expect(page.getByTestId("tts-unavailable").first()).toBeVisible();
   await expect(page.getByTestId("tts-unavailable").first()).toContainText(/ಕನ್ನಡ|Kannada/);
 });

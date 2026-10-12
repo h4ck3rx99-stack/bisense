@@ -37,9 +37,11 @@ from bisense.answer.present import (
     to_standard_ref,
 )
 from bisense.answer.validate import SourceView, Validator
+from bisense.answer.verdict import build_verdict, lead_with_verdict, suggestions
 from bisense.config import get_settings
 from bisense.i18n.protect import protect, restore
 from bisense.i18n.translate import translate_strings
+from bisense.listrow import parse_row
 from bisense.models import (
     Answer,
     AnswerType,
@@ -57,7 +59,7 @@ from bisense.models import (
 )
 from bisense.retrieval.index import db_conn, get_index
 from bisense.retrieval.query import ClientContext, QueryPlan, apply_rewrite, understand
-from bisense.retrieval.search import SearchResult, load_candidates, product_terms, search
+from bisense.retrieval.search import SearchResult, load_candidates, product_match, product_terms, search
 
 Event = tuple[str, BaseModel | dict]
 ANSWER_TYPES = set(get_args(AnswerType))
@@ -131,6 +133,10 @@ def run_ask(req: AskRequest) -> Iterator[Event]:
         final.searched_summary = searched_summary(index.counts)
         final.library_note = coverage_line(index.counts)
         final.coverage = [CoverageNote(**c) for c in scope_coverage(conn, [s.slug for s in plan.scope])]
+        final.verdict = build_verdict(conn, plan, final, res, citations)
+        lead_with_verdict(final, final.verdict, conn)
+        if final.verdict and final.verdict.kind == "not_found":
+            final.suggestions = suggestions(conn, plan)
         final.synthetic_used = any(c.synthetic for c in res.context)
 
         total = round((time.perf_counter() - t_start) * 1000, 1)
@@ -302,7 +308,11 @@ def _decide(
         )
         return d
 
-    if _gate_fails(res, plan, llm_available=llm is not None):
+    gate_failed = _gate_fails(res, plan, llm_available=llm is not None)
+    # Weak scores, but the top hit is the official list row or BIS manual for the very product asked about
+    # (the cross-encoder scores table rows low): show it as a possible match instead of refusing.
+    possible = gate_failed and _possible_match(res, plan)
+    if gate_failed and not possible:
         d.answer = Answer(
             answer_type="insufficient_evidence",
             mode="none",
@@ -342,6 +352,10 @@ def _decide(
             d.answer = _extractive(plan, res, std_refs, llm_configured=True)
             d.answer.notice = "notice.extractive_llm_declined"
             return d
+        if live is not None and possible and live.answer_type == "insufficient_evidence":
+            d.answer = _extractive(plan, res, std_refs, llm_configured=True)
+            d.answer.notice = "notice.possible_match"
+            return d
 
     if live is not None:
         if plan.lang != "en" and live.answer_type not in ("insufficient_evidence",):
@@ -365,7 +379,44 @@ def _decide(
         d.answer = a
         return d
     d.answer = _extractive(plan, res, std_refs, llm_configured=llm is not None)
+    if possible:
+        d.answer.notice = "notice.possible_match"
     return d
+
+
+# Questions about fines, penalties and prices are never answered from a product match: the official lists
+# say which standard applies, not what a violation costs.
+FINE_RE = re.compile(r"\b(fines?|penalt\w*|punish\w*|jail|imprison\w*|prosecut\w*|prices?|cost of|how much does|rate of)\b", re.I)
+
+
+# BIS service questions: an official page about the asked topic among the top passages is a possible
+# match even when the reranker scores it low ("Where can I complain about a fake ISI product?").
+SERVICE_TOPICS: list[tuple[re.Pattern[str], tuple[str, ...]]] = [
+    (re.compile(r"\b(complain\w*|grievance|fake isi|misuse)\b", re.I), ("consumer", "complaint")),
+    (re.compile(r"\b(hallmark\w*|huid|jewell?ery)\b", re.I), ("hallmark",)),
+    (re.compile(r"\b(apply|application|get a bis|grant of licen[cs]e)\b", re.I), ("product certification", "grant of licence")),
+    (re.compile(r"\b(lab|labs|laborator\w*|get (my )?product tested)\b", re.I), ("laborator", "lab ")),
+]
+
+
+def _possible_match(res: SearchResult, plan: QueryPlan) -> bool:
+    if FINE_RE.search(plan.english_query) or FINE_RE.search(plan.raw):
+        return False
+    for pattern, doc_words in SERVICE_TOPICS:
+        if pattern.search(plan.english_query):
+            for c in res.context[:3]:
+                title = f"{c.title} {c.document_title or ''} {c.clause_heading}".lower()
+                if c.clause_kind != "list" and any(w in title for w in doc_words):
+                    return True
+    pq = product_terms(plan)
+    for c in res.context[:3]:
+        if c.clause_kind == "list":
+            row = parse_row(c.text)
+            if row and product_match(f"{row.product} {row.title}", pq) > 0:
+                return True
+        elif c.text_scope == "product_manual" and product_match(f"{c.title} {c.document_title or ''}", pq) > 0:
+            return True
+    return False
 
 
 def _live_answer(

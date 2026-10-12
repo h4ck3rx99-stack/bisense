@@ -30,7 +30,7 @@ from bisense import stdnum
 from bisense.config import Settings
 from bisense.db import connect, get_meta, init_schema, set_meta
 from bisense.ingest import catalogue, html_parse, parse
-from bisense.ingest.chunk import CHUNKER_VERSION, build_embed_text, chunk_clause
+from bisense.ingest.chunk import CHUNKER_VERSION, ChunkDraft, build_embed_text, chunk_clause, count_tokens
 from bisense.ingest.clean import strip_parallel_devanagari
 from bisense.ingest.demo_pack import build_demo_pack
 from bisense.ingest.manifest import SourceFile, discover, draft_entry, save_manifest
@@ -38,6 +38,7 @@ from bisense.ingest.pdf_parse import IngestError
 from bisense.ingest.requirements import extract_requirements
 from bisense.ingest.terms import extract_amendments, extract_references, extract_terms
 from bisense.ingest.types import ClauseDraft, ParsedDoc
+from bisense.listrow import rows_from_table, scheme_of
 
 Log = Callable[[str], None]
 
@@ -302,9 +303,15 @@ def build_database(db_path: Path, parsed: list[tuple[SourceFile, str, ParsedDoc]
         # chunks + FTS
         n_chunks = 0
         chunk_of_clause: dict[int, list[tuple[int, str]]] = {}
+        list_scheme = scheme_of(e.get("title") or "") if e.get("doc_type") == "catalogue_page" else None
         for i, c in enumerate(doc.clauses):
             path = _clause_path(doc.clauses, i)
-            for k, ch in enumerate(chunk_clause(c.text, c.table_rows, heading=c.heading if c.table_rows else "", max_table_rows=8 if c.kind == "list" else 20)):
+            if list_scheme and c.kind == "list" and c.table_rows:
+                # Official product lists: one chunk per row (see bisense/listrow.py for why).
+                drafts = [ChunkDraft(t, count_tokens(t)) for t in rows_from_table(c.table_rows, list_scheme)]
+            else:
+                drafts = chunk_clause(c.text, c.table_rows, heading=c.heading if c.table_rows else "", max_table_rows=8 if c.kind == "list" else 20)
+            for k, ch in enumerate(drafts):
                 cid = _insert(
                     conn,
                     "chunks",

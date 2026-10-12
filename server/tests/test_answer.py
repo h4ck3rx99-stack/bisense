@@ -192,3 +192,40 @@ def test_daily_provider_limit_is_reported_and_not_retried(monkeypatch, built_ind
         assert answer.notice == "notice.extractive_llm_quota" and len(calls) == n
     finally:
         set_llm(None, override=False)
+
+
+def test_backup_llm_is_used_when_the_primary_hits_its_daily_limit(monkeypatch, built_index):
+    """Groq daily quota (429 "tokens per day") on the primary and its alternate model -> LLM_FALLBACK_* answers."""
+    import httpx
+
+    from bisense.answer import llm_client
+    from bisense.config import get_settings
+
+    hosts = []
+
+    def handler(request):
+        hosts.append(request.url.host)
+        if request.url.host == "groq.test":
+            return httpx.Response(429, headers={"retry-after": "900"}, json={"error": {"message": "Rate limit reached on tokens per day (TPD)"}})
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"answer_type": "answer", "summary": "", "points": []}'}}], "usage": {}})
+
+    real_client = httpx.Client
+    monkeypatch.setattr(llm_client.httpx, "Client", lambda **kw: real_client(transport=httpx.MockTransport(handler), **kw))
+    s = get_settings().model_copy(
+        update={
+            "llm_provider": "openai_compatible",
+            "llm_base_url": "https://groq.test/v1",
+            "llm_model": "m1",
+            "llm_alt_model": "m2",
+            "llm_fallback_base_url": "http://localhost:11434/v1",
+            "llm_fallback_model": "qwen3:8b",
+        }
+    )
+    client = llm_client.LLMClient(s)
+    result = client.chat([{"role": "user", "content": "hi"}])
+    assert result.provider == "fallback" and result.model == "qwen3:8b"
+    assert hosts == ["groq.test", "groq.test", "localhost"]
+    assert client.quota_wait() is None  # a provider is still available, so no "daily limit" notice
+    hosts.clear()
+    client.chat([{"role": "user", "content": "again"}])
+    assert hosts == ["localhost"]  # the exhausted models are not called again

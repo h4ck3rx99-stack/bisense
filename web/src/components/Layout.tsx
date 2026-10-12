@@ -33,7 +33,7 @@ export function LanguageSwitcher() {
   );
 }
 
-function LibraryIndicator() {
+export function LibraryIndicator() {
   const { t } = useTranslation();
   const { data, isError } = useHealth();
   if (isError) return <span className="text-xs text-err-ink">{t("health.backendDown")}</span>;
@@ -44,7 +44,7 @@ function LibraryIndicator() {
   const full = c.standards_with_full_text ?? 0;
   const manuals = c.standards_with_manual ?? 0;
   return (
-    <Link to="/standards" className="hidden text-xs text-ink-3 no-underline hover:text-ink lg:inline" title={t("health.libraryTitle", { std: full, pm: manuals, guide: c.guidance, cat: c.catalogue })}>
+    <Link to="/standards" className="text-[13px] text-ink-3 no-underline hover:text-ink" title={t("health.libraryTitle", { std: full, pm: manuals, guide: c.guidance, cat: c.catalogue })}>
       {full > 0 && (
         <>
           <span className="mono font-semibold text-ink-2">{full}</span> {t("health.fullText")} ·{" "}
@@ -138,8 +138,10 @@ export function TopBar() {
               <SyntheticBadge compact />
             </span>
           )}
-          <LibraryIndicator />
-          <RecentMenu />
+          {/* Library counts live on the About page; on phones only the language switcher stays in the bar. */}
+          <span className="hidden md:inline-flex">
+            <RecentMenu />
+          </span>
           <LanguageSwitcher />
           <button type="button" className="inline-flex h-9 w-9 items-center justify-center rounded-md hover:bg-surface-2 md:hidden" aria-label={open ? t("action.close") : t("nav.menu")} aria-expanded={open} onClick={() => setOpen((o) => !o)}>
             {open ? <X size={18} aria-hidden /> : <Menu size={18} aria-hidden />}
@@ -153,6 +155,10 @@ export function TopBar() {
               {t(n.key)}
             </NavLink>
           ))}
+          <div className="mt-1 flex items-center gap-2 border-t border-line pt-2">
+            <RecentMenu />
+            {data?.dataset_mode === "sample" && <SyntheticBadge compact />}
+          </div>
         </nav>
       )}
     </header>

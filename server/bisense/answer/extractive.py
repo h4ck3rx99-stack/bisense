@@ -128,10 +128,21 @@ def extractive_points(context: list[Candidate], limit: int = 6, discover: bool =
     else:
         chosen = strong_context(context)[:limit]
     for c in chosen:
+        if c.clause_kind == "list" and c.text.startswith("Product: "):
+            # one official list row: already readable ("Product: … · IS … · Scheme-I ISI mark · Order: …")
+            points.append(Point(kind="source_fact", text=c.text[len("Product: ") :], citations=[c.citation_id or ""], quote=None))
+            continue
         excerpt = first_sentences(c.text)
         if not excerpt:
             continue
         loc = _location(c)
         label = f"{c.label()} — {loc}" if loc else c.label()
-        points.append(Point(kind="source_fact", text=f"{label}: {excerpt}", citations=[c.citation_id or ""], quote=None if _is_table(c.text) else excerpt))
+        points.append(
+            Point(
+                kind="source_fact",
+                text=f"{label}: {excerpt}",
+                citations=[c.citation_id or ""],
+                quote=None if _is_table(c.text) or c.clause_kind == "list" else excerpt,
+            )
+        )
     return points

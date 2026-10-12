@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import * as Tabs from "@radix-ui/react-tabs";
-import { AlertCircle, ArrowRight, Columns2, ExternalLink, FileText, Image as ImageIcon, Scale, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowRight, Columns2, ExternalLink, FileText, Image as ImageIcon, Sparkles } from "lucide-react";
 import { api } from "../api/client";
 import type { ClauseNode, ClauseOut, StandardDetail } from "../api/types";
 import { Markdown } from "../components/Markdown";
@@ -125,7 +125,9 @@ function Header({ d }: { d: StandardDetail }) {
   const { t } = useTranslation();
   const s = d.summary;
   const p = d.provenance;
-  const covers = firstSentence(d.scope_text);
+  // Product manuals and list-only entries: a sentence built from the product and standard title (their first
+  // passage is a cover page / list row); full-text standards: the first sentence of the scope.
+  const covers = d.about ?? firstSentence(d.scope_text);
   const who = d.products.length ? d.products.slice(0, 5).join(", ") : d.industries.join(", ");
   return (
     <header className={`rounded-lg border border-line bg-surface p-4 sm:p-5 ${s.synthetic ? "synthetic-stripes" : ""}`} aria-labelledby="std-title">
@@ -146,6 +148,22 @@ function Header({ d }: { d: StandardDetail }) {
           </Badge>
         )}
       </div>
+      {(d.compulsory.status === "yes" || d.compulsory.status === "denotified" || s.kind === "standard" || s.kind === "catalogue") && (
+        <p className="mt-3 text-[15px]" data-testid="compulsory-line">
+          <span className="font-semibold">{t("glance.compulsoryLine")}</span>{" "}
+          {d.compulsory.status === "yes"
+            ? `${t("glance.compYes")}${d.compulsory.order_short ? ` (${d.compulsory.order_short})` : ""}`
+            : d.compulsory.status === "denotified"
+              ? t("glance.compDenotified")
+              : t("glance.compNotListed")}
+          {d.compulsory.slug && (d.compulsory.status === "yes" || d.compulsory.status === "denotified") && (
+            <>
+              {" · "}
+              <Link to={`/standards/${d.compulsory.slug}?tab=clauses&clause=${encodeURIComponent(d.compulsory.clause_number ?? "")}`}>{t("legal.seeListEntry")}</Link>
+            </>
+          )}
+        </p>
+      )}
       <dl className="mt-4 grid gap-x-6 gap-y-3 text-[14px] sm:grid-cols-2">
         {covers && (
           <div className="sm:col-span-2">
@@ -222,7 +240,8 @@ function Overview({ d, onTab }: { d: StandardDetail; onTab: (t: string) => void 
             <p className="font-semibold">{t("standard.catalogueOnlyTitle")}</p>
             <p className="mt-1 text-[14px]">{t("standard.catalogueOnlyBody")}</p>
           </div>
-        ) : (
+        ) : d.about ? null : (
+          /* manuals: the first passage is a cover page, so "What it covers" (above) replaces this section */
           <section aria-labelledby="ov-scope">
             <SectionTitle id="ov-scope">{s.kind === "standard" ? t("explorer.scope") : t("explorer.about")}</SectionTitle>
             {d.scope_text ? (
@@ -293,35 +312,6 @@ function Overview({ d, onTab }: { d: StandardDetail; onTab: (t: string) => void 
       </div>
 
       <div className="min-w-0 space-y-6">
-        <section aria-labelledby="ov-legal">
-          <SectionTitle id="ov-legal">{t("legal.title")}</SectionTitle>
-          <div className="card divide-y divide-line">
-            <div className="p-3.5">
-              <div className="flex items-center gap-2 text-[14px] font-semibold">
-                <Scale size={15} className="text-warn-ink" aria-hidden />
-                {t("legal.compulsoryTitle")}
-              </div>
-              {d.compulsory.status === "yes" || d.compulsory.status === "denotified" ? (
-                <p className="mt-1 text-[14px]">
-                  {t(d.compulsory.status === "yes" ? "legal.listedCompulsory" : "legal.listedDenotified")}{" "}
-                  {d.compulsory.slug && (
-                    <Link to={`/standards/${d.compulsory.slug}?tab=clauses&clause=${encodeURIComponent(d.compulsory.clause_number ?? "")}`}>{t("legal.seeListEntry")}</Link>
-                  )}
-                  {d.compulsory.source && <span className="mt-1 block text-[13px] text-ink-3">{d.compulsory.source}</span>}
-                </p>
-              ) : (
-                <p className="mt-1 text-[14px] text-ink-2">{t("legal.notDetermined")}</p>
-              )}
-            </div>
-            {s.kind === "standard" && (
-              <div className="p-3.5">
-                <div className="text-[14px] font-semibold">{t("legal.shallTitle")}</div>
-                <p className="mt-1 text-[14px] text-ink-2">{t("legal.shallBody")}</p>
-              </div>
-            )}
-          </div>
-        </section>
-
         {d.product_mentions.length > 0 && (
           <section aria-labelledby="ov-products">
             <SectionTitle id="ov-products">{t("explorer.productMentions")}</SectionTitle>
@@ -350,8 +340,8 @@ function Overview({ d, onTab }: { d: StandardDetail; onTab: (t: string) => void 
               {d.clauses.slice(0, 14).map((c) => (
                 <li key={c.id}>
                   <Link to={`?tab=clauses&clause=${encodeURIComponent(c.number)}`} className="flex items-baseline gap-2 px-3 py-2 text-[14px] text-ink no-underline hover:bg-surface-2">
-                    <span className="mono w-16 shrink-0 text-[13px] text-ink-3">{clauseTitle(c.number, c.heading).num ?? ""}</span>
-                    <span className="flex-1 truncate">{clauseTitle(c.number, c.heading).text || t(`clauseKind.${c.kind}`, { defaultValue: c.kind })}</span>
+                    <span className="mono w-16 shrink-0 text-[13px] text-ink-3">{clauseTitle(c.number, c.heading, t).num ?? ""}</span>
+                    <span className="flex-1 truncate">{clauseTitle(c.number, c.heading, t).text || t(`clauseKind.${c.kind}`, { defaultValue: c.kind })}</span>
                     {c.children.length > 0 && <span className="text-xs text-ink-3">{c.children.length}</span>}
                   </Link>
                 </li>
@@ -430,7 +420,7 @@ function ClauseViewer({ d, target }: { d: StandardDetail; target: string | null 
                   className={`block truncate rounded-sm py-1 pr-2 no-underline hover:bg-surface-2 ${active === c.number ? "bg-accent-soft text-accent-strong" : "text-ink-2"}`}
                   style={{ paddingLeft: `${(c.level - 1) * 12 + 8}px` }}
                 >
-                  {clauseTitle(c.number, c.heading).num && <span className="mono">{c.number}</span>} {clauseTitle(c.number, c.heading).text}
+                  {clauseTitle(c.number, c.heading, t).num && <span className="mono">{c.number}</span>} {clauseTitle(c.number, c.heading, t).text}
                 </a>
               </li>
             ))}
@@ -454,8 +444,8 @@ function ClauseViewer({ d, target }: { d: StandardDetail; target: string | null 
             >
               <div className="flex flex-wrap items-baseline gap-x-2">
                 <h3 id={`${clauseAnchor(c.number)}-h`} className={`${c.level === 1 ? "text-[16px] font-semibold" : "text-[15px] font-medium"}`}>
-                  {clauseTitle(c.number, c.heading).num && <span className="mono mr-2 text-ink-2">{c.number}</span>}
-                  {clauseTitle(c.number, c.heading).text}
+                  {clauseTitle(c.number, c.heading, t).num && <span className="mono mr-2 text-ink-2">{c.number}</span>}
+                  {clauseTitle(c.number, c.heading, t).text}
                 </h3>
                 <span className="text-xs text-ink-3">{hasPdf ? t("evidence.page", { n: c.page_start }) : ""}</span>
                 {hasPdf && (

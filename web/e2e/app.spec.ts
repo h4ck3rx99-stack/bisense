@@ -1,4 +1,4 @@
-import { expect, expectNoSeriousA11yIssues, test, waitForAnswer } from "./fixtures";
+import { expect, expectNoSeriousA11yIssues, openProof, test, waitForAnswer } from "./fixtures";
 
 test("home loads with real library counts and is accessible", async ({ page }) => {
   await page.goto("/");
@@ -10,14 +10,18 @@ test("home loads with real library counts and is accessible", async ({ page }) =
   await expectNoSeriousA11yIssues(page);
 });
 
-test("search from home: evidence renders, then a cited answer", async ({ page }) => {
+test("search from home: verdict first, proof behind one button", async ({ page }) => {
   await page.goto("/");
   await page.getByRole("textbox", { name: /Ask about Indian Standards/ }).fill("What are the microbiological requirements for packaged drinking water?");
   await page.keyboard.press("Enter");
   await expect(page).toHaveURL(/\/ask\?q=/);
-  const firstCard = page.locator("article[id^=evidence-]").first();
-  await expect(firstCard).toBeVisible();
   await waitForAnswer(page);
+  await expect(page.getByTestId("verdict-card")).toBeVisible();
+  // evidence and key points are hidden until asked for
+  await expect(page.locator("article[id^=evidence-]")).toHaveCount(0);
+  await expectNoSeriousA11yIssues(page);
+  await openProof(page);
+  await expect(page.locator("article[id^=evidence-]").first()).toBeVisible();
   await expect(page.getByRole("heading", { name: "Key points, from the source" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Next step" })).toBeVisible();
   await expect(page.locator("button[aria-label^='Source 1']").first()).toBeVisible();
@@ -27,12 +31,13 @@ test("search from home: evidence renders, then a cited answer", async ({ page })
 test("citation chip -> evidence card -> exact clause opens highlighted", async ({ page }) => {
   await page.goto("/ask?q=" + encodeURIComponent("What is the maximum mass of a two-wheeler helmet?") + "&lang=en");
   await waitForAnswer(page);
+  await openProof(page);
   const chip = page.locator("button[aria-label^='Source ']").first();
   await chip.focus();
   await expect(page.getByRole("dialog").or(page.locator("[data-radix-popper-content-wrapper]")).first()).toBeVisible();
   await chip.click();
   const card = page.locator("article[id^=evidence-]").first();
-  await card.getByRole("link", { name: "Open clause" }).click();
+  await card.getByRole("link", { name: "Read this part" }).click();
   await expect(page).toHaveURL(/\/standards\/demo-201-2026\?tab=clauses&clause=/);
   const clause = new URL(page.url()).searchParams.get("clause")!;
   const anchor = "clause-" + clause.replace(/[^A-Za-z0-9]+/g, "-").replace(/^-|-$/g, "");
@@ -50,9 +55,13 @@ test("follow-up question carries the standard in scope", async ({ page }) => {
   await expect(page.getByText("DEMO-201:2026").first()).toBeVisible();
 });
 
-test("honest refusal for an unanswerable question", async ({ page }) => {
+test("honest refusal: plain message, rephrasings, step-by-step finder, no evidence column", async ({ page }) => {
   await page.goto("/ask?q=" + encodeURIComponent("What is the boiling point of mercury on Mars in kelvin?") + "&lang=en");
-  await expect(page.getByText("This isn't stated in the indexed sources.")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText("We couldn't find this in official BIS sources")).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByText(/Searched \d+ full-text/)).toHaveCount(0);
+  await expect(page.locator("article[id^=evidence-]")).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Find standards step by step" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Is BIS certification compulsory for my product?" })).toBeVisible();
 });
 
 test("language switch changes the interface language", async ({ page }) => {
@@ -88,7 +97,8 @@ test("catalogue-only entry shows official compulsory-certification evidence", as
   test.skip((await request.get("/api/standards/is-7466-1994")).status() === 404, "official data not loaded (npm run fetch-public && npm run ingest)");
   await page.goto("/standards/is-7466-1994");
   await expect(page.getByText("Metadata only. Full text not indexed.").first()).toBeVisible();
-  await expect(page.getByText(/Listed as under compulsory BIS certification/)).toBeVisible();
+  await expect(page.getByTestId("compulsory-line")).toContainText("Compulsory: Yes");
+  await expect(page.getByText("Two different questions")).toHaveCount(0);
 });
 
 test("library filters and compare with numeric alignment", async ({ page }) => {
@@ -136,10 +146,11 @@ test("guided path: describing a product asks through the normal pipeline", async
 test("next-step chip 'Ask in हिंदी' switches the whole interface and re-asks", async ({ page }) => {
   await page.goto("/ask?q=" + encodeURIComponent("What is the maximum mass of a two-wheeler helmet?") + "&lang=en");
   await waitForAnswer(page);
+  await openProof(page);
   await page.getByRole("button", { name: "Ask in हिंदी" }).click();
   await expect(page.locator("html")).toHaveAttribute("lang", "hi");
   await expect(page).toHaveURL(/lang=hi/);
-  await expect(page.getByRole("heading", { name: "मुख्य बातें, स्रोत से" }).or(page.getByText("सबसे प्रासंगिक खंड")).first()).toBeVisible({ timeout: 60_000 });
+  await expect(page.getByRole("button", { name: "प्रमाण और विवरण दिखाएँ" }).or(page.getByTestId("proof")).first()).toBeVisible({ timeout: 60_000 });
   await page.getByRole("button", { name: "English", exact: true }).click();
 });
 
@@ -147,6 +158,8 @@ test("Hindi UI: quoted evidence stays original; machine translation is optional 
   await page.goto("/");
   await page.getByRole("button", { name: "हिन्दी" }).click();
   await page.goto("/ask?q=" + encodeURIComponent("What is the maximum mass of a two-wheeler helmet?") + "&lang=hi");
+  await waitForAnswer(page);
+  await openProof(page);
   const card = page.locator("article[id^=evidence-]").first();
   await expect(card).toBeVisible({ timeout: 60_000 });
   await expect(card.locator("p[lang=en]").first()).toBeVisible();

@@ -1,0 +1,39 @@
+# Everyday questions a first-time user asks (usability audit, 2026-10-12).
+# A "good answer" is judged by bisense.everyday.score():
+#   expect:       the verdict standard (first standard shown) has one of these base numbers
+#   expect_doc:   the first cited source's document/page title contains one of these words
+#   avoid_doc:    ... and must not contain these words
+#   refuse: true  the answer must be "not found in official sources"
+#   answer: true  the answer must not be a refusal (any useful official match)
+# Expected standards were checked against the official BIS lists and product manuals in data/public.
+questions:
+  - {id: e01, q: "Do I need BIS certification for two-wheeler helmets?", expect: ["IS 4151"]}
+  - {id: e02, q: "Is ISI mark compulsory for pressure cookers?", expect: ["IS 2347"]}
+  - {id: e03, q: "Which standard applies to LED bulbs?", expect: ["IS 16102"]}
+  - {id: e04, q: "What standard is OPC cement made to?", expect: ["IS 269"]}
+  - {id: e05, q: "What standard for steel TMT bars?", expect: ["IS 1786"]}
+  - {id: e06, q: "Do toys need BIS?", expect: ["IS 9873"]}
+  - {id: e07, q: "Is BIS certification needed for a mobile charger?", expect: ["IS/IEC 62368"]}
+  - {id: e08, q: "Which standard applies to room heaters?", expect: ["IS 302"]}
+  - {id: e09, q: "Do ceiling fans need ISI mark?", expect: ["IS 374"]}
+  - {id: e10, q: "Which standard covers plastic water bottles?", expect: ["IS 15410"]}
+  - {id: e11, q: "Do solar panels need BIS registration?", expect: ["IS 14286"]}
+  - {id: e12, q: "Where can I complain about a fake ISI product?", expect_doc: ["complaint", "consumer"]}
+  - {id: e13, q: "How do I apply for a BIS licence?", expect_doc: ["licence", "certification", "process", "application"], avoid_doc: ["foreign", "fmcs"]}
+  - {id: e14, q: "main kettle banata hoon, kaunsa standard?", answer: true}
+  - {id: e15, q: "What is the fine for selling fake helmets?", refuse: true}
+  - {id: e16, q: "standard for cotton t-shirts", refuse: true}
+  - {id: e17, q: "Is BIS mandatory for geysers?", expect: ["IS 2082", "IS 302", "IS 15558", "IS 368"]}
+  - {id: e18, q: "Which standard for AC?", expect: ["IS 1391"]}
+  - {id: e19, q: "Do mixer grinders need ISI mark?", expect: ["IS 4250"]}
+  - {id: e20, q: "Which standard applies to electrical wires?", expect: ["IS 694"]}
+  - {id: e21, q: "Is ISI mark compulsory for electric irons?", expect: ["IS 366", "IS 302"]}
+  - {id: e22, q: "Which standard for baby feeding bottles?", expect: ["IS 14625"]}
+  - {id: e23, q: "Which standard covers drinking water coolers?", expect: ["IS 1475"]}
+  - {id: e24, q: "Do industrial safety helmets need BIS?", expect: ["IS 2925"]}
+  - {id: e25, q: "Which standard applies to packaged drinking water?", expect: ["IS 14543"]}
+  - {id: e26, q: "Do I need BIS certification for a refrigerator?", expect: ["IS 17550"]}
+  - {id: e27, q: "How can I check if gold jewellery is hallmarked?", expect_doc: ["hallmark"]}
+  - {id: e28, q: "Is BIS certification compulsory for plugs and sockets?", expect: ["IS 1293"]}
+  - {id: e29, q: "Which standard for desert coolers?", expect: ["IS 3315"]}
+  - {id: e30, q: "Is a BIS licence needed for televisions?", expect: ["IS/IEC 62368", "IS 18112", "IS 616"]}

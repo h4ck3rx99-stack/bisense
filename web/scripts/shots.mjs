@@ -31,7 +31,7 @@ for (const size of sizes) {
   for (const p of pages) {
     const url = base + routes[p];
     await page.goto(url, { waitUntil: "networkidle" });
-    if (p === "ask") await page.waitForSelector("text=/From the sources|Most relevant clauses|isn't stated/", { timeout: Number(process.env.ASK_TIMEOUT ?? 120000) }).catch(() => {});
+    if (p === "ask") await page.waitForSelector("[data-testid=verdict-card], [data-testid=not-found]", { timeout: Number(process.env.ASK_TIMEOUT ?? 120000) }).catch(() => {});
     if (p === "compare") await page.waitForSelector("table", { timeout: 120000 }).catch(() => {});
     await page.waitForTimeout(400);
     const file = `${out}/${p}-${size.name}${process.env.LANG_UI ? "-" + process.env.LANG_UI : ""}.png`;

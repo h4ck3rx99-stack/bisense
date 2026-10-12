@@ -20,7 +20,7 @@ import sqlite3
 from dataclasses import dataclass, field
 
 from bisense import stdnum
-from bisense.i18n.glossary import expand_lexical, keyword_translate
+from bisense.i18n.glossary import expand_lexical, hinglish_translate, is_hinglish, keyword_translate, product_phrases
 from bisense.i18n.languages import detect_language
 
 INTENT_RULES: list[tuple[str, re.Pattern[str]]] = [
@@ -156,6 +156,9 @@ def understand(conn: sqlite3.Connection, query: str, ui_lang: str = "en", contex
     context = context or ClientContext()
     query = " ".join(query.split())
     lang = detect_language(query, fallback="en")
+    romanised = lang == "en" and is_hinglish(query)
+    if romanised:
+        lang = "hi"  # Hinglish: pivot to English like Hindi (LLM rewrite when available)
     intent = classify_intent(query)
 
     numbers = stdnum.find_all(query)
@@ -184,13 +187,19 @@ def understand(conn: sqlite3.Connection, query: str, ui_lang: str = "en", contex
     english = query
     keywords: list[str] = []
     notes: list[str] = []
-    if lang != "en":
+    if romanised:
+        keywords = hinglish_translate(query)
+        english = " ".join(keywords) if keywords else query
+        intent = classify_intent(english)
+        notes.append("romanised Hindi; offline keyword translation")
+    elif lang != "en":
         keywords = keyword_translate(query, lang)
         english = " ".join(keywords) if keywords else query
         notes.append("offline keyword translation")
 
     content = tokenize_terms(english)
-    lexical = content + expand_lexical(english)
+    # Everyday product words also search for the official product wording ("bulb" -> "LED lamps").
+    lexical = content + expand_lexical(english) + [v for _, v in product_phrases(english)]
     return QueryPlan(
         raw=query,
         # One language context: answers are always in the language the user selected. The question may be
@@ -217,7 +226,9 @@ def apply_rewrite(plan: QueryPlan, english_query: str, keywords: list[str], inte
     plan.english_query = english_query.strip() or plan.english_query
     plan.keywords = keywords or plan.keywords
     plan.content_terms = tokenize_terms(plan.english_query)
-    plan.lexical_terms = plan.content_terms + [k for k in keywords if k] + expand_lexical(plan.english_query)
+    plan.lexical_terms = (
+        plan.content_terms + [k for k in keywords if k] + expand_lexical(plan.english_query) + [v for _, v in product_phrases(plan.english_query)]
+    )
     # Re-classify with the same deterministic rules on the English text (the model's own label is
     # only a hint and is not trusted).
     if plan.intent == "ask":

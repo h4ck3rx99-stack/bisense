@@ -30,6 +30,7 @@ from bisense.answer.present import coverage_line
 from bisense.api.common import ApiError, get_db
 from bisense.config import get_settings
 from bisense.db import get_meta, loads
+from bisense.listrow import order_short
 from bisense.models import (
     AmendmentOut,
     AskContext,
@@ -93,6 +94,18 @@ def _get_standard(conn: sqlite3.Connection, slug: str) -> sqlite3.Row:
 
 
 # ---------------------------------------------------------------------------------------------------
+
+
+def about_sentence(s: sqlite3.Row) -> str | None:
+    """'What it covers' for entries whose text has no usable scope: built from the standard title (and product
+    name), never from the document text. Full-text standards use their scope clause instead."""
+    if s["text_scope"] == "product_manual":
+        return f"The official BIS product manual for {s['number_canonical']} ({s['title']}): how samples are taken, which tests are done and what a licence covers."
+    if s["text_scope"] == "metadata_only":
+        products = loads(s["products_json"], [])
+        what = products[0] if products else s["title"]
+        return f"{s['number_canonical']} is the Indian Standard listed for {what} in the official BIS list. BISense has its number and title, not its text."
+    return None
 
 
 @router.get("/library", response_model=LibraryOut)
@@ -335,9 +348,14 @@ def standard_detail(slug: str, conn: sqlite3.Connection = Depends(get_db)) -> St
             text_scope=s["text_scope"],
         ),
         compulsory=CompulsoryEvidence(
-            status=s["compulsory_certification"], source=s["compulsory_source"], slug=ev.get("slug"), clause_number=ev.get("clause_number")
+            status=s["compulsory_certification"],
+            source=s["compulsory_source"],
+            slug=ev.get("slug"),
+            clause_number=ev.get("clause_number"),
+            order_short=order_short((s["compulsory_source"] or "").split("—", 1)[-1]),
         ),
         scope_text=scope_text,
+        about=about_sentence(s),
         scope_clause=scope[0]["number"] if scope else None,
         clauses=_clause_tree(conn, sid),
         amendments=[

@@ -21,9 +21,11 @@ export function shortTitle(title: string, max = 72): string {
   return t.length > max ? `${t.slice(0, max - 1)}…` : t;
 }
 
-/** Human label for a clause: avoids "Front Front matter" and bare word-numbers. */
-export function clauseTitle(number: string, heading: string): { num: string | null; text: string } {
-  if (number === "Front") return { num: null, text: heading || "Front matter" };
+/** Human label for a clause: avoids "Front Front matter" and bare word-numbers. With `t`, the cover part is
+ *  "About this document" and annexes read "Extra tables (Annex B)". */
+export function clauseTitle(number: string, heading: string, t?: (k: string) => string): { num: string | null; text: string } {
+  if (number === "Front") return { num: null, text: t ? t("clauseKind.front") : heading || "Front matter" };
+  if (t && /^Annex(ure)?\s+[A-Z]$/i.test(number)) return { num: null, text: `${t("clauseKind.annex")} (${number})${heading ? ` — ${heading}` : ""}` };
   if (/^[A-Za-z]/.test(number) && !/^[A-H]-\d/.test(number) && !/^(Table|Q\d)/.test(number)) {
     return { num: null, text: heading ? `${number} — ${heading}` : number };
   }

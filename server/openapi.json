@@ -1317,6 +1317,23 @@
       "title": "Synthetic Used",
       "default": false
      },
+     "verdict": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/Verdict"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     },
+     "suggestions": {
+      "items": {
+       "type": "string"
+      },
+      "type": "array",
+      "title": "Suggestions"
+     },
      "coverage": {
       "items": {
        "$ref": "#/components/schemas/CoverageNote"
@@ -1351,6 +1368,8 @@
      "searched_summary",
      "library_note",
      "synthetic_used",
+     "verdict",
+     "suggestions",
      "coverage"
     ],
     "title": "Answer"
@@ -2059,6 +2078,17 @@
        }
       ],
       "title": "Clause Number"
+     },
+     "order_short": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Order Short"
      }
     },
     "type": "object",
@@ -2066,7 +2096,8 @@
      "status",
      "source",
      "slug",
-     "clause_number"
+     "clause_number",
+     "order_short"
     ],
     "title": "CompulsoryEvidence"
    },
@@ -3295,6 +3326,17 @@
       ],
       "title": "Scope Text"
      },
+     "about": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "About"
+     },
      "scope_clause": {
       "anyOf": [
        {
@@ -3395,6 +3437,7 @@
      "provenance",
      "compulsory",
      "scope_text",
+     "about",
      "scope_clause",
      "clauses",
      "amendments",
@@ -3884,6 +3927,187 @@
      "type"
     ],
     "title": "ValidationError"
+   },
+   "Verdict": {
+    "properties": {
+     "kind": {
+      "type": "string",
+      "enum": [
+       "compulsory",
+       "not_compulsory",
+       "standard_only",
+       "info",
+       "not_found"
+      ],
+      "title": "Kind"
+     },
+     "possible": {
+      "type": "boolean",
+      "title": "Possible",
+      "default": false
+     },
+     "product": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Product"
+     },
+     "standard_slug": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Standard Slug"
+     },
+     "standard_number": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Standard Number"
+     },
+     "standard_title": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Standard Title"
+     },
+     "scheme": {
+      "anyOf": [
+       {
+        "type": "string",
+        "enum": [
+         "ISI",
+         "CRS"
+        ]
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Scheme"
+     },
+     "order_short": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Order Short"
+     },
+     "denotified": {
+      "type": "boolean",
+      "title": "Denotified",
+      "default": false
+     },
+     "source": {
+      "anyOf": [
+       {
+        "$ref": "#/components/schemas/VerdictSource"
+       },
+       {
+        "type": "null"
+       }
+      ]
+     }
+    },
+    "type": "object",
+    "required": [
+     "kind",
+     "possible",
+     "product",
+     "standard_slug",
+     "standard_number",
+     "standard_title",
+     "scheme",
+     "order_short",
+     "denotified",
+     "source"
+    ],
+    "title": "Verdict",
+    "description": "The one-line answer shown first. Built deterministically from official evidence (list rows, manuals,\npages), never from model text, so it is the same with or without an AI model."
+   },
+   "VerdictSource": {
+    "properties": {
+     "label": {
+      "type": "string",
+      "title": "Label"
+     },
+     "url": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Url"
+     },
+     "citation_id": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Citation Id"
+     },
+     "page": {
+      "anyOf": [
+       {
+        "type": "integer"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Page"
+     },
+     "source_type": {
+      "anyOf": [
+       {
+        "type": "string"
+       },
+       {
+        "type": "null"
+       }
+      ],
+      "title": "Source Type"
+     }
+    },
+    "type": "object",
+    "required": [
+     "label",
+     "url",
+     "citation_id",
+     "page",
+     "source_type"
+    ],
+    "title": "VerdictSource"
    },
    "VoiceStatus": {
     "properties": {

@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 
 from bisense import stdnum
 from bisense.config import get_settings
+from bisense.listrow import parse_row
 from bisense.retrieval.fuse import apply_boosts, rrf, topic_kinds
 from bisense.retrieval.index import LoadedIndex, get_index
 from bisense.retrieval.lexical import lexical_search
@@ -145,6 +146,15 @@ def load_candidates(conn: sqlite3.Connection, chunk_ids: list[int]) -> dict[int,
 RERANK_TOP = 16
 # Questions about legal/compulsory status should always consult the official product lists.
 LEGAL_QUESTION_RE = re.compile(r"\b(compulsory|mandatory|isi|qco|quality control order|certification required|need (a )?(bis )?licen[cs]e)\b", re.I)
+# "Do I need / is it compulsory / which standard" questions: official list rows rank above FAQs.
+APPLIES_RE = re.compile(
+    r"\b(do|does|is|are|will)\b[^?]*\b(need|needs|needed|require[sd]?|compulsory|mandatory|necessary)\b|"
+    r"\b(which|what)\s+(indian\s+)?(standards?|is\s+(no|number)|bis\s+standards?)\b|\bstandards?\s+(for|of|applies?|applicable)\b|"
+    r"\bneed(s|ed)?\s+(a\s+)?(bis|isi|crs|registration|licen[cs]e|certification)\b",
+    re.I,
+)
+# Foreign Manufacturers Certification Scheme pages answer only questions about manufacturers abroad.
+FOREIGN_RE = re.compile(r"\b(foreign|import|imports|importer|importing|imported|overseas|abroad|outside india|fmcs)\b", re.I)
 _cache: OrderedDict[tuple, SearchResult] = OrderedDict()
 _CACHE_MAX = 256
 
@@ -242,19 +252,28 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
             reranked = True
         timings["rerank"] = _ms(t)
 
+    # FMCS (foreign manufacturers) pages come last unless the question is about importing/foreign makers:
+    # "How do I apply for a BIS licence?" should answer from the domestic scheme.
+    if not FOREIGN_RE.search(plan.english_query):
+        ordered = [c for c in ordered if not _is_fmcs(c)] + [c for c in ordered if _is_fmcs(c)]
+
     # Official product lists: for discovery questions, put matching list rows first (they are the
     # only official evidence of which standard covers a product and whether certification is compulsory).
-    if plan.intent in ("discover", "applicability") or LEGAL_QUESTION_RE.search(plan.english_query):
+    applies = bool(APPLIES_RE.search(plan.english_query))
+    if plan.intent in ("discover", "applicability") or applies or LEGAL_QUESTION_RE.search(plan.english_query):
         t = time.perf_counter()
-        probe_ids = [cid for cid in product_probe(conn, plan) if cid not in {c.chunk_id for c in ordered[:3]}]
-        extra = load_candidates(conn, [cid for cid in probe_ids if cid not in cands])
+        probe_all = product_probe(conn, plan)
+        probe_ids = [cid for cid in probe_all if cid not in {c.chunk_id for c in ordered[:3]}]
+        extra = load_candidates(conn, [cid for cid in probe_all if cid not in cands])
         cands.update(extra)
-        promoted = []
-        for cid in probe_ids:
-            c = cands[cid]
-            c.boosts["official_list"] = 1.0
-            promoted.append(c)
-        ordered = ordered[:1] + promoted + [c for c in ordered[1:] if c.chunk_id not in set(probe_ids)]
+        for cid in probe_all:
+            cands[cid].boosts["official_list"] = 1.0
+        promoted = [cands[cid] for cid in probe_ids]
+        # A matching official row is the answer to "do I need / which standard"; FAQs and pages follow it.
+        if probe_all and (applies or plan.intent in ("discover", "applicability")) and ordered[:1] and ordered[0].chunk_id != probe_all[0]:
+            ordered = [cands[cid] for cid in probe_all] + [c for c in ordered if c.chunk_id not in set(probe_all)]
+        else:
+            ordered = ordered[:1] + promoted + [c for c in ordered[1:] if c.chunk_id not in set(probe_ids)]
         timings["product_probe"] = _ms(t)
 
     # Clause lookup ("clause 4.3.1 of DEMO-101", "Table 2 of DEMO-301"): direct database lookup, placed first.
@@ -283,6 +302,10 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
 
 
 _GENERIC = STOPWORDS | {
+    # question words: "Do ceiling fans NEED ISI mark?" must match "Electric Ceiling Type Fans" on fans alone
+    *"need needs needed require requires required apply applies applicable which what does get use used standards".split(),
+    *"certificate certified registration register approval approved rule rules law legal selling seller manufacturer".split(),
+    *"manufacturing made making item items covers cover govern governs relevant".split(),
     "product",
     "products",
     "certification",
@@ -321,48 +344,100 @@ def _stems(text: str) -> set[str]:
     return {_stem(w) for w in re.findall(r"[A-Za-z]{3,}", text)}
 
 
-def product_terms(plan: QueryPlan) -> tuple[set[str], set[str]]:
-    """(the user's content words, extra words from glossary expansion), both stemmed, generic words removed."""
+# Words that describe where or how a product is used, not what it is: "mobile charger" still matches
+# "Power Adaptors for IT Equipments" when only such words are missing.
+_CONTEXT_WORDS = {
+    _stem(w)
+    for w in "mobile phone cell home house household domestic kitchen electric electrical small new our buy online india indian good best cheap local office personal".split()
+}
+
+
+@dataclass
+class ProductQuery:
+    """The user's product words, plus alternative versions with everyday words replaced by the official
+    product wording from the glossary ("LED bulbs" -> "self-ballasted LED lamps general lighting services")."""
+
+    variants: list[set[str]]  # official-wording variants first, the user's own words last
+    exp: set[str]  # extra words from the lexical synonym expansion
+    phrases: list[str] = field(default_factory=list)  # official product wording, lower case
+
+    @property
+    def orig(self) -> set[str]:
+        return self.variants[-1] if self.variants else set()
+
+    def __iter__(self):  # `orig, exp = product_terms(plan)` keeps working
+        return iter((self.orig, self.exp))
+
+
+def product_terms(plan: QueryPlan) -> ProductQuery:
+    """The user's content words (stemmed, generic words removed), official-wording variants and expansion words."""
+    from bisense.i18n.glossary import product_phrases
+
     orig = {s for t in plan.content_terms for s in _stems(t)} - _GENERIC_STEMS
     exp = {s for t in plan.lexical_terms for s in _stems(t)} - _GENERIC_STEMS - orig
-    return orig, exp
+    variants: list[set[str]] = []
+    phrases = [p.lower() for _, p in product_phrases(plan.english_query)]
+    for key, phrase in product_phrases(plan.english_query):
+        v = (orig - _stems(key)) | (_stems(phrase) - _GENERIC_STEMS)
+        if v and v not in variants:
+            variants.append(v)
+    variants.append(orig)
+    return ProductQuery(variants=variants, exp=exp, phrases=phrases)
 
 
-def product_match(product_text: str, orig: set[str], exp: set[str]) -> float:
-    """How well a product name matches the query (0 = no match). Coverage of the user's words must be >= 70%,
-    or at least two glossary-expansion words must match (e.g. "TMT bars" -> "deformed steel bars")."""
-    words = _stems(product_text)
-    if not words:
-        return 0.0
+def _match_one(words: set[str], orig: set[str], exp: set[str]) -> float:
     o = len(orig & words)
     if orig and o / len(orig) >= 0.7:
         return o / len(orig) + 0.5 * o / len(words)
+    # Key words all present; only usage words ("mobile", "home") missing.
+    missing = orig - words
+    if o and missing and missing <= _CONTEXT_WORDS:
+        return 0.6 + 0.1 * o / len(words)
     e = len(exp & words)
     if e >= 3:
         return 0.5 + 0.1 * e
     return 0.0
 
 
+def product_match(product_text: str, orig: set[str] | ProductQuery, exp: set[str] | None = None) -> float:
+    """How well a product name matches the query (0 = no match). Coverage of the user's words must be >= 70%
+    (after replacing everyday words with the official product wording), or only usage words may be missing,
+    or at least three glossary-expansion words must match (e.g. "TMT bars" -> "deformed steel bars")."""
+    words = _stems(product_text)
+    if not words:
+        return 0.0
+    if isinstance(orig, ProductQuery):
+        score = max(_match_one(words, v, orig.exp) for v in orig.variants)
+        # The official wording appears as written ("Safety of Toys ..." rather than "Safety of Electric Toys").
+        text = " ".join(product_text.lower().split())
+        if score and any(p in text for p in orig.phrases):
+            score += 0.3
+        return score
+    return _match_one(words, orig, exp or set())
+
+
 def product_probe(conn: sqlite3.Connection, plan: QueryPlan, limit: int = 3) -> list[int]:
     """Chunk ids of official list rows whose product name best matches the query's content words."""
-    orig, exp = product_terms(plan)
-    if not orig and not exp:
+    pq = product_terms(plan)
+    if not any(pq.variants) and not pq.exp:
         return []
-    scored: list[tuple[float, int, str]] = []
+    scored: list[tuple[float, int, str, str]] = []
     for r in conn.execute("SELECT product_term, standard_number, clause_id FROM product_mappings WHERE clause_id IS NOT NULL"):
-        score = product_match(r["product_term"], orig, exp)
+        score = product_match(r["product_term"], pq)
         if score > 0:
-            scored.append((score, r["clause_id"], r["standard_number"]))
+            scored.append((score, r["clause_id"], r["standard_number"], r["product_term"]))
     scored.sort(reverse=True)
     out: list[int] = []
-    for _, clause_id, number in scored:
+    for _, clause_id, number, product in scored:
         sn = stdnum.parse(number)
-        needle = f"{sn.prefix} {sn.number}" if sn else number
-        for ch in conn.execute("SELECT id, text FROM chunks WHERE clause_id = ? ORDER BY ord", (clause_id,)):
-            if needle.replace(" ", "") in ch["text"].replace(" ", ""):
-                if ch["id"] not in out:
-                    out.append(ch["id"])
-                break
+        needle = (f"{sn.prefix} {sn.number}" if sn else number).replace(" ", "")
+        rows = [
+            ch for ch in conn.execute("SELECT id, text FROM chunks WHERE clause_id = ? ORDER BY ord", (clause_id,)) if needle in ch["text"].replace(" ", "")
+        ]
+        # One chunk per row: prefer the row for this product (several products can share a standard).
+        best = next((ch for ch in rows if product[:40] in ch["text"]), rows[0] if rows else None)
+        if best is not None and best["id"] not in out:
+            out.append(best["id"])
         if len(out) >= limit:
             break
     return out
@@ -376,7 +451,7 @@ def trim_list_rows(text: str, plan: QueryPlan) -> str:
     if len(table) < 3:
         return text
     header_end = table[1] + 1  # header row + separator row
-    orig, exp = product_terms(plan)
+    pq = product_terms(plan)
     bases = {s.base for s in map(stdnum.parse, plan.explicit_numbers) if s}
     keep: list[str] = []
     for ln in lines[header_end:]:
@@ -386,7 +461,7 @@ def trim_list_rows(text: str, plan: QueryPlan) -> str:
         nums = stdnum.find_all(ln)
         if bases and any(n.base in bases for n in nums):
             keep.append(ln)
-        elif not bases and product_match(" ".join(cells[2:-1]) if len(cells) > 3 else " ".join(cells[2:]), orig, exp) > 0:
+        elif not bases and product_match(" ".join(cells[2:-1]) if len(cells) > 3 else " ".join(cells[2:]), pq) > 0:
             keep.append(ln)
     if not keep:
         return text
@@ -417,6 +492,10 @@ def _number_phrases(plan: QueryPlan) -> list[str]:
     return out
 
 
+def _is_fmcs(c: Candidate) -> bool:
+    return "foreign manufacturer" in f"{c.title} {c.document_title or ''}".lower()
+
+
 def _rerank_text(c: Candidate) -> str:
     head = f"{c.number or ''} {c.title} — {c.clause_number} {c.clause_heading}".strip()
     return f"{head}\n{c.text}"[:700]  # longer inputs cost more CPU than they add in relevance signal
@@ -425,12 +504,14 @@ def _rerank_text(c: Candidate) -> str:
 def _diversify(ordered: list[Candidate], intent: str, top_k: int, token_budget: int) -> list[Candidate]:
     per_standard_cap = 2 if intent in ("discover", "applicability") else 4
     per_clause_cap = 1 if intent in ("discover", "applicability") else 2
+    row_cap = 3  # official list rows are one chunk each; neighbouring products in a category may all apply
     by_std: dict[int, int] = {}
     by_clause: dict[int, int] = {}
     out: list[Candidate] = []
     tokens = 0
     for c in ordered:
-        if by_std.get(c.standard_id, 0) >= per_standard_cap or by_clause.get(c.clause_id, 0) >= per_clause_cap:
+        cap = row_cap if c.clause_kind == "list" else per_clause_cap
+        if (c.clause_kind != "list" and by_std.get(c.standard_id, 0) >= per_standard_cap) or by_clause.get(c.clause_id, 0) >= cap:
             continue
         cost = int(len(c.text.split()) * 1.3) + 20
         if out and tokens + cost > token_budget:
@@ -447,7 +528,7 @@ def _diversify(ordered: list[Candidate], intent: str, top_k: int, token_budget: 
 def group_standards(conn: sqlite3.Connection, ordered: list[Candidate], plan: QueryPlan) -> list[StandardHit]:
     """Group candidates by standard; surface catalogue standards from matching list rows."""
     hits: dict[int, StandardHit] = {}
-    orig, exp = product_terms(plan)
+    pq = product_terms(plan)
 
     def add(std_id: int, score: float, via: str, chunk_id: int, row: str | None = None) -> None:
         if std_id in hits:
@@ -480,11 +561,36 @@ def group_standards(conn: sqlite3.Connection, ordered: list[Candidate], plan: Qu
             matched_row=row,
         )
 
+    # For product questions ("do I need / which standard"), the ranked evidence order already puts the
+    # matching official row first; order the standards the same way (raw scores mix reranked and
+    # unreranked passages and would let a neighbouring row win).
+    by_position = (
+        plan.intent in ("discover", "applicability") or bool(APPLIES_RE.search(plan.english_query)) or bool(LEGAL_QUESTION_RE.search(plan.english_query))
+    )
     for rank, c in enumerate(ordered):
         score = (c.rerank_score if c.rerank_score is not None else c.fused * 100) - rank * 0.01
+        if by_position:
+            score = 30.0 - rank
         if c.clause_kind == "list":
             # rows of an official product list: surface the standards whose rows match the query
             explicit_bases = {s.base for s in map(stdnum.parse, plan.explicit_numbers) if s}
+            row = parse_row(c.text)
+            if row:
+                nums = stdnum.find_all(row.numbers)
+                if not nums:
+                    continue
+                if explicit_bases:
+                    if not any(n.base in explicit_bases for n in nums):
+                        continue
+                    match = 1.0
+                else:
+                    match = product_match(f"{row.product} {row.title}", pq)
+                    if match == 0:
+                        continue
+                r = conn.execute("SELECT id FROM standards WHERE base_number = ? ORDER BY (kind = 'catalogue') LIMIT 1", (nums[0].base,)).fetchone()
+                if r:
+                    add(r["id"], score + 0.1 * match if by_position else score - 0.5 + 2 * match, "official_list", c.chunk_id, c.text)
+                continue
             for line in c.text.splitlines():
                 if not line.startswith("|") or set(line) <= set("|-: "):
                     continue
@@ -499,7 +605,7 @@ def group_standards(conn: sqlite3.Connection, ordered: list[Candidate], plan: Qu
                     cells = [x.strip() for x in line.strip().strip("|").split("|")]
                     # product (+ title) cells only; the notification cell mentions "Order" in every row
                     product_cells = " ".join(cells[2:-1]) if len(cells) > 3 else " ".join(cells[2:])
-                    match = product_match(product_cells, orig, exp)
+                    match = product_match(product_cells, pq)
                     if match == 0:
                         continue
                 for sn in nums[:1]:

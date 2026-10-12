@@ -179,6 +179,30 @@ class Point(BaseModel):
     quote: str | None = None
 
 
+class VerdictSource(BaseModel):
+    label: str  # human source line, e.g. "Official BIS website · Products under Compulsory Certification — Scheme-I · Helmets"
+    url: str | None = None
+    citation_id: str | None = None
+    page: int | None = None
+    source_type: str | None = None
+
+
+class Verdict(BaseModel):
+    """The one-line answer shown first. Built deterministically from official evidence (list rows, manuals,
+    pages), never from model text, so it is the same with or without an AI model."""
+
+    kind: Literal["compulsory", "not_compulsory", "standard_only", "info", "not_found"]
+    possible: bool = False  # weak match: shown as "Possible match — check the source"
+    product: str | None = None
+    standard_slug: str | None = None
+    standard_number: str | None = None
+    standard_title: str | None = None
+    scheme: Literal["ISI", "CRS"] | None = None
+    order_short: str | None = None  # "Helmet QCO 2020"
+    denotified: bool = False
+    source: VerdictSource | None = None
+
+
 class StandardRef(BaseModel):
     slug: str
     number: str | None
@@ -239,6 +263,8 @@ class Answer(BaseModel):
     searched_summary: str = ""  # "Searched 34 sources (4 full-text standards ...)"
     library_note: str = ""
     synthetic_used: bool = False
+    verdict: Verdict | None = None
+    suggestions: list[str] = Field(default_factory=list)  # rephrasings offered when nothing was found
     # Standards named in the question whose full text BISense does not hold.
     coverage: list[CoverageNote] = Field(default_factory=list)
 
@@ -435,6 +461,7 @@ class CompulsoryEvidence(BaseModel):
     source: str | None
     slug: str | None
     clause_number: str | None
+    order_short: str | None = None  # "Helmet for Riders of Two Wheeler Motor Vehicles QCO 2020"
 
 
 class StandardDetail(BaseModel):
@@ -448,6 +475,7 @@ class StandardDetail(BaseModel):
     provenance: Provenance
     compulsory: CompulsoryEvidence
     scope_text: str | None
+    about: str | None = None  # one sentence for "What it covers" when the text has no usable scope (manuals, list entries)
     scope_clause: str | None
     clauses: list[ClauseNode]
     amendments: list[AmendmentOut]

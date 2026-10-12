@@ -51,3 +51,18 @@ export function useSpeechLifecycle(): void {
     document.documentElement.lang = i18n.language;
   }, [i18n.language]);
 }
+
+/** True while the media query matches (e.g. "(min-width: 1024px)"); re-renders on change. */
+export function useMediaQuery(query: string): boolean {
+  const get = () => typeof window !== "undefined" && !!window.matchMedia && window.matchMedia(query).matches;
+  const [matches, setMatches] = useState(get);
+  useEffect(() => {
+    if (!window.matchMedia) return;
+    const mq = window.matchMedia(query);
+    const on = () => setMatches(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, [query]);
+  return matches;
+}

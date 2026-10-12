@@ -6,6 +6,7 @@ import { api } from "../api/client";
 import { useLibrary } from "../lib/hooks";
 import { Badge, SectionTitle, Skeleton } from "../components/ui";
 import team from "../team.json";
+import { LibraryIndicator } from "../components/Layout";
 
 const PIPELINE = ["understand", "retrieve", "fuse", "rerank", "gate", "generate", "validate", "translate", "show"] as const;
 
@@ -21,6 +22,9 @@ export default function About() {
       <header>
         <h1 className="text-3xl font-semibold">{t("about.title")}</h1>
         <p className="mt-2 text-[16px] text-ink-2">{t("about.lead")}</p>
+        <p className="mt-3" data-testid="library-counts">
+          <LibraryIndicator />
+        </p>
       </header>
 
       <section aria-labelledby="ab-problem">

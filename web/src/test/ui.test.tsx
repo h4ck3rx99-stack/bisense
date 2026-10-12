@@ -85,6 +85,8 @@ const answer: Answer = {
   searched_summary: "",
   library_note: "",
   coverage: [],
+  verdict: null,
+  suggestions: [],
   synthetic_used: true,
 };
 
@@ -114,22 +116,88 @@ describe("Answer rendering", () => {
   it("renders the beginner structure in order, keeping source facts apart from the AI explanation", () => {
     const { container } = wrap(<AnswerBlock answer={answer} citations={new Map([["C1", citation]])} onFollowUp={() => {}} onAskIn={() => {}} />);
     const headings = [...container.querySelectorAll("h2, h3")].map((h) => h.textContent);
-    const order = ["Short answer", "Key points, from the source", "What this means for you", "Sources", "Next step"];
+    const order = ["Short answer", "Key points, from the source", "What this means for you", "Next step"];
     const idx = order.map((h) => headings.indexOf(h));
     expect(idx.every((i) => i >= 0)).toBe(true);
     expect([...idx].sort((a, b) => a - b)).toEqual(idx);
     expect(screen.getByText(/Explanation written by BISense \(AI interpretation\)/)).toBeInTheDocument();
     expect(screen.getAllByText("Sample data, not official").length).toBeGreaterThan(0);
-    // human citation, no internal ids or scores
-    expect(screen.getByText("Sample data, not official · DEMO-101:2026 · Clause 4.3.1 · Page 2")).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/\bC1\b|rerank|fused/);
+  });
+
+  it("shows the human citation under 'See the original text'", async () => {
+    wrap(<AnswerBlock answer={answer} citations={new Map([["C1", citation]])} />);
+    await userEvent.click(screen.getAllByRole("button", { name: "See the original text" })[0]);
+    expect(screen.getByText("Sample data, not official · DEMO-101:2026 · Clause 4.3.1 · Page 2")).toBeInTheDocument();
+  });
+
+  it("leads with the verdict card and keeps proof behind one button", async () => {
+    const listRow: Citation = {
+      ...citation,
+      id: "C1",
+      clause_kind: "list",
+      snippet: "Product: Helmet for riders of Two Wheeler Motor Vehicles · IS 4151: 2015 · Scheme-I ISI mark · Order: 65. Helmet (Quality Control) Order, 2020 (S.O. No. 4252 (E) 26/11/2020)",
+      synthetic: false,
+      source_type: "official_website",
+      text_scope: "page",
+      url: "https://www.bis.gov.in/x",
+    };
+    const verdictAnswer: Answer = {
+      ...answer,
+      synthetic_used: false,
+      points: [{ kind: "source_fact", text: "Helmet for riders of Two Wheeler Motor Vehicles · IS 4151: 2015 · Scheme-I ISI mark · Order: 65. S.O. No. 4252 (E)", citations: ["C1"], quote: null }],
+      verdict: {
+        kind: "compulsory",
+        possible: false,
+        product: "Helmet for riders of Two Wheeler Motor Vehicles",
+        standard_slug: "is-4151-2015",
+        standard_number: "IS 4151:2015",
+        standard_title: "Protective Helmet for Two Wheeler Riders",
+        scheme: "ISI",
+        order_short: "Helmet for riders of Two Wheeler Motor Vehicles QCO 2020",
+        denotified: false,
+        source: { label: "Official BIS website · Products under Compulsory Certification", url: "https://www.bis.gov.in/x", citation_id: "C1", page: null, source_type: "official_website" },
+      },
+    };
+    let open = false;
+    const { rerender, container } = wrap(<AnswerBlock answer={verdictAnswer} citations={new Map([["C1", listRow]])} proofOpen={open} onToggleProof={() => (open = !open)} />);
+    expect(screen.getByRole("heading", { name: "Yes — BIS certification is compulsory for Helmet for riders of Two Wheeler Motor Vehicles" })).toBeInTheDocument();
+    expect(screen.getByTestId("standard-chip")).toHaveAttribute("href", "/standards/is-4151-2015");
+    expect(container.querySelectorAll("ol li")).toHaveLength(3);
+    expect(screen.getByTestId("verdict-source")).toHaveTextContent("Official BIS list of products under compulsory certification");
+    // raw notification text and the evidence stay behind "Show proof and details"
+    expect(container.textContent).not.toMatch(/S\.O\. No\./);
+    expect(screen.queryByTestId("proof")).toBeNull();
+    await userEvent.click(screen.getByRole("button", { name: "Show proof and details" }));
+    expect(open).toBe(true);
+    rerender(
+      <QueryClientProvider client={new QueryClient()}>
+        <ToastProvider>
+          <MemoryRouter>
+            <AnswerBlock answer={verdictAnswer} citations={new Map([["C1", listRow]])} proofOpen onToggleProof={() => {}} />
+          </MemoryRouter>
+        </ToastProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByTestId("proof")).toHaveTextContent(/S\.O\. No\. 4252/);
+  });
+
+  it("not found: plain message, two rephrasings that ask again, and the step-by-step finder", async () => {
+    const asked: string[] = [];
+    const notFound: Answer = { ...answer, answer_type: "insufficient_evidence", points: [], summary: "", verdict: { kind: "not_found", possible: false, product: null, standard_slug: null, standard_number: null, standard_title: null, scheme: null, order_short: null, denotified: false, source: null }, suggestions: ["Is BIS certification compulsory for Cotton Bales?", "Is BIS certification compulsory for my product?"] };
+    const { container } = wrap(<AnswerBlock answer={notFound} citations={new Map()} onFollowUp={(q) => asked.push(q)} />);
+    expect(screen.getByText("We couldn't find this in official BIS sources")).toBeInTheDocument();
+    expect(container.textContent).not.toMatch(/Searched \d+/);
+    await userEvent.click(screen.getByRole("button", { name: "Is BIS certification compulsory for my product?" }));
+    expect(asked).toEqual(["Is BIS certification compulsory for my product?"]);
+    expect(screen.getByRole("link", { name: /Find standards step by step/ })).toHaveAttribute("href", "/guide");
   });
 
   it("keeps the exact source wording collapsed until asked for", async () => {
     const quoted: Answer = { ...answer, points: [{ kind: "source_fact", text: "Coliform must be absent.", citations: ["C1"], quote: "shall be absent in any 250 ml sample" }] };
     wrap(<AnswerBlock answer={quoted} citations={new Map([["C1", citation]])} />);
     expect(screen.queryByText(/shall be absent in any 250 ml sample/)).toBeNull();
-    await userEvent.click(screen.getByRole("button", { name: "Exact wording and source" }));
+    await userEvent.click(screen.getByRole("button", { name: "See the original text" }));
     expect(screen.getByText(/shall be absent in any 250 ml sample/)).toBeInTheDocument();
   });
 

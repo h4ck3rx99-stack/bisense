@@ -16,6 +16,24 @@ observed; compiling is not enough.
 - Earlier evidence from the first repair pass (same day, with network and a Groq key) is listed separately
   and marked **"previous pass"**. It was not re-run here.
 
+## Pass 5 (2026-10-12): everyday questions and a simpler answer page
+
+- Everyday set (`server/eval/everyday.yaml`, 30 questions; `tests/test_everyday.py`): good answers **12/30 → 30/30**
+  without an AI model, **30/30** with Groq (`BISENSE_LIVE_EVERYDAY=1`). Fines and "cotton t-shirts" still refused.
+- Server: one chunk per official list row (1,528 chunks); 50+ everyday→official product names in `glossary.yaml`
+  (`products:`), matched with the official wording replacing the everyday words; "do I need / which standard"
+  questions put matching list rows above FAQs; FMCS pages last unless the question is about imports; no-AI gate
+  lets an exact official row/manual or service page through as "Possible match — check the source"; Hinglish
+  detected and pivoted; backup LLM used on Groq's daily 429 (test); Ollama `qwen3:8b` documented.
+- Verdict card built on the server from official evidence (`Answer.verdict`); everything else behind "Show proof
+  and details"; "not found" page with 2 rephrasings + step-by-step; top-bar counts moved to About; plain words
+  in en/hi/kn; standard page "What it covers" sentence, "Compulsory: Yes (… QCO 2020)", renamed sections.
+- Tests: pytest 177 passed (+1 live test opt-in), vitest 18, Playwright 26/26 (nothing skipped).
+  `web/scripts/answer-shots.mjs`: all layout checks pass at 1366 px and 390 px (helmet answer first screen shows
+  verdict, IS 4151 and the steps; phone answers 1.04–1.32 screens; no overflow or overlap). Screenshots refreshed.
+- No-AI retrieval eval (e2e index): recall@5 **0.98** (was 1.00), MRR@10 0.884 (was 0.89), exact hit 1.00,
+  refusal 0.833, false refusals 0.02. **Open:** find the one question that dropped out of the top 5.
+
 ## Pass 4 (2026-09-28, network and a Groq key)
 
 - `pytest`: **175 passed, 0 skipped** (live Groq Whisper in English/Hindi/Kannada, local Whisper, RAG proofs on
