@@ -44,7 +44,7 @@ team (real devices, native speakers, Groq console, Docker) or tomorrow's Groq al
 - (none)
 
 ## Next (team)
-0. Next: find the eval question whose recall@5 dropped (1.00 → 0.98) after per-row list chunks; native review of new hi/kn strings (verdict.*).
+0. Native-speaker review of the new hi/kn strings (verdict.*, keywords_hinglish).
 1. Re-run `npm run eval` once Groq's daily allowance has recovered (not on demo day) to confirm the numbers with
    prompt `answer_v2.1`.
 2. Run `npm run warm` again the day before the demo (cache is keyed by index + prompt version).

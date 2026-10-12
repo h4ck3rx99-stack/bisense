@@ -230,6 +230,29 @@ def _search_uncached(conn: sqlite3.Connection, index: LoadedIndex, plan: QueryPl
                 c.fused += 0.02
                 c.boosts["mention_boost"] = 0.02
     ordered = sorted(cands.values(), key=lambda c: c.fused, reverse=True)
+    # Every official list row mentions "(Quality Control) Order", so for a question that names no listed
+    # product ("What is a Quality Control Order?") hundreds of rows would crowd out the explaining page.
+    # Rows whose product does not match the question keep at most 3 places in the reranked head.
+    pq = product_terms(plan)
+    explicit_bases = {s.base for s in map(stdnum.parse, plan.explicit_numbers) if s}
+
+    def _row_matches(c: Candidate) -> bool:
+        row = parse_row(c.text)
+        if row is None:
+            return True  # not a one-row chunk (older tables): leave as is
+        if explicit_bases and any(n.base in explicit_bases for n in stdnum.find_all(row.numbers)):
+            return True
+        return product_match(f"{row.product} {row.title}", pq) > 0
+
+    kept, demoted, stray = [], [], 0
+    for c in ordered:
+        if c.clause_kind == "list" and not _row_matches(c):
+            stray += 1
+            if stray > 3:
+                demoted.append(c)
+                continue
+        kept.append(c)
+    ordered = kept + demoted
     timings["fuse"] = _ms(t)
 
     reranked = False

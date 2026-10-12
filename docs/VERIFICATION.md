@@ -31,8 +31,10 @@ observed; compiling is not enough.
 - Tests: pytest 177 passed (+1 live test opt-in), vitest 18, Playwright 26/26 (nothing skipped).
   `web/scripts/answer-shots.mjs`: all layout checks pass at 1366 px and 390 px (helmet answer first screen shows
   verdict, IS 4151 and the steps; phone answers 1.04–1.32 screens; no overflow or overlap). Screenshots refreshed.
-- No-AI retrieval eval (e2e index): recall@5 **0.98** (was 1.00), MRR@10 0.884 (was 0.89), exact hit 1.00,
-  refusal 0.833, false refusals 0.02. **Open:** find the one question that dropped out of the top 5.
+- No-AI retrieval eval (e2e index): recall@5 **1.00**, MRR@10 **0.903** (before this pass 1.00 / 0.89), exact hit 1.00,
+  refusal 0.833, false refusals 0.02. Found and fixed on the way: with one chunk per row, every row matched
+  "Quality Control Order", so "What is a Quality Control Order?" lost its FAQ (recall 0.98); rows whose product
+  does not match the question now keep at most 3 places in the reranked head.
 
 ## Pass 4 (2026-09-28, network and a Groq key)
 
